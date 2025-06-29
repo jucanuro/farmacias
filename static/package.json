@@ -1,0 +1,15 @@
+{
+  "name": "farmacias",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tailwindcss -i ./static/src/input.css -o ./static/css/style.css --minify",
+    "watch": "npx tailwindcss -i ./static/src/input.css -o ./static/css/style.css --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

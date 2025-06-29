@@ -1,0 +1,137 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}
+{% if usuario %}
+VQL - Editando a {{ usuario.username }}
+{% else %}
+VQL - Crear Usuario
+{% endif %}
+{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    {# BOTÓN DE VOLVER ACTUALIZADO #}
+    <a href="{% url 'core:usuario_list' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
+              hover:bg-slate-700 hover:text-white transition-all duration-300
+              shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver a la lista de Usuarios
+    </a>
+
+    {% if usuario %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Usuario: <span class="text-cyan-400">{{ usuario.username
+            }}</span></h1>
+    <p class="text-slate-400 mt-1">Modifica los datos del miembro del personal.</p>
+    {% else %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Usuario</h1>
+    <p class="text-slate-400 mt-1">Completa los datos para registrar un nuevo miembro del personal.</p>
+    {% endif %}
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-4xl mx-auto">
+    <form method="post" action="">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-rose-500/20 border border-rose-500/50 text-rose-300 p-4 rounded-lg mb-6">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+
+            <div class="space-y-6">
+                {% if not usuario %} {# El username solo se establece al crear #}
+                <div>
+                    <label for="{{ form.username.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Nombre de usuario</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<p class="text-red-400 text-xs mt-1">{{ form.username.errors|first }}
+                    </p>{% endif %}
+                </div>
+                {% endif %}
+                <div>
+                    <label for="{{ form.first_name.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Nombres</label>
+                    {{ form.first_name }}
+                </div>
+                <div>
+                    <label for="{{ form.last_name.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Apellidos</label>
+                    {{ form.last_name }}
+                </div>
+                <div>
+                    <label for="{{ form.email.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Correo Electrónico</label>
+                    {{ form.email }}
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label for="{{ form.farmacia.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Farmacia</label>
+                    {{ form.farmacia }}
+                </div>
+                <div>
+                    <label for="{{ form.sucursal.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Sucursal (Opcional)</label>
+                    {{ form.sucursal }}
+                </div>
+                <div>
+                    <label for="{{ form.rol.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Rol</label>
+                    {{ form.rol }}
+                </div>
+                {% if usuario %}
+                <div>
+                    <label for="{{ form.is_active.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Usuario Activo</label>
+                    <label class="relative inline-flex items-center cursor-pointer mt-2">
+                        {{ form.is_active }}
+                        <div
+                            class="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-teal-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500">
+                        </div>
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not usuario %}
+            <div class="md:col-span-2 space-y-6 border-t border-slate-700 pt-6 mt-6">
+                <div>
+                    <label for="{{ form.password1.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}<p class="text-red-400 text-xs mt-1">{{ form.password1.errors|first }}
+                    </p>{% endif %}
+                    <p class="text-xs text-slate-500 mt-1">{{ form.password1.help_text|safe }}</p>
+                </div>
+                <div>
+                    <label for="{{ form.password2.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Confirmación de contraseña</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}<p class="text-red-400 text-xs mt-1">{{ form.password2.errors|first }}
+                    </p>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'core:usuario_list' %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold transition-colors">
+                {% if usuario %}Guardar Cambios{% else %}Guardar Usuario{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

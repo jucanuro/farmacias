@@ -1,0 +1,119 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}VQL - Gestión de Usuarios{% endblock %}
+
+{% block app_content %}
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <div>
+        <h1 class="text-2xl font-extrabold text-white">Gestión de Usuarios</h1>
+        <p class="text-slate-400 mt-1">Administra las cuentas y permisos de todo tu personal.</p>
+    </div>
+    <a href="{% url 'core:usuario_create' %}"
+        class="w-12 h-12 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-full shadow-lg hover:shadow-teal-500/50 transition-all duration-300 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+    </a>
+</header>
+
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left min-w-[960px]">
+            <thead class="bg-slate-800">
+                <tr>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Usuario</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nombre Completo</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Rol</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Farmacia</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Estado</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700">
+                {% for usuario in usuarios %}
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="p-4 font-medium text-white">{{ usuario.username }}</td>
+                    <td class="p-4">{{ usuario.get_full_name|default:"No especificado" }}</td>
+                    <td class="p-4">{{ usuario.rol.nombre|default:"<span class='text-slate-500'>Sin rol</span>"|safe }}
+                    </td>
+                    <td class="p-4">{{ usuario.farmacia.nombre|default:"<span class='text-slate-500'>N/A</span>"|safe }}
+                    </td>
+                    <td class="p-4">
+                        {% if usuario.is_active %}
+                        <span class="text-emerald-400">Activo</span>
+                        {% else %}
+                        <span class="text-rose-400">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4">
+                        <div class="flex justify-center items-center gap-4">
+                            <a href="{% url 'core:usuario_update' pk=usuario.pk %}"
+                                class="text-slate-400 hover:text-emerald-400 transition-colors" title="Editar Usuario">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path
+                                        d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                    <path fill-rule="evenodd"
+                                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-400">No hay usuarios registrados todavía.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        document.querySelectorAll('.toggle-active-switch').forEach(toggle => {
+            toggle.addEventListener('change', function () {
+                const url = this.dataset.url;
+                const statusTextElement = this.closest('td').querySelector('.status-text');
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    },
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            if (data.is_active) {
+                                statusTextElement.textContent = 'Activo';
+                                statusTextElement.classList.remove('text-rose-400');
+                                statusTextElement.classList.add('text-emerald-400');
+                            } else {
+                                statusTextElement.textContent = 'Inactivo';
+                                statusTextElement.classList.remove('text-emerald-400');
+                                statusTextElement.classList.add('text-rose-400');
+                            }
+                        } else {
+                            this.checked = !this.checked;
+                            alert(data.message || 'Ocurrió un error.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.checked = !this.checked;
+                        alert('No se pudo comunicar con el servidor.');
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

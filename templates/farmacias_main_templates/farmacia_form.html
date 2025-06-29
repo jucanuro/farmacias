@@ -1,0 +1,88 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}VQL - Nueva Farmacia{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <h1 class="text-2xl font-extrabold text-white">Crear Nueva Farmacia</h1>
+    <p class="text-slate-400 mt-1">Completa los datos para registrar una nueva farmacia en el sistema.</p>
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-4xl mx-auto">
+    <form method="post" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="space-y-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.nombre.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Nombre de la Farmacia</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.razon_social.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Razón Social</label>
+                    {{ form.razon_social }}
+                    {% if form.razon_social.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.razon_social.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.ruc.id_for_label }}"
+                    class="block text-sm font-medium text-slate-300 mb-1">RUC</label>
+                {{ form.ruc }}
+                {% if form.ruc.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ form.ruc.errors.as_text }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.direccion.id_for_label }}"
+                    class="block text-sm font-medium text-slate-300 mb-1">Dirección Principal</label>
+                {{ form.direccion }}
+                {% if form.direccion.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ form.direccion.errors.as_text }}</p>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.telefono.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Teléfono</label>
+                    {{ form.telefono }}
+                    {% if form.telefono.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.telefono.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.email.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <p class="text-red-400 text-xs mt-1">{{ form.email.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'core:farmacias_list' %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
+                Guardar Farmacia
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

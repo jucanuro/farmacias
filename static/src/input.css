@@ -1,0 +1,10 @@
+    /* ~/projects/farmacias/static/src/input.css */
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    /* Puedes añadir tus estilos CSS personalizados aquí si los necesitas */
+    body {
+        font-family: 'Inter', 'sans-serif';
+        /* Asegura que la fuente Inter se aplica */
+    }

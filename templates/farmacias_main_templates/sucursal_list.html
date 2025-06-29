@@ -1,0 +1,175 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}Sucursales de {{ farmacia.nombre }}{% endblock %}
+
+{% block app_content %}
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <div>
+        <a href="{% url 'core:farmacias_list' %}"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
+                  hover:bg-slate-700 hover:text-white transition-all duration-300
+                  shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+            </svg>
+            Volver a Farmacias
+        </a>
+        <h1 class="text-2xl font-extrabold text-white mt-6">
+            Sucursales de <span class="text-cyan-400">{{ farmacia.nombre }}</span>
+        </h1>
+        <p class="text-slate-400 mt-1">Administra todas las sucursales de esta farmacia.</p>
+    </div>
+    <a href="{% url 'core:sucursal_create' farmacia_id=farmacia.pk %}"
+        class="w-12 h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-full shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+    </a>
+</header>
+
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left min-w-[720px]">
+            <thead class="bg-slate-800">
+                <tr>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nombre Sucursal</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Dirección</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Teléfono</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Administrador</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700">
+
+                {% for sucursal in sucursales %}
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="p-4 font-medium text-white">{{ sucursal.nombre }}</td>
+                    <td class="p-4">{{ sucursal.direccion|default:"No especificada" }}</td>
+                    <td class="p-4">{{ sucursal.telefono|default:"N/A" }}</td>
+                    <td class="p-4">{{ sucursal.administrador }}</td>
+                    <td class="p-4">
+                        <div class="flex justify-center items-center gap-4">
+                            <a href="{% url 'core:sucursal_update' pk=sucursal.pk %}"
+                                class="text-slate-400 hover:text-emerald-400 transition-colors" title="Editar Sucursal">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path
+                                        d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                    <path fill-rule="evenodd"
+                                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                            <button type="button"
+                                class="delete-btn text-slate-400 hover:text-rose-500 transition-colors"
+                                title="Eliminar Sucursal" data-sucursal-nombre="{{ sucursal.nombre }}"
+                                data-delete-url="{% url 'core:sucursal_delete' pk=sucursal.pk %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-400">
+                        Esta farmacia aún no tiene sucursales registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block app_content_extra %}
+<div id="delete-modal" class="fixed inset-0 z-50 flex justify-center items-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="glass-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-rose-500/50 p-8 m-4">
+        <div class="text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/20">
+                <svg class="h-6 w-6 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+            <h3 class="mt-4 text-2xl font-bold leading-6 text-white">Eliminar Sucursal</h3>
+            <div class="mt-2">
+                <p class="text-sm text-slate-400">
+                    ¿Estás seguro de que quieres eliminar la sucursal <strong id="sucursal-name-modal"
+                        class="font-bold text-white"></strong>?
+                    <br>Esta acción no se puede deshacer.
+                </p>
+            </div>
+        </div>
+        <form id="delete-form" method="POST" class="mt-8 space-y-4">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 gap-4">
+                <button type="button" id="cancel-delete-btn"
+                    class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="w-full px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors">
+                    Sí, eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const deleteModal = document.getElementById('delete-modal');
+        if (!deleteModal) return;
+
+        const deleteForm = document.getElementById('delete-form');
+        const sucursalNameModal = document.getElementById('sucursal-name-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+
+        const openModal = (button) => {
+            const sucursalNombre = button.dataset.sucursalNombre;
+            const deleteUrl = button.dataset.deleteUrl;
+
+            sucursalNameModal.textContent = sucursalNombre;
+            deleteForm.action = deleteUrl;
+
+            deleteModal.classList.remove('hidden');
+        };
+
+        const closeModal = () => {
+            deleteModal.classList.add('hidden');
+        };
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(button);
+            });
+        });
+
+        cancelDeleteBtn.addEventListener('click', closeModal);
+
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) {
+                closeModal();
+            }
+        });
+    });
+</script>
+{% endblock %}

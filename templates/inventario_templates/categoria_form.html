@@ -1,0 +1,71 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}
+{% if categoria %}
+VQL - Editando Categoría
+{% else %}
+VQL - Nueva Categoría
+{% endif %}
+{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <a href="{% url 'inventario:categoria_list' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
+              hover:bg-slate-700 hover:text-white transition-all duration-300
+              shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver a Categorías
+    </a>
+
+    {% if categoria %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Categoría</h1>
+    <p class="text-slate-400 mt-1">Modifica los detalles de la categoría <strong class="text-white">{{ categoria.nombre
+            }}</strong>.</p>
+    {% else %}
+    <h1 class="text-4xl font-extrabold text-white mt-6">Crear Nueva Categoría</h1>
+    <p class="text-slate-400 mt-1">Define una nueva categoría para tus productos.</p>
+    {% endif %}
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-2xl mx-auto">
+    <form method="post" action="">
+        {% csrf_token %}
+        <div class="space-y-6">
+            <div>
+                <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-1">Nombre
+                    de la Categoría</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label for="{{ form.descripcion.id_for_label }}"
+                    class="block text-sm font-medium text-slate-300 mb-1">Descripción</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ form.descripcion.errors.as_text }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'inventario:categoria_list' %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">
+                {% if categoria %}
+                Guardar Cambios
+                {% else %}
+                Guardar Categoría
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

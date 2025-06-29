@@ -1,0 +1,184 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}VQL - Gestión de Farmacias{% endblock %}
+
+{% block app_content %}
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <div>
+        <h1 class="text-4xl font-extrabold text-white">Gestión de Farmacias</h1>
+        <p class="text-slate-400 mt-1">Administra todas tus farmacias desde un solo lugar.</p>
+    </div>
+    <a href="{% url 'core:farmacia_create' %}"
+        class="w-12 h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+    </a>
+</header>
+
+<div class="glass-card rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left min-w-[720px]">
+            <thead class="bg-slate-800">
+                <tr>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nombre</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">RUC</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Dirección Principal</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Teléfono</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700">
+
+                {% for farmacia in farmacias %}
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="p-4 font-medium text-white">{{ farmacia.nombre }}</td>
+                    <td class="p-4">{{ farmacia.ruc }}</td>
+                    <td class="p-4">{{ farmacia.direccion|default:"No especificada" }}</td>
+                    <td class="p-4">{{ farmacia.telefono|default:"N/A" }}</td>
+                    <td class="p-4">
+                        <div class="flex justify-center items-center gap-4">
+                            <!-- Ícono Ver Sucursales (NUEVO) -->
+                            <a href="{% url 'core:sucursal_list' farmacia_id=farmacia.pk %}"
+                                class="text-slate-400 hover:text-cyan-400 transition-colors" title="Ver Sucursales">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path
+                                        d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                                </svg>
+                            </a>
+
+                            <!-- Ícono Editar -->
+                            <a href="{% url 'core:farmacia_update' farmacia.pk %}"
+                                class="text-slate-400 hover:text-emerald-400 transition-colors" title="Editar Farmacia">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path
+                                        d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                                    <path fill-rule="evenodd"
+                                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
+
+                            <!-- Botón Eliminar que abre el modal -->
+                            <button type="button"
+                                class="delete-btn text-slate-400 hover:text-rose-500 transition-colors"
+                                title="Eliminar Farmacia" data-farmacia-id="{{ farmacia.pk }}"
+                                data-farmacia-nombre="{{ farmacia.nombre }}"
+                                data-delete-url="{% url 'core:farmacia_delete' farmacia.pk %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-400">
+                        No hay farmacias registradas todavía.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- INICIO: Modal de Confirmación de Eliminación -->
+<div id="delete-modal" class="fixed inset-0 z-50 flex justify-center items-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="glass-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-rose-500/50 p-8 m-4">
+        <div class="text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/20">
+                <svg class="h-6 w-6 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+            <h3 class="mt-4 text-2xl font-bold leading-6 text-white">Eliminar Farmacia</h3>
+            <div class="mt-2">
+                <p class="text-sm text-slate-400">
+                    ¿Estás seguro de que quieres eliminar la farmacia <strong id="farmacia-name-modal"
+                        class="font-bold text-white"></strong>?
+                    <br>Esta acción no se puede deshacer.
+                </p>
+            </div>
+        </div>
+
+        <!-- Formulario que se enviará para eliminar -->
+        <form id="delete-form" method="POST" class="mt-8 space-y-4">
+            {% csrf_token %}
+            <div class="grid grid-cols-2 gap-4">
+                <button type="button" id="cancel-delete-btn"
+                    class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="w-full px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors">
+                    Sí, eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- FIN: Modal -->
+
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- LÓGICA DEL MODAL DE ELIMINACIÓN ---
+
+        const deleteModal = document.getElementById('delete-modal');
+        const deleteForm = document.getElementById('delete-form');
+        const farmaciaNameModal = document.getElementById('farmacia-name-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+
+        // Función para abrir el modal
+        const openModal = (button) => {
+            const farmaciaNombre = button.dataset.farmaciaNombre;
+            const deleteUrl = button.dataset.deleteUrl;
+
+            // Actualizar el contenido del modal
+            farmaciaNameModal.textContent = farmaciaNombre;
+            deleteForm.action = deleteUrl;
+
+            // Mostrar el modal
+            deleteModal.classList.remove('hidden');
+        };
+
+        // Función para cerrar el modal
+        const closeModal = () => {
+            deleteModal.classList.add('hidden');
+        };
+
+        // Asignar evento a cada botón de eliminar en la tabla
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(button);
+            });
+        });
+
+        // Asignar evento al botón de cancelar
+        cancelDeleteBtn.addEventListener('click', closeModal);
+
+        // Asignar evento para cerrar el modal si se hace clic fuera de él
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) {
+                closeModal();
+            }
+        });
+    });
+</script>
+{% endblock %}

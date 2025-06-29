@@ -1,0 +1,105 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}
+{# El título de la página cambiará si estamos editando o creando #}
+{% if sucursal %}
+VQL - Editando {{ sucursal.nombre }}
+{% else %}
+VQL - Añadir Sucursal a {{ farmacia.nombre }}
+{% endif %}
+{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    {# El encabezado también será dinámico #}
+    {% if sucursal %}
+    <a href="{% url 'core:sucursal_list' farmacia_id=farmacia.pk %}"
+        class="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+        &larr; Volver a Sucursales de {{ farmacia.nombre }}
+    </a>
+    <h1 class="text-2xl font-extrabold text-white mt-2">Editar Sucursal: <span class="text-cyan-400">{{ sucursal.nombre
+            }}</span></h1>
+    <p class="text-slate-400 mt-1">Modifica los datos de la sucursal y guarda los cambios.</p>
+    {% else %}
+    <h1 class="text-2xl font-extrabold text-white">Añadir Nueva Sucursal</h1>
+    <p class="text-slate-400 mt-1">Completa los datos de la nueva sucursal para la farmacia <strong
+            class="text-white">{{ farmacia.nombre }}</strong>.</p>
+    {% endif %}
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-4xl mx-auto">
+    <form method="post" action="" novalidate>
+        {% csrf_token %}
+        <div class="space-y-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.nombre.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Nombre de la Sucursal</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}<p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.codigo.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Código de Sucursal</label>
+                    {{ form.codigo }}
+                    {% if form.codigo.errors %}<p class="text-red-400 text-xs mt-1">{{ form.codigo.errors.as_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.direccion.id_for_label }}"
+                    class="block text-sm font-medium text-slate-300 mb-1">Dirección de la Sucursal</label>
+                {{ form.direccion }}
+                {% if form.direccion.errors %}<p class="text-red-400 text-xs mt-1">{{ form.direccion.errors.as_text }}
+                </p>{% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.telefono.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Teléfono</label>
+                    {{ form.telefono }}
+                    {% if form.telefono.errors %}<p class="text-red-400 text-xs mt-1">{{ form.telefono.errors.as_text }}
+                    </p>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.fecha_apertura.id_for_label }}"
+                        class="block text-sm font-medium text-slate-300 mb-1">Fecha de Apertura</label>
+                    {{ form.fecha_apertura }}
+                    {% if form.fecha_apertura.errors %}<p class="text-red-400 text-xs mt-1">{{
+                        form.fecha_apertura.errors.as_text }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.administrador.id_for_label }}"
+                    class="block text-sm font-medium text-slate-300 mb-1">Administrador de Sucursal</label>
+                {{ form.administrador }}
+                {% if form.administrador.errors %}<p class="text-red-400 text-xs mt-1">{{
+                    form.administrador.errors.as_text }}</p>{% endif %}
+            </div>
+
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'core:sucursal_list' farmacia_id=farmacia.pk %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
+                {# El texto del botón también será dinámico #}
+                {% if sucursal %}
+                Guardar Cambios
+                {% else %}
+                Guardar Sucursal
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

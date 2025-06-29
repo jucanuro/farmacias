@@ -1,0 +1,154 @@
+{% extends 'farmacias_main_templates/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="relative min-h-screen lg:flex">
+    <aside
+        class="hidden lg:flex group flex-col w-20 hover:w-64 transition-all duration-300 ease-in-out h-screen p-4 sticky top-0 bg-slate-900/50">
+        <a href="{% url 'dashboard' %}"
+            class="flex items-center justify-start h-12 text-3xl font-bold mb-10 text-emerald-400 flex-shrink-0 w-full pl-0.5">
+            <span class="text-3xl">💊</span>
+            <span class="ml-2 text-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">VQL</span>
+        </a>
+
+        <nav id="main-nav-menu" class="flex flex-col space-y-2 flex-grow">
+        </nav>
+
+        <div class="flex flex-col w-full mt-auto">
+            <a id="logout-link" href="{% url 'core:logout' %}"
+                class="flex items-center w-full h-12 rounded-full text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-colors pl-4">
+                <svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
+                </svg>
+                <span
+                    class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Cerrar
+                    Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+        <header
+            class="lg:hidden flex items-center justify-between p-4 glass-card border-b border-slate-700/50 sticky top-0 z-20">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xl font-bold text-white">
+                <span class="text-3xl">💊</span>
+                <span>VQL</span>
+            </a>
+            <button id="mobile-menu-button" class="p-2 rounded-lg hover:bg-slate-700/50">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                    </path>
+                </svg>
+            </button>
+        </header>
+
+        <div id="mobile-menu" class="hidden lg:hidden bg-slate-900/80 backdrop-blur-md animate-slide-down">
+            <nav class="flex flex-col p-4 space-y-2">
+                <a href="{% url 'dashboard' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Inicio</a>
+                <a href="{% url 'core:farmacias_list' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Farmacias</a>
+                <a href="{% url 'core:usuario_list' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Usuarios</a>
+                <a href="{% url 'inventario:categoria_list' %}"
+                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Categorías</a>
+                <a href="{% url 'core:logout' %}"
+                    class="px-4 py-3 rounded-lg text-rose-500 hover:bg-rose-500/10 mt-4 border-t border-slate-700">Cerrar
+                    Sesión</a>
+            </nav>
+        </div>
+
+        <main class="flex-1 p-6 lg:p-10">
+            {% block app_content %}{% endblock %}
+            {% block app_content_extra %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const navMenuContainer = document.getElementById('main-nav-menu');
+
+        const navData = [
+            {
+                id: 'inicio',
+                url: "{% url 'dashboard' %}",
+                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 9-9m0 0 9 9m-9-9v11.25A2.25 2.25 0 0 1 11.25 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V12M18.75 12V4.5m0 0-2.25-2.25M18.75 4.5h-1.5m-2.25 18H12M4.5 9.75v8.25c0 .621.504 1.125 1.125 1.125h11.25c.621 0 1.125-.504 1.125-1.125V9.75M3.75 12h.008v.008H3.75V12zm0 3.75h.008v.008H3.75v-.008zm0 3.75h.008v.008H3.75v-.008zm3.75-3.75h.008v.008H7.5v-.008zm0 3.75h.008v.008H7.5v-.008zm3.75-3.75h.008v.008h-.008v-.008zm0 3.75h.008v.008h-.008v-.008zm3.75-3.75h.008v.008h-.008v-.008zm0 3.75h.008v.008h-.008v-.008z" /></svg>`,
+                title: 'Inicio'
+            },
+            {
+                id: 'inventario',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125A2.25 2.25 0 0 1 4.5 4.875h15A2.25 2.25 0 0 1 21.75 7.125v10.5A2.25 2.25 0 0 1 19.5 19.875h-15A2.25 2.25 0 0 1 2.25 17.625V7.125Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m12 15.75-3-3m0 0 3-3m-3 3h7.5" /></svg>`,
+                title: 'Inventario',
+                children: [
+                    { id: 'productos', url: '#', icon: '💊', title: 'Productos' },
+                    { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías' },
+                ]
+            },
+            {
+                id: 'configuracion',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.43.992a6.759 6.759 0 0 1 0 1.905c.008.378.137.75.43.99l1.004.827a1.125 1.125 0 0 1 .26 1.43l-1.296 2.247a1.125 1.125 0 0 1-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.332.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.759 6.759 0 0 1 0-1.905c-.008-.378-.137-.75-.43-.99l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.296-2.247a1.125 1.125 0 0 1 1.37.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.213-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>`,
+                title: 'Configuración',
+                children: [
+                    { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Farmacias' },
+                    { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Usuarios' },
+                    { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Roles' },
+                ]
+            }
+        ];
+
+        if (navMenuContainer) {
+            navMenuContainer.innerHTML = '';
+            navData.forEach(item => {
+                if (item.children && item.children.length > 0) {
+                    const menuWrapper = document.createElement('div');
+                    const button = document.createElement('button');
+                    button.className = 'flex items-center justify-between w-full h-12 rounded-full bg-slate-700/50 hover:bg-slate-800/80 transition-colors pl-4 nav-item';
+                    button.innerHTML = `<div class="flex items-center">${item.icon}<span class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${item.title}</span></div><svg class="w-5 h-5 mr-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-transform duration-300 nav-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>`;
+                    const submenu = document.createElement('div');
+                    submenu.className = 'hidden mt-2 pl-4 space-y-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+                    item.children.forEach(child => {
+                        submenu.innerHTML += `<a href="${child.url}" id="${child.id}-link" class="flex items-center w-full h-10 rounded-lg hover:bg-slate-800/80 px-2 text-slate-300 hover:text-white transition-colors nav-sub-item"><span class="w-8 text-center text-lg">${child.icon}</span><span class="ml-2 text-sm font-medium whitespace-nowrap">${child.title}</span></a>`;
+                    });
+                    menuWrapper.appendChild(button);
+                    menuWrapper.appendChild(submenu);
+                    navMenuContainer.appendChild(menuWrapper);
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        submenu.classList.toggle('hidden');
+                        button.querySelector('.nav-chevron').classList.toggle('rotate-180');
+                    });
+                } else {
+                    const link = document.createElement('a');
+                    link.href = item.url;
+                    link.id = `${item.id}-link`;
+                    link.className = 'flex items-center w-full h-12 rounded-full bg-slate-700/50 hover:bg-slate-800/80 transition-colors pl-4 nav-item';
+                    link.innerHTML = `${item.icon}<span class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${item.title}</span>`;
+                    navMenuContainer.appendChild(link);
+                }
+            });
+        }
+
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', () => {
+                document.getElementById('mobile-menu').classList.toggle('hidden');
+            });
+        }
+
+        const currentPath = window.location.pathname;
+        const allLinks = document.querySelectorAll('aside nav a');
+        allLinks.forEach(link => {
+            if (link.href && new URL(link.href).pathname === currentPath) {
+                link.classList.add('bg-slate-800/80', 'text-emerald-400');
+                link.classList.remove('bg-slate-700/50', 'hover:bg-slate-800/80');
+            }
+        });
+    });
+</script>
+{% block app_scripts %}{% endblock %}
+{% endblock %}

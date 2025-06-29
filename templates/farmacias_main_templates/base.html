@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark"> {# El modo oscuro es el predeterminado #}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VQL - Gestión de Farmacias{% endblock %}</title>
+
+    {# --- INICIO: SECCIÓN DE ESTILOS Y FUENTES COMUNES --- #}
+    {# 1. Carga de la fuente "Inter" desde Google Fonts #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    {# 2. Carga de Tailwind CSS y su configuración #}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        'aurora-spin': { 'from': { transform: 'rotate(0deg)' }, 'to': { transform: 'rotate(360deg)' } },
+                        'fade-in-up': { '0%': { opacity: '0', transform: 'translateY(30px) scale(0.95)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+                        'slide-down': { '0%': { opacity: '0', transform: 'translateY(-10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        'button-glow': {
+                            '0%, 100%': { boxShadow: '0 0 10px #10b981, 0 0 12px #10b981' },
+                            '50%': { boxShadow: '0 0 20px #10b981, 0 0 25px #10b981' }
+                        }
+                    },
+                    animation: {
+                        'aurora': 'aurora-spin 20s linear infinite',
+                        'fade-in-up': 'fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+                        'slide-down': 'slide-down 0.3s ease-out forwards',
+                        'button-glow': 'button-glow 2s ease-in-out infinite'
+                    },
+                }
+            }
+        }
+    </script>
+
+    {# 3. Estilos personalizados base #}
+    <style>
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            /* slate-900 con opacidad */
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+        }
+
+        .dashboard-card {
+            opacity: 0;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+    </style>
+    {# --- FIN: SECCIÓN DE ESTILOS Y FUENTES COMUNES --- #}
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body class="font-sans bg-slate-900 text-slate-200">
+
+    {# Fondo de aurora dinámico, presente en todas las páginas #}
+    <div id="aurora-background"
+        class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden transition-all duration-1000 ease-in-out">
+        <div
+            class="absolute top-1/2 left-1/2 w-[150vw] h-[150vw] bg-gradient-to-r from-emerald-500/30 via-cyan-500/30 to-purple-500/30 animate-aurora">
+        </div>
+    </div>
+
+    {# Bloque principal donde irá el contenido de cada página (login, dashboard, etc.) #}
+    {% block content %}{% endblock %}
+
+    {# Bloque para los scripts específicos de cada página #}
+    {% block scripts_extra %}{% endblock %}
+</body>
+
+</html>

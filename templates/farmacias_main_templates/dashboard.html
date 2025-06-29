@@ -1,0 +1,174 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}VQL - Panel de Control{% endblock %}
+
+{% block app_content %}
+<div id="inicio-content">
+    <header id="main-header" class="flex justify-between items-center mb-10">
+        <div>
+            <h1 class="text-4xl font-extrabold text-white">Panel de Control</h1>
+            <p class="text-slate-400 mt-1">Hola, {{ user.get_full_name|default:user.username }}. Bienvenido al futuro de
+                la gestión.</p>
+        </div>
+        <button id="command-palette-button-main"
+            class="px-4 py-2 glass-card rounded-lg text-slate-300 hover:text-white hover:border-slate-400/50 transition-colors flex items-center gap-2">
+            Búsqueda rápida <span class="text-xs border border-slate-500 rounded px-1.5 py-0.5">Ctrl K</span>
+        </button>
+    </header>
+    <div id="card-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+    </div>
+</div>
+
+<div id="analisis-content" class="hidden">
+</div>
+{% endblock %}
+
+{% block app_content_extra %}
+<div id="command-palette"
+    class="fixed inset-0 z-50 flex justify-center items-start pt-20 bg-black/50 backdrop-blur-sm hidden">
+    <div class="glass-card w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border-emerald-500/50">
+        <input id="command-input" type="text" placeholder="Escribe un comando o busca una página..."
+            class="w-full p-4 text-lg bg-transparent text-white focus:outline-none border-b border-slate-500/50">
+        <ul id="command-list" class="p-2 max-h-96 overflow-y-auto"></ul>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. ESTRUCTURA DE DATOS PRINCIPAL ---
+        const navigationData = [
+            {
+                id: 'inventario', icon: '📦', category: 'Inventario', title: 'Control de Inventario', desc: 'Administra productos, categorías y stock.', glow: '#0891b2',
+                children: [
+                    { id: 'productos', url: '#', icon: '💊', title: 'Productos', desc: 'Gestiona el catálogo completo.', category: 'Inventario' },
+                    { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías', desc: 'Organiza tus productos.', category: 'Inventario' },
+                    { id: 'laboratorios', url: '#', icon: '🏢', title: 'Laboratorios', desc: 'Administra los fabricantes.', category: 'Inventario' },
+                ]
+            },
+            {
+                id: 'administracion', icon: '⚙️', category: 'Sistema', title: 'Administración', desc: 'Gestiona farmacias, usuarios y roles.', glow: '#64748b',
+                children: [
+                    { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Gestión de Farmacias', desc: 'Añade o edita tus farmacias.', category: 'Sistema' },
+                    { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Gestión de Usuarios', desc: 'Controla los accesos y permisos.', category: 'Sistema' },
+                    { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Gestión de Roles', desc: 'Define los tipos de usuario.', category: 'Sistema' },
+                ]
+            },
+            { id: 'ventas', url: '#', icon: '📈', category: 'Ventas', title: 'Módulo de Ventas', desc: 'Registra transacciones y revisa historiales.', glow: '#a855f7' },
+            { id: 'analisis', url: '#', icon: '📊', category: 'Análisis', title: 'Dashboard de Análisis', desc: 'Métricas y KPIs de ventas.', glow: '#14b8a6', action: 'show_analysis_view' },
+        ];
+
+        // --- 2. ELEMENTOS DEL DOM ---
+        const inicioContent = document.getElementById('inicio-content');
+        const analisisContent = document.getElementById('analisis-content');
+        const cardContainer = document.getElementById('card-container');
+        const mainHeader = document.getElementById('main-header');
+
+        // --- 3. LÓGICA DE VISTAS (Panel Principal vs. Análisis) ---
+        const setActiveView = (viewName) => {
+            const isInicio = viewName === 'inicio';
+            inicioContent.classList.toggle('hidden', !isInicio);
+            analisisContent.classList.toggle('hidden', isInicio);
+        };
+
+        // --- 4. LÓGICA DE RENDERIZADO (Tarjetas y Dashboard de Análisis) ---
+        const renderCards = (items, parentItem = null) => {
+            cardContainer.innerHTML = '';
+            if (parentItem) {
+                const backButton = document.createElement('div');
+                backButton.className = 'col-span-full mb-4 animate-fade-in';
+                backButton.innerHTML = `<button id="back-to-main" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> Volver al Menú Principal</button>`;
+                cardContainer.appendChild(backButton);
+                document.getElementById('back-to-main').addEventListener('click', () => {
+                    mainHeader.style.display = 'flex';
+                    renderCards(navigationData);
+                });
+            }
+            items.forEach(card => {
+                const cardElement = document.createElement('a');
+                cardElement.className = 'dashboard-card card-3d glass-card rounded-2xl p-6 flex flex-col justify-between h-52 group cursor-pointer block animate-fade-in-up';
+                cardElement.href = card.url || '#';
+                cardElement.innerHTML = `<div class="flex justify-between items-start"><span class="text-5xl">${card.icon}</span> ${card.category ? `<span class="text-xs font-bold uppercase" style="color:${card.glow};">${card.category}</span>` : ''}</div><div><h4 class="text-xl font-bold text-white">${card.title}</h4><p class="text-sm text-slate-400">${card.desc}</p></div>`;
+                cardElement.addEventListener('click', (e) => {
+                    if (card.children && card.children.length > 0) {
+                        e.preventDefault();
+                        mainHeader.style.display = 'none';
+                        renderCards(card.children, { title: 'Menú Principal' });
+                    } else if (card.action === 'show_analysis_view') {
+                        e.preventDefault();
+                        setActiveView('analisis');
+                    }
+                });
+                cardContainer.appendChild(cardElement);
+            });
+        };
+
+        const renderAnalysisDashboard = () => {
+            analisisContent.innerHTML = `
+            <header class="flex justify-between items-center mb-10">
+                <div><h1 class="text-4xl font-extrabold text-white">Dashboard de Análisis</h1><p class="text-slate-400 mt-1">Métricas clave (datos de ejemplo).</p></div>
+                <button id="back-from-analysis" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    Volver al Panel
+                </button>
+            </header>
+            <div class="glass-card p-6 rounded-2xl text-center"><p>Aquí irían tus gráficos y KPIs.</p></div>`;
+            document.getElementById('back-from-analysis').addEventListener('click', () => setActiveView('inicio'));
+        };
+
+        // --- 5. LÓGICA DE LA PALETA DE COMANDOS (RE-INTEGRADA) ---
+        const commandItems = [];
+        navigationData.forEach(item => {
+            if (item.children && item.children.length > 0) { commandItems.push(...item.children); }
+            else { commandItems.push(item); }
+        });
+        const commands = [
+            ...commandItems.map(card => ({
+                name: card.title, category: card.category || 'General',
+                action: () => {
+                    if (card.action === 'show_analysis_view') { setActiveView('analisis'); }
+                    else { window.location.href = card.url; }
+                }
+            })),
+            { name: 'Cerrar Sesión', category: 'Sistema', action: () => { document.getElementById('logout-link')?.click(); } }
+        ];
+        const commandPalette = document.getElementById('command-palette');
+        const commandInput = document.getElementById('command-input');
+        const commandList = document.getElementById('command-list');
+        const commandButtons = document.querySelectorAll('#command-palette-button-main');
+        const openCommandPalette = () => { commandPalette.classList.remove('hidden'); commandInput.focus(); renderCommandList(commands); };
+        const closeCommandPalette = () => { commandPalette.classList.add('hidden'); commandInput.value = ''; };
+        const renderCommandList = (items) => {
+            commandList.innerHTML = '';
+            if (items.length === 0) { commandList.innerHTML = `<li class="p-3 text-slate-400">No se encontraron resultados.</li>`; return; }
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = `p-3 text-slate-300 flex justify-between items-center rounded-lg cursor-pointer hover:bg-emerald-500/20 ${index === 0 ? 'bg-emerald-500/20' : ''}`;
+                li.innerHTML = `<span>${item.name}</span> <span class="text-xs text-slate-500">${item.category}</span>`;
+                li.addEventListener('click', () => { item.action(); closeCommandPalette(); });
+                commandList.appendChild(li);
+            });
+        };
+
+        // --- 6. INICIALIZACIÓN Y EVENTOS ---
+        renderCards(navigationData);
+        renderAnalysisDashboard();
+        setActiveView('inicio');
+
+        commandButtons.forEach(btn => btn.addEventListener('click', openCommandPalette));
+        commandInput.addEventListener('input', () => {
+            const query = commandInput.value.toLowerCase();
+            const filteredCommands = commands.filter(c => c.name.toLowerCase().includes(query));
+            renderCommandList(filteredCommands);
+        });
+        commandPalette.addEventListener('click', (e) => { if (e.target === commandPalette) { closeCommandPalette(); } });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !commandPalette.classList.contains('hidden')) { closeCommandPalette(); }
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); commandPalette.classList.contains('hidden') ? openCommandPalette() : closeCommandPalette(); }
+        });
+    });
+</script>
+{% endblock %}

@@ -20,10 +20,7 @@ class Rol(models.Model):
         return self.nombre
 
 class Usuario(AbstractUser):
-    """
-    Modelo de usuario personalizado que extiende AbstractUser de Django.
-    Añade campos para asociar el usuario a una Farmacia, Sucursal y Rol específico.
-    """
+    # ... (todos tus campos existentes como 'farmacia', 'sucursal' y 'rol' van aquí) ...
     farmacia = models.ForeignKey(
         'Farmacia',
         on_delete=models.SET_NULL,
@@ -51,11 +48,17 @@ class Usuario(AbstractUser):
 
     class Meta:
         verbose_name = "Usuario del Sistema"
-        verbose_name_plural = "Usuarios del Sistema" # <-- CORREGIDO AQUÍ
-        # AbstractUser ya maneja la unicidad del username
+        verbose_name_plural = "Usuarios del Sistema"
 
+    # --- MÉTODO __str__ MODIFICADO ---
     def __str__(self):
-        return self.username # Retorna el nombre de usuario
+        # El método get_full_name() ya existe en los usuarios de Django
+        # y combina 'first_name' y 'last_name'.
+        nombre_completo = self.get_full_name()
+        
+        # Si el usuario tiene nombre y apellido, los mostramos.
+        # Si no, mostramos su 'username' para no dejar el campo vacío.
+        return nombre_completo if nombre_completo else self.username
 
 # --- Modelos de Estructura de Farmacias ---
 class ConfiguracionFacturacionElectronica(models.Model):
