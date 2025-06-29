@@ -1,0 +1,139 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}{% if producto %}VQL - Editando Producto{% else %}VQL - Nuevo Producto{% endif %}{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <a href="{% url 'inventario:producto_list' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver a Productos
+    </a>
+    {% if producto %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Producto: <span class="text-cyan-400">{{ producto
+            }}</span></h1>
+    {% else %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Producto</h1>
+    <p class="text-slate-400 mt-1">Completa toda la información para registrar un nuevo producto en el catálogo.</p>
+    {% endif %}
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-6xl mx-auto">
+    <form method="post" action="" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="space-y-8">
+            <div>
+                <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Información General</h3>
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-6 pt-4">
+                    <div class="col-span-6 md:col-span-4">
+                        <label for="{{ form.nombre.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Nombre del Producto</label>
+                        {{ form.nombre }}
+                    </div>
+                    <div class="col-span-6 md:col-span-2">
+                        <label for="{{ form.codigo_barras.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Código de Barras (EAN)</label>
+                        {{ form.codigo_barras }}
+                    </div>
+                    <div class="col-span-6">
+                        <label for="{{ form.descripcion.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Descripción Detallada</label>
+                        {{ form.descripcion }}
+                    </div>
+                    <div class="col-span-6 md:col-span-3">
+                        <label for="{{ form.categoria.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Categoría</label>
+                        {{ form.categoria }}
+                    </div>
+                    <div class="col-span-6 md:col-span-3">
+                        <label for="{{ form.laboratorio.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Laboratorio</label>
+                        {{ form.laboratorio }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Detalles Farmacéuticos</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div>
+                        <label for="{{ form.principio_activo.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Principio Activo</label>
+                        {{ form.principio_activo }}
+                    </div>
+                    <div>
+                        <label for="{{ form.concentracion.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Concentración (ej. 500mg)</label>
+                        {{ form.concentracion }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Unidades y Precios</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <div>
+                        <label for="{{ form.forma_farmaceutica.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Forma Farmacéutica</label>
+                        {{ form.forma_farmaceutica }}
+                    </div>
+                    <div>
+                        <label for="{{ form.presentacion_base.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Presentación Base</label>
+                        {{ form.presentacion_base }}
+                    </div>
+                    <div>
+                        <label for="{{ form.unidad_medida.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Unidad de Medida</label>
+                        {{ form.unidad_medida }}
+                    </div>
+                    <div>
+                        <label for="{{ form.cantidad_por_presentacion_base.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Unidades por Presentación</label>
+                        {{ form.cantidad_por_presentacion_base }}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="{{ form.margen_ganancia_sugerido.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Margen de Ganancia Sugerido
+                            (%)</label>
+                        {{ form.margen_ganancia_sugerido }}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Regulaciones y Medios</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div>
+                        <label for="{{ form.imagen_producto.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Imagen del Producto</label>
+                        {{ form.imagen_producto }}
+                    </div>
+                    <div class="space-y-4 pt-8">
+                        <div class="flex items-center gap-3">
+                            {{ form.aplica_receta }}
+                            <label for="{{ form.aplica_receta.id_for_label }}"
+                                class="text-sm font-medium text-slate-300 cursor-pointer">Requiere Receta Médica</label>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            {{ form.es_controlado }}
+                            <label for="{{ form.es_controlado.id_for_label }}"
+                                class="text-sm font-medium text-slate-300 cursor-pointer">Es Producto Controlado</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'inventario:producto_list' %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
+                {% if producto %}Guardar Cambios{% else %}Guardar Producto{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

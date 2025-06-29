@@ -1,16 +1,16 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}VQL - Categorías de Productos{% endblock %}
+{% block title %}VQL - Laboratorios{% endblock %}
 
 {% block app_content %}
 <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
     <div>
-        <h1 class="text-2xl font-extrabold text-white">Categorías de Productos</h1>
-        <p class="text-slate-400 mt-1">Organiza y gestiona las categorías de tu inventario.</p>
+        <h1 class="text-2xl font-extrabold text-white">Gestión de Laboratorios</h1>
+        <p class="text-slate-400 mt-1">Administra los laboratorios y fabricantes de tus productos.</p>
     </div>
-    <a href="{% url 'inventario:categoria_create' %}"
-        class="w-12 h-12 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full shadow-lg hover:shadow-sky-500/50 transition-all duration-300 flex items-center justify-center">
+    <a href="{% url 'inventario:laboratorio_create' %}"
+        class="w-12 h-12 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full shadow-lg hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd"
                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -32,24 +32,26 @@
 
 <div class="glass-card rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full text-left min-w-[640px]">
+        <table class="w-full text-left min-w-[720px]">
             <thead class="bg-slate-800">
                 <tr>
                     <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nombre</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Descripción</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Teléfono</th>
+                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Email</th>
                     <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-700">
-                {% for categoria in categorias %}
+                {% for laboratorio in laboratorios %}
                 <tr class="hover:bg-slate-800/50 transition-colors">
-                    <td class="p-4 font-medium text-white">{{ categoria.nombre }}</td>
-                    <td class="p-4">{{ categoria.descripcion|default:"-" }}</td>
+                    <td class="p-4 font-medium text-white">{{ laboratorio.nombre }}</td>
+                    <td class="p-4">{{ laboratorio.telefono|default:"-" }}</td>
+                    <td class="p-4">{{ laboratorio.email|default:"-" }}</td>
                     <td class="p-4">
                         <div class="flex justify-center items-center gap-4">
-                            <a href="{% url 'inventario:categoria_update' pk=categoria.pk %}"
+                            <a href="{% url 'inventario:laboratorio_update' pk=laboratorio.pk %}"
                                 class="text-slate-400 hover:text-emerald-400 transition-colors"
-                                title="Editar Categoría">
+                                title="Editar Laboratorio">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                     fill="currentColor">
                                     <path
@@ -61,8 +63,8 @@
                             </a>
                             <button type="button"
                                 class="delete-btn text-slate-400 hover:text-rose-500 transition-colors"
-                                title="Eliminar Categoría" data-nombre="{{ categoria.nombre }}"
-                                data-url="{% url 'inventario:categoria_delete' pk=categoria.pk %}">
+                                title="Eliminar Laboratorio" data-nombre="{{ laboratorio.nombre }}"
+                                data-url="{% url 'inventario:laboratorio_delete' pk=laboratorio.pk %}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none"
                                     viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd"
@@ -75,7 +77,9 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="p-8 text-center text-slate-400">No hay categorías registradas todavía.</td>
+                    <td colspan="4" class="p-8 text-center text-slate-400">
+                        No hay laboratorios registrados todavía.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -94,9 +98,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg></div>
-            <h3 class="mt-4 text-2xl font-bold leading-6 text-white">Eliminar Categoría</h3>
+            <h3 class="mt-4 text-2xl font-bold leading-6 text-white">Eliminar Laboratorio</h3>
             <div class="mt-2">
-                <p class="text-sm text-slate-400">¿Estás seguro de que quieres eliminar la categoría <strong
+                <p class="text-sm text-slate-400">¿Estás seguro de que quieres eliminar el laboratorio <strong
                         id="delete-item-name" class="font-bold text-white"></strong>?<br>Esta acción no se puede
                     deshacer.</p>
             </div>

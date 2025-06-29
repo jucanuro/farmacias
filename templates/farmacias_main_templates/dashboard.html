@@ -44,9 +44,11 @@
             {
                 id: 'inventario', icon: '📦', category: 'Inventario', title: 'Control de Inventario', desc: 'Administra productos, categorías y stock.', glow: '#0891b2',
                 children: [
-                    { id: 'productos', url: '#', icon: '💊', title: 'Productos', desc: 'Gestiona el catálogo completo.', category: 'Inventario' },
+                    { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos', desc: 'Gestiona el catálogo completo.', category: 'Inventario' },
                     { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías', desc: 'Organiza tus productos.', category: 'Inventario' },
-                    { id: 'laboratorios', url: '#', icon: '🏢', title: 'Laboratorios', desc: 'Administra los fabricantes.', category: 'Inventario' },
+                    { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios', desc: 'Administra los fabricantes.', category: 'Inventario' },
+                    { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas Farmacéuticas', desc: 'Administra las formas', category: 'Inventario' },
+                    { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos', desc: 'Administra los principios', category: 'Inventario' },
                 ]
             },
             {

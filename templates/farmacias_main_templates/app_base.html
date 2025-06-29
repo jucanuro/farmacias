@@ -85,8 +85,11 @@
                 icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125A2.25 2.25 0 0 1 4.5 4.875h15A2.25 2.25 0 0 1 21.75 7.125v10.5A2.25 2.25 0 0 1 19.5 19.875h-15A2.25 2.25 0 0 1 2.25 17.625V7.125Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m12 15.75-3-3m0 0 3-3m-3 3h7.5" /></svg>`,
                 title: 'Inventario',
                 children: [
-                    { id: 'productos', url: '#', icon: '💊', title: 'Productos' },
+                    { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos' },
                     { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías' },
+                    { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios' },
+                    { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas Farmacéuticas' },
+                    { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos' },
                 ]
             },
             {
