@@ -34,7 +34,10 @@
                 {% for producto in productos %}
                 <tr class="hover:bg-slate-800/50 transition-colors">
                     <td class="p-4 font-medium text-white">
-                        {{ producto.nombre }}
+                        <a href="{% url 'inventario:producto_detail' pk=producto.pk %}"
+                            class="hover:text-emerald-400 transition-colors">
+                            {{ producto.nombre }}
+                        </a>
                         <span class="block text-xs text-slate-400">{{ producto.concentracion|default:"" }}</span>
                     </td>
                     <td class="p-4">{{ producto.categoria.nombre|default:"-" }}</td>
@@ -53,8 +56,8 @@
                     </td>
                     <td class="p-4">
                         <div class="flex justify-center items-center gap-4">
-                            <a href="#" class="text-slate-400 hover:text-cyan-400 transition-colors"
-                                title="Ver Stock y Lotes">
+                            <a href="{% url 'inventario:producto_detail' pk=producto.pk %}"
+                                class="text-slate-400 hover:text-cyan-400 transition-colors" title="Ver Stock y Lotes">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
                                     fill="currentColor">
                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />

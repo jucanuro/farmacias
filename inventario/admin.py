@@ -34,11 +34,14 @@ class FormaFarmaceuticaAdmin(admin.ModelAdmin):
 class ProductoAdmin(admin.ModelAdmin):
     list_display = (
         'nombre', 'codigo_barras', 'categoria', 'laboratorio',
-        'get_precio_venta_sugerido', 'aplica_receta', 'es_controlado'
+        # 'get_precio_venta_sugerido' # Lo comentamos temporalmente si da problemas
+        'unidad_compra', 'unidad_venta', 'aplica_receta', 'es_controlado'
     )
     list_filter = (
         'categoria', 'laboratorio', 'aplica_receta', 'es_controlado',
-        'forma_farmaceutica', 'presentacion_base'
+        'forma_farmaceutica', 
+        'unidad_compra', # Reemplazamos 'presentacion_base' por los nuevos campos
+        'unidad_venta'
     )
     search_fields = (
         'nombre', 'codigo_barras', 'descripcion', 'principio_activo__nombre',
@@ -56,8 +59,9 @@ class ProductoAdmin(admin.ModelAdmin):
         }),
         ('Unidades y Precios', {
             'fields': (
-                'presentacion_base', 'cantidad_por_presentacion_base',
-                'unidad_medida', 'precio_compra_promedio', 'margen_ganancia_sugerido'
+                # --- CAMPOS ACTUALIZADOS AQUÍ ---
+                'unidad_compra', 'unidad_venta',
+                'precio_compra_promedio', 'margen_ganancia_sugerido'
             ),
         }),
         ('Regulaciones Especiales', {
@@ -66,8 +70,8 @@ class ProductoAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('fecha_registro',)
     ordering = ('nombre',)
-
-
+    
+    
 @admin.register(StockProducto)
 class StockProductoAdmin(admin.ModelAdmin):
     list_display = (

@@ -1,0 +1,128 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}
+{% if proveedor %}
+VQL - Editando Proveedor
+{% else %}
+VQL - Nuevo Proveedor
+{% endif %}
+{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <a href="{% url 'proveedores:proveedor_list' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver a Proveedores
+    </a>
+    {% if proveedor %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Proveedor</h1>
+    <p class="text-slate-400 mt-1">Modifica los detalles de <strong class="text-white">{{ proveedor }}</strong>.</p>
+
+    {% else %}
+    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Proveedor</h1>
+    <p class="text-slate-400 mt-1">Añade un nuevo proveedor al sistema.</p>
+    {% endif %}
+</header>
+
+<div class="glass-card rounded-2xl p-8 max-w-7xl mx-auto">
+    <form method="post" action="">
+        {% csrf_token %}
+        <div class="space-y-8">
+
+            <div>
+                <h3 class="text-lg font-bold text-white border-b border-slate-700 pb-2 mb-4">Información Fiscal y de
+                    Contacto</h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+
+                    <div class="md:col-span-6">
+                        <label for="{{ form.nombre_comercial.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Nombre Comercial</label>
+                        {{ form.nombre_comercial }}
+                    </div>
+                    <div class="md:col-span-6">
+                        <label for="{{ form.razon_social.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Razón Social</label>
+                        {{ form.razon_social }}
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <label for="{{ form.tipo_documento.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Tipo de Documento</label>
+                        {{ form.tipo_documento }}
+                    </div>
+                    <div class="md:col-span-8">
+                        <label for="{{ form.numero_documento.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Número de Documento</label>
+                        {{ form.numero_documento }}
+                    </div>
+
+                    <div class="md:col-span-12">
+                        <label for="{{ form.direccion.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Dirección</label>
+                        {{ form.direccion }}
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <label for="{{ form.telefono.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Teléfono Principal</label>
+                        {{ form.telefono }}
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="{{ form.email.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Email Principal</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="{{ form.sitio_web.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Sitio Web</label>
+                        {{ form.sitio_web }}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-bold text-white border-b border-slate-700 pb-2 mb-4">Contacto Comercial y
+                    Condiciones</h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+                    <div class="md:col-span-5">
+                        <label for="{{ form.persona_contacto.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Persona de Contacto</label>
+                        {{ form.persona_contacto }}
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="{{ form.telefono_contacto.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Teléfono del Contacto</label>
+                        {{ form.telefono_contacto }}
+                    </div>
+                    <div class="md:col-span-3 flex items-end pb-1">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            {{ form.activo }}
+                            <span class="text-sm font-medium text-slate-300">Proveedor Activo</span>
+                        </label>
+                    </div>
+                    <div class="md:col-span-12">
+                        <label for="{{ form.condiciones_pago.id_for_label }}"
+                            class="block text-sm font-medium text-slate-300 mb-1">Condiciones de Pago</label>
+                        {{ form.condiciones_pago }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+            <a href="{% url 'proveedores:proveedor_list' %}"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
+            <button type="submit"
+                class="px-5 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold transition-colors">
+                {% if proveedor %}Guardar Cambios{% else %}Guardar Proveedor{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

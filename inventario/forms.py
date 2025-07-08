@@ -1,5 +1,5 @@
 from django import forms
-from .models import CategoriaProducto, Laboratorio, FormaFarmaceutica, PrincipioActivo, Producto
+from .models import CategoriaProducto, Laboratorio, FormaFarmaceutica, PrincipioActivo, Producto, Sucursal, MovimientoInventario, UnidadPresentacion
 
 class CategoriaProductoForm(forms.ModelForm):
     class Meta:
@@ -76,4 +76,51 @@ class ProductoForm(forms.ModelForm):
             'aplica_receta': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'es_controlado': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'imagen_producto': forms.ClearableFileInput(attrs={'class': 'form-input-file'}),
+        }
+    
+    
+class StockEntradaForm(forms.Form):
+    sucursal = forms.ModelChoiceField(
+        queryset=Sucursal.objects.all().order_by('nombre'),
+        label="Sucursal de Destino",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    lote = forms.CharField(
+        max_length=50,
+        label="Número de Lote",
+        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: XJ500-A1'})
+    )
+    fecha_vencimiento = forms.DateField(
+        label="Fecha de Vencimiento",
+        widget=forms.DateInput(attrs={'class': 'form-input', 'type': 'date'})
+    )
+    cantidad = forms.IntegerField(
+        min_value=1,
+        label="Cantidad Recibida",
+        help_text="Cantidad en la 'presentación base' del producto (ej. número de cajas).",
+        widget=forms.NumberInput(attrs={'class': 'form-input'})
+    )
+    precio_compra_lote = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        label="Precio de Compra del Lote",
+        help_text="Precio por cada 'presentación base' en esta compra.",
+        widget=forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'})
+    )
+    ubicacion_almacen = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Ubicación en Almacén (Opcional)",
+        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: Estante A-3'})
+    )
+    
+class UnidadPresentacionForm(forms.ModelForm):
+    class Meta:
+        model = UnidadPresentacion
+        fields = ['nombre', 'padre', 'factor_conversion']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-input'}),
+            'padre': forms.Select(attrs={'class': 'form-select'}),
+            'factor_conversion': forms.NumberInput(attrs={'class': 'form-input'}),
         }

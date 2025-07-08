@@ -1,25 +1,50 @@
-# proveedores/views.py
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.db.models import ProtectedError
+from .models import Proveedor
+from .forms import ProveedorForm
 
-def proveedores_home_view(request):
-    """
-    Vista de ejemplo para la página de inicio de la aplicación de proveedores.
-    Aquí podríamos listar proveedores o mostrar un resumen.
-    """
-    return HttpResponse("<h1>Gestión de Proveedores</h1><p>Esta es la página de inicio de la aplicación de proveedores. Aquí podrás ver, añadir y gestionar a los proveedores de la farmacia.</p>")
+def proveedor_list_view(request):
+    lista = Proveedor.objects.filter(activo=True).order_by('nombre_comercial')
+    context = {'proveedores': lista}
+    return render(request, 'proveedores_templates/proveedor_list.html', context)
 
-# Puedes añadir más vistas aquí para listar proveedores, ver detalles de un proveedor, etc.
-# from .models import Proveedor
-# from django.views.generic import ListView, DetailView
+def proveedor_create_view(request):
+    if request.method == 'POST':
+        form = ProveedorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'El proveedor ha sido creado con éxito.')
+            return redirect('proveedores:proveedor_list')
+    else:
+        form = ProveedorForm()
+    context = {'form': form}
+    return render(request, 'proveedores_templates/proveedor_form.html', context)
 
-# class ProveedorListView(ListView):
-#     model = Proveedor
-#     template_name = 'proveedores/proveedor_list.html'
-#     context_object_name = 'proveedores'
-#     paginate_by = 10
+def proveedor_update_view(request, pk):
+    item = get_object_or_404(Proveedor, pk=pk)
+    if request.method == 'POST':
+        form = ProveedorForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"El proveedor '{item.nombre_comercial}' ha sido actualizado con éxito.")
+            return redirect('proveedores:proveedor_list')
+    else:
+        form = ProveedorForm(instance=item)
+    context = {
+        'form': form, 
+        'proveedor': item
+    }
+    return render(request, 'proveedores_templates/proveedor_form.html', context)
 
-# class ProveedorDetailView(DetailView):
-#     model = Proveedor
-#     template_name = 'proveedores/proveedor_detail.html'
-#     context_object_name = 'proveedor'
+@require_POST
+def proveedor_delete_view(request, pk):
+    item = get_object_or_404(Proveedor, pk=pk)
+    try:
+        item.delete()
+        messages.success(request, f"El proveedor '{item.nombre_comercial}' ha sido eliminado con éxito.")
+    except ProtectedError:
+        messages.error(request, f"El proveedor '{item.nombre_comercial}' no se puede eliminar porque está asociado a otros registros.")
+    
+    return redirect('proveedores:proveedor_list')

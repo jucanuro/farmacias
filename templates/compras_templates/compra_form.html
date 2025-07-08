@@ -1,0 +1,346 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+{% block title %}VQL - Registrar Nueva Compra{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <a href="{% url 'dashboard' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver al Dashboard
+    </a>
+    <h1 class="text-4xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
+    <p class="text-slate-400 mt-1">Registra los productos recibidos de un proveedor según la factura o guía de remisión.
+    </p>
+</header>
+
+<form id="purchase-form" autocomplete="off">
+    {% csrf_token %}
+    <div class="space-y-8">
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-xl font-bold text-white mb-4">Información de la Factura</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="proveedor" class="block text-sm font-medium text-slate-300 mb-1">Proveedor</label>
+                    <select id="proveedor" class="form-select">
+                        <option value="">Seleccione un proveedor...</option>
+                        {% for proveedor in proveedores %}
+                        <option value="{{ proveedor.pk }}">{{ proveedor.nombre_comercial }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="sucursal" class="block text-sm font-medium text-slate-300 mb-1">Sucursal de
+                        Destino</label>
+                    <select id="sucursal" class="form-select">
+                        <option value="">Seleccione una sucursal...</option>
+                        {% for sucursal in sucursales %}<option value="{{ sucursal.pk }}">{{ sucursal.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="numero_factura" class="block text-sm font-medium text-slate-300 mb-1">Nº de Factura del
+                        Proveedor</label>
+                    <input type="text" id="numero_factura" class="form-input" placeholder="Ej: F001-12345">
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-xl font-bold text-white mb-4">Detalle de Productos</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="border-b border-slate-700">
+                        <tr>
+                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 250px;">
+                                Producto</th>
+                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 140px;">
+                                Presentación</th>
+                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 100px;">Lote
+                            </th>
+                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 150px;">
+                                Vencimiento</th>
+                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 80px;">
+                                Cantidad</th>
+                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 120px;">Costo
+                                Unit.</th>
+                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 120px;">
+                                Subtotal</th>
+                            <th class="p-2 text-center text-sm font-semibold text-white" style="width: 48px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-details-body"></tbody>
+                </table>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-700">
+                <label for="product-search" class="block text-sm font-medium text-slate-300 mb-1">Añadir
+                    Producto</label>
+                <div class="relative">
+                    <input type="text" id="product-search" class="form-input"
+                        placeholder="Escribe el nombre o código del producto para buscar...">
+                    <div id="product-suggestions"
+                        class="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-lg hidden">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end items-center gap-6 mt-8">
+            <div class="text-right">
+                <p class="text-slate-400">Subtotal:</p>
+                <p id="subtotal-display" class="text-2xl font-bold text-white">S/ 0.00</p>
+            </div>
+            <div class="text-right">
+                <p class="text-slate-400">Impuestos (18%):</p>
+                <p id="impuestos-display" class="text-2xl font-bold text-white">S/ 0.00</p>
+            </div>
+            <div class="text-right">
+                <p class="text-slate-400">TOTAL:</p>
+                <p id="total-display" class="text-3xl font-extrabold text-emerald-400">S/ 0.00</p>
+            </div>
+            <button type="button" id="save-purchase-button"
+                class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Guardar
+                Compra</button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- ELEMENTOS DEL DOM ---
+        const productSearchInput = document.getElementById('product-search');
+        const suggestionsContainer = document.getElementById('product-suggestions');
+        const purchaseDetailsBody = document.getElementById('purchase-details-body');
+        const subtotalDisplay = document.getElementById('subtotal-display');
+        const impuestosDisplay = document.getElementById('impuestos-display');
+        const totalDisplay = document.getElementById('total-display');
+        const saveButton = document.getElementById('save-purchase-button');
+        const proveedorSelect = document.getElementById('proveedor');
+        const sucursalSelect = document.getElementById('sucursal');
+        const numeroFacturaInput = document.getElementById('numero_factura');
+
+        // --- ESTADO DE LA COMPRA ---
+        let lineItems = [];
+
+        // --- LÓGICA DE AUTOCOMPLETADO ---
+        productSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            if (query.length < 2) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            // La opción 'credentials' va dentro de un objeto {} como segundo argumento de fetch
+            fetch(`/inventario/api/productos/autocomplete/?search=${query}`, {
+                credentials: 'include'
+            })
+                .then(response => {
+                    // Si la respuesta no es 'ok', lanza un error con más detalles
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    suggestionsContainer.innerHTML = '';
+                    if (data.results && data.results.length > 0) {
+                        suggestionsContainer.classList.remove('hidden');
+                        data.results.forEach(product => {
+                            const suggestionItem = document.createElement('div');
+                            suggestionItem.className = 'p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-800';
+                            suggestionItem.innerHTML = `<p class="font-semibold text-white">${product.nombre} ${product.concentracion || ''}</p><p class="text-xs text-slate-400">${product.laboratorio_nombre}</p>`;
+                            suggestionItem.dataset.product = JSON.stringify(product);
+                            suggestionItem.addEventListener('click', handleSuggestionClick);
+                            suggestionsContainer.appendChild(suggestionItem);
+                        });
+                    } else {
+                        suggestionsContainer.classList.add('hidden');
+                    }
+                })
+                // El .catch ahora mostrará un error más descriptivo
+                .catch(error => {
+                    console.error('Error en autocomplete:', error);
+                    suggestionsContainer.classList.add('hidden');
+                });
+        });
+        // --- LÓGICA DE LA TABLA DINÁMICA ---
+        const handleSuggestionClick = (e) => {
+            const productData = JSON.parse(e.currentTarget.dataset.product);
+            const defaultUnit = productData.unidades_jerarquia.length > 0 ? productData.unidades_jerarquia[0] : { id: productData.unidad_venta, factor_conversion_a_base: 1, nombre: 'Unidad' };
+
+            lineItems.push({
+                producto_id: productData.id,
+                producto_nombre: `${productData.nombre} ${productData.concentracion || ''}`,
+                lote: '', fecha_vencimiento: '', cantidad_ingresada: '', precio_unitario_ingresado: '',
+                unidades_disponibles: productData.unidades_jerarquia,
+                unidad_seleccionada_id: defaultUnit.id,
+            });
+
+            productSearchInput.value = '';
+            suggestionsContainer.classList.add('hidden');
+            renderTableAndTotals();
+
+            setTimeout(() => {
+                const lastRow = purchaseDetailsBody.querySelector('tr:last-child');
+                if (lastRow) { lastRow.querySelector('input[name="lote"]').focus(); }
+            }, 100);
+            /* llamar la nueva funcion*/
+        };
+
+        const renderTableRows = () => {
+            purchaseDetailsBody.innerHTML = '';
+            lineItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.dataset.index = index;
+                const cantidad = parseFloat(item.cantidad_ingresada) || 0;
+                const precio = parseFloat(item.precio_unitario_ingresado) || 0;
+                const subtotal = (cantidad * precio).toFixed(2);
+                let unitOptionsHTML = '';
+                if (item.unidades_disponibles && item.unidades_disponibles.length > 0) {
+                    item.unidades_disponibles.forEach(unit => {
+                        const selected = unit.id == item.unidad_seleccionada_id ? 'selected' : '';
+                        unitOptionsHTML += `<option value="${unit.id}" data-factor="${unit.factor_conversion_a_base}" ${selected}>${unit.nombre}</option>`;
+                    });
+                }
+                row.innerHTML = `<td class="p-2 align-middle"><p class="text-white font-medium text-sm">${item.producto_nombre}</p></td><td class="p-2 align-middle"><select class="form-select py-1 data-field" name="unidad_seleccionada_id">${unitOptionsHTML}</select></td><td class="p-2 align-middle"><input type="text" class="form-input py-1 data-field" name="lote" value="${item.lote}"></td><td class="p-2 align-middle"><input type="date" class="form-input py-1 data-field" name="fecha_vencimiento" value="${item.fecha_vencimiento}"></td><td class="p-2 align-middle"><input type="number" class="form-input py-1 text-right data-field" name="cantidad_ingresada" value="${item.cantidad_ingresada}" min="1" placeholder="0"></td><td class="p-2 align-middle"><input type="number" class="form-input py-1 text-right data-field" name="precio_unitario_ingresado" value="${item.precio_unitario_ingresado}" step="0.01" min="0" placeholder="0.00"></td><td class="p-2 align-middle text-right font-mono text-white subtotal-cell">S/ ${subtotal}</td><td class="p-2 align-middle text-center"><button type="button" class="text-rose-400 hover:text-rose-300 delete-row-btn" title="Eliminar Fila"><svg class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></button></td>`;
+                purchaseDetailsBody.appendChild(row);
+            });
+            addEventListenersToRows();
+            updateTotals();
+        };
+
+        const updateTotals = () => {
+            const subtotal = lineItems.reduce((acc, item) => acc + ((parseFloat(item.cantidad_ingresada) || 0) * (parseFloat(item.precio_unitario_ingresado) || 0)), 0);
+            const impuestos = subtotal * 0.18;
+            const total = subtotal + impuestos;
+            subtotalDisplay.textContent = `S/ ${subtotal.toFixed(2)}`;
+            impuestosDisplay.textContent = `S/ ${impuestos.toFixed(2)}`;
+            totalDisplay.textContent = `S/ ${total.toFixed(2)}`;
+        };
+
+        const renderTableAndTotals = () => { renderTableRows(); };
+
+        const updateLineItem = (index, field, value) => {
+            const item = lineItems[index];
+            if (!item) return;
+            item[field] = value;
+            const row = purchaseDetailsBody.querySelector(`tr[data-index="${index}"]`);
+            if (row) {
+                const subtotalCell = row.querySelector('.subtotal-cell');
+                const cantidad = parseFloat(item.cantidad_ingresada) || 0;
+                const precio = parseFloat(item.precio_unitario_ingresado) || 0;
+                subtotalCell.textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
+            }
+            updateTotals();
+        };
+
+        const deleteLineItem = (index) => {
+            lineItems.splice(index, 1);
+            renderTableAndTotals();
+        };
+
+        const addEventListenersToRows = () => {
+            purchaseDetailsBody.querySelectorAll('.data-field').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    updateLineItem(e.target.closest('tr').dataset.index, e.target.name, e.target.value);
+                });
+            });
+            purchaseDetailsBody.querySelectorAll('.delete-row-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    deleteLineItem(e.target.closest('tr').dataset.index);
+                });
+            });
+        };
+
+        const savePurchase = () => {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            if (!csrftoken) { alert('Error de seguridad: No se encontró el token CSRF.'); return; }
+
+            if (!proveedorSelect.value) { alert('Por favor, seleccione un proveedor.'); return; }
+            if (!sucursalSelect.value) { alert('Por favor, seleccione una sucursal de destino.'); return; }
+            if (lineItems.length === 0) { alert('Debe añadir al menos un producto a la compra.'); return; }
+
+            for (let i = 0; i < lineItems.length; i++) {
+                const item = lineItems[i];
+                if (!item.lote || !item.fecha_vencimiento || !item.cantidad_ingresada || !item.precio_unitario_ingresado) {
+                    alert(`Por favor, complete todos los campos para el producto en la fila #${i + 1} (${item.producto_nombre}).`);
+                    return;
+                }
+            }
+
+            const purchaseData = {
+                proveedor: proveedorSelect.value,
+                sucursal_destino: sucursalSelect.value,
+                numero_factura_proveedor: numeroFacturaInput.value || 'S/N',
+                observaciones: 'Compra registrada desde la interfaz web.',
+                detalles: lineItems.map((item, index) => {
+                    const row = purchaseDetailsBody.querySelector(`tr[data-index="${index}"]`);
+                    const selectUnidad = row.querySelector('select[name="unidad_seleccionada_id"]');
+                    const selectedOption = selectUnidad.options[selectUnidad.selectedIndex];
+                    const factor = parseFloat(selectedOption.dataset.factor);
+                    const cantidadIngresada = parseFloat(item.cantidad_ingresada) || 0;
+                    const precioUnitarioIngresado = parseFloat(item.precio_unitario_ingresado) || 0;
+                    const cantidadBase = cantidadIngresada * factor;
+                    const precioUnitarioBase = factor > 0 ? precioUnitarioIngresado / factor : 0;
+                    return {
+                        producto: item.producto_id,
+                        cantidad_recibida: cantidadBase,
+                        precio_unitario_compra: precioUnitarioBase.toFixed(2),
+                        lote: item.lote,
+                        fecha_vencimiento: item.fecha_vencimiento || null,
+                    };
+                })
+            };
+
+            saveButton.textContent = 'Guardando...';
+            saveButton.disabled = true;
+
+            fetch(`/compras/api/compras/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify(purchaseData),
+            })
+                .then(response => {
+                    if (response.status === 201) return response.json();
+                    return response.json().then(err => Promise.reject(err));
+                })
+                .then(data => {
+                    alert('¡Compra registrada y stock actualizado con éxito!');
+                    window.location.href = "{% url 'dashboard' %}";
+                })
+                .catch(error => {
+                    console.error('Error al guardar la compra:', error);
+                    let errorMessages = 'Por favor, corrige los siguientes errores:\n\n';
+                    for (const field in error) {
+                        if (field === 'detalles' && Array.isArray(error[field])) {
+                            error[field].forEach((detalleError, index) => {
+                                if (Object.keys(detalleError).length > 0) {
+                                    errorMessages += `Producto en Fila #${index + 1}:\n`;
+                                    for (const detailField in detalleError) {
+                                        if (Array.isArray(detalleError[detailField]) && detalleError[detailField].length > 0) {
+                                            errorMessages += `  - ${detailField}: ${detalleError[detailField].join(', ')}\n`;
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            errorMessages += `- ${field}: ${Array.isArray(error[field]) ? error[field].join(', ') : error[field]}\n`;
+                        }
+                    }
+                    alert(errorMessages);
+                    saveButton.textContent = 'Guardar Compra';
+                    saveButton.disabled = false;
+                });
+        };
+
+        saveButton.addEventListener('click', savePurchase);
+        document.addEventListener('click', (e) => { if (productSearchInput && !productSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) { suggestionsContainer.classList.add('hidden'); } });
+    });
+</script>
+{% endblock %}

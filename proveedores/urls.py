@@ -1,21 +1,11 @@
-# proveedores/urls.py
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from . import views # Para las vistas web tradicionales (ej. proveedores_home_view)
-from . import api_views # Para las vistas de la API
+from django.urls import path
+from . import views
 
-# Crea un router y registra nuestros ViewSets con él.
-router = DefaultRouter()
-router.register(r'proveedores', api_views.ProveedorViewSet)
-
-
-app_name = 'proveedores' # Define un espacio de nombres para las URLs de esta app
+app_name = 'proveedores'
 
 urlpatterns = [
-    # URLs para vistas web tradicionales (si las tienes)
-    path('', views.proveedores_home_view, name='home'),
-
-    # URLs para la API REST de la aplicación 'proveedores'
-    # Las URLs generadas por el router se incluyen aquí bajo un prefijo 'api/'
-    path('api/', include(router.urls)),
+    path('', views.proveedor_list_view, name='proveedor_list'),
+    path('nuevo/', views.proveedor_create_view, name='proveedor_create'),
+    path('<int:pk>/editar/', views.proveedor_update_view, name='proveedor_update'),
+    path('<int:pk>/eliminar/', views.proveedor_delete_view, name='proveedor_delete'),
 ]

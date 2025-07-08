@@ -47,20 +47,55 @@
                     { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos', desc: 'Gestiona el catálogo completo.', category: 'Inventario' },
                     { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías', desc: 'Organiza tus productos.', category: 'Inventario' },
                     { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios', desc: 'Administra los fabricantes.', category: 'Inventario' },
-                    { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas Farmacéuticas', desc: 'Administra las formas', category: 'Inventario' },
-                    { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos', desc: 'Administra los principios', category: 'Inventario' },
+                    { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas Farmacéuticas', desc: 'Administra las formas.', category: 'Inventario' },
+                    { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos', desc: 'Administra los principios.', category: 'Inventario' },
+                    { id: 'unidades', url: "{% url 'inventario:unidad_presentacion_list' %}", icon: '📐', title: 'Unidades', desc: 'Gestiona cajas, blisters, etc.', category: 'Inventario' }, // <-- LÍNEA AÑADIDA
                 ]
             },
             {
-                id: 'administracion', icon: '⚙️', category: 'Sistema', title: 'Administración', desc: 'Gestiona farmacias, usuarios y roles.', glow: '#64748b',
+                id: 'compras',
+                icon: '🛒',
+                category: 'Compras',
+                title: 'Módulo de Compras',
+                desc: 'Registra facturas y gestiona proveedores.',
+                glow: '#0ea5e9',
+                children: [
+                    { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra', desc: 'Ingresa nuevas facturas de compra.', category: 'Compras' },
+                    { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores', desc: 'Administra tus proveedores.', category: 'Compras' },
+                ]
+            },
+            {
+                id: 'administracion',
+                icon: '⚙️',
+                category: 'Sistema',
+                title: 'Administración',
+                desc: 'Gestiona farmacias, usuarios y roles.',
+                glow: '#64748b',
                 children: [
                     { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Gestión de Farmacias', desc: 'Añade o edita tus farmacias.', category: 'Sistema' },
                     { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Gestión de Usuarios', desc: 'Controla los accesos y permisos.', category: 'Sistema' },
                     { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Gestión de Roles', desc: 'Define los tipos de usuario.', category: 'Sistema' },
                 ]
             },
-            { id: 'ventas', url: '#', icon: '📈', category: 'Ventas', title: 'Módulo de Ventas', desc: 'Registra transacciones y revisa historiales.', glow: '#a855f7' },
-            { id: 'analisis', url: '#', icon: '📊', category: 'Análisis', title: 'Dashboard de Análisis', desc: 'Métricas y KPIs de ventas.', glow: '#14b8a6', action: 'show_analysis_view' },
+            {
+                id: 'ventas',
+                url: '#',
+                icon: '📈',
+                category: 'Ventas',
+                title: 'Módulo de Ventas',
+                desc: 'Registra transacciones y revisa historiales.',
+                glow: '#a855f7'
+            },
+            {
+                id: 'analisis',
+                url: '#',
+                icon: '📊',
+                category: 'Análisis',
+                title: 'Dashboard de Análisis',
+                desc: 'Métricas y KPIs de ventas.',
+                glow: '#14b8a6',
+                action: 'show_analysis_view'
+            },
         ];
 
         // --- 2. ELEMENTOS DEL DOM ---

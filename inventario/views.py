@@ -3,8 +3,8 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db.models import ProtectedError
-from .models import CategoriaProducto, Laboratorio,FormaFarmaceutica, PrincipioActivo, Producto
-from .forms import CategoriaProductoForm, LaboratorioForm, FormaFarmaceuticaForm, PrincipioActivoForm, ProductoForm
+from .models import CategoriaProducto, Laboratorio,FormaFarmaceutica, PrincipioActivo, Producto, StockProducto, Sucursal, MovimientoInventario,UnidadPresentacion
+from .forms import CategoriaProductoForm, LaboratorioForm, FormaFarmaceuticaForm, PrincipioActivoForm, ProductoForm,StockEntradaForm, UnidadPresentacionForm
 
 def inventario_home_view(request):
     return HttpResponse("<h1>Gestión de Inventario</h1><p>Esta es la página de inicio de la aplicación de inventario. Aquí podrás ver y gestionar productos y stock.</p>")
@@ -227,3 +227,97 @@ def producto_update_view(request, pk):
         'producto': producto
     }
     return render(request, 'inventario_templates/producto_form.html', context)
+
+
+def producto_detail_view(request, pk):
+    producto = get_object_or_404(
+        Producto.objects.select_related('categoria', 'laboratorio', 'forma_farmaceutica', 'principio_activo'), 
+        pk=pk
+    )
+    stock_items = StockProducto.objects.filter(producto=producto).select_related('sucursal').order_by('sucursal__nombre', '-fecha_vencimiento')
+
+    context = {
+        'producto': producto,
+        'stock_items': stock_items
+    }
+    return render(request, 'inventario_templates/producto_detail.html', context)
+        
+    
+def stock_add_view(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == 'POST':
+        form = StockEntradaForm(request.POST)
+        if form.is_valid():
+            datos = form.cleaned_data
+            
+            stock, created = StockProducto.objects.get_or_create(
+                producto=producto,
+                sucursal=datos['sucursal'],
+                lote=datos['lote'],
+                defaults={'fecha_vencimiento': datos['fecha_vencimiento']}
+            )
+            
+            stock.cantidad += datos['cantidad']
+            stock.ubicacion_almacen = datos['ubicacion_almacen']
+            stock.save()
+
+            MovimientoInventario.objects.create(
+                producto=producto,
+                sucursal=datos['sucursal'],
+                stock_afectado=stock,
+                tipo_movimiento='ENTRADA',
+                cantidad=datos['cantidad'],
+                usuario=request.user,
+                referencia_doc=f"Compra Lote {datos['lote']}"
+            )
+            
+            messages.success(request, f"Se ha añadido stock para '{producto.nombre}' con éxito.")
+            return redirect('inventario:producto_detail', pk=producto.pk)
+    else:
+        form = StockEntradaForm()
+        
+    context = {
+        'form': form,
+        'producto': producto
+    }
+    return render(request, 'inventario_templates/stock_add_form.html', context)
+
+def unidad_presentacion_list_view(request):
+    lista = UnidadPresentacion.objects.select_related('padre').all().order_by('nombre')
+    context = {'unidades': lista}
+    return render(request, 'inventario_templates/unidad_presentacion_list.html', context)
+
+def unidad_presentacion_create_view(request):
+    if request.method == 'POST':
+        form = UnidadPresentacionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'La unidad de presentación ha sido creada.')
+            return redirect('inventario:unidad_presentacion_list')
+    else:
+        form = UnidadPresentacionForm()
+    context = {'form': form}
+    return render(request, 'inventario_templates/unidad_presentacion_form.html', context)
+
+def unidad_presentacion_update_view(request, pk):
+    item = get_object_or_404(UnidadPresentacion, pk=pk)
+    if request.method == 'POST':
+        form = UnidadPresentacionForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"La unidad '{item.nombre}' ha sido actualizada.")
+            return redirect('inventario:unidad_presentacion_list')
+    else:
+        form = UnidadPresentacionForm(instance=item)
+    context = {'form': form, 'unidad': item}
+    return render(request, 'inventario_templates/unidad_presentacion_form.html', context)
+
+@require_POST
+def unidad_presentacion_delete_view(request, pk):
+    item = get_object_or_404(UnidadPresentacion, pk=pk)
+    try:
+        item.delete()
+        messages.success(request, f"La unidad '{item.nombre}' ha sido eliminada.")
+    except ProtectedError:
+        messages.error(request, f"La unidad '{item.nombre}' no se puede eliminar porque está en uso.")
+    return redirect('inventario:unidad_presentacion_list')

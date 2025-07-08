@@ -1,154 +1,103 @@
-# compras/serializers.py
+from django.db import transaction
 from rest_framework import serializers
 from .models import (
     CotizacionProveedor, DetalleCotizacion,
     OrdenCompra, DetalleOrdenCompra,
     Compra, DetalleCompra
 )
-from proveedores.serializers import ProveedorSerializer # Importamos para anidamiento
-from inventario.serializers import ProductoSerializer, StockProductoSerializer, MovimientoInventarioSerializer # Importamos para anidamiento
-from core.serializers import SucursalSerializer, UsuarioSerializer # Importamos para anidamiento
+# Nota: Las siguientes importaciones asumen que ya tienes estos serializers
+# en sus respectivas apps. Si no, puedes comentarlas por ahora.
+# from proveedores.serializers import ProveedorSerializer
+# from inventario.serializers import ProductoSerializer
+# from core.serializers import SucursalSerializer, UsuarioSerializer
 
-# Serializador para DetalleCotizacion
-class DetalleCotizacionSerializer(serializers.ModelSerializer):
-    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
 
+# --- Serializador para DetalleCompra (para poder escribirlo anidado) ---
+class DetalleCompraWriteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DetalleCotizacion
+        model = DetalleCompra
         fields = [
-            'id', 'cotizacion', 'producto', 'producto_nombre',
-            'cantidad', 'precio_unitario_cotizado', 'subtotal_linea'
+            'producto', 
+            'cantidad_recibida', 
+            'precio_unitario_compra', 
+            'lote', 
+            'fecha_vencimiento'
         ]
-        read_only_fields = ['subtotal_linea']
 
-# Serializador para CotizacionProveedor
-class CotizacionProveedorSerializer(serializers.ModelSerializer):
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    creado_por_username = serializers.CharField(source='creado_por.username', read_only=True)
-    detalles = DetalleCotizacionSerializer(many=True, read_only=True) # Anidamos los detalles
-
-    class Meta:
-        model = CotizacionProveedor
-        fields = [
-            'id', 'proveedor', 'proveedor_nombre', 'fecha_cotizacion', 'fecha_validez',
-            'numero_cotizacion', 'subtotal', 'impuestos', 'total_cotizacion',
-            'estado', 'observaciones', 'creado_por', 'creado_por_username',
-            'fecha_creacion', 'detalles' # Incluir los detalles anidados
-        ]
-        read_only_fields = ['subtotal', 'impuestos', 'total_cotizacion', 'fecha_creacion']
-
-    def create(self, validated_data):
-        # Manejar la creación de detalles si se envían anidados para la creación
-        detalles_data = validated_data.pop('detalles', [])
-        cotizacion = CotizacionProveedor.objects.create(**validated_data)
-        for detalle_data in detalles_data:
-            DetalleCotizacion.objects.create(cotizacion=cotizacion, **detalle_data)
-        cotizacion.calcular_totales() # Recalcular totales después de crear detalles
-        return cotizacion
-
-    def update(self, instance, validated_data):
-        # Manejar la actualización de detalles si se envían anidados
-        detalles_data = validated_data.pop('detalles', [])
-        instance = super().update(instance, validated_data)
-
-        # Si quieres actualizar o crear nuevos detalles anidados, aquí iría la lógica
-        # Para ModelSerializer simple, esto es más complejo y usualmente se hace
-        # con un ViewSet separado para DetalleCotizacion o usando `create`/`update` explícitos
-        # con lógica de eliminación/actualización de sub-objetos.
-        # Por ahora, los detalles anidados son read_only en update para simplificar.
-
-        instance.calcular_totales() # Recalcular totales después de actualizar
-        return instance
-
-
-# Serializador para DetalleOrdenCompra
-class DetalleOrdenCompraSerializer(serializers.ModelSerializer):
-    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
-
-    class Meta:
-        model = DetalleOrdenCompra
-        fields = [
-            'id', 'orden_compra', 'producto', 'producto_nombre',
-            'cantidad_solicitada', 'cantidad_recibida', 'precio_unitario_oc', 'subtotal_linea'
-        ]
-        read_only_fields = ['subtotal_linea', 'cantidad_recibida'] # cantidad_recibida se actualiza en Compra
-
-
-# Serializador para OrdenCompra
-class OrdenCompraSerializer(serializers.ModelSerializer):
+# --- Serializador Principal para Compra (Creación y Lectura) ---
+class CompraSerializer(serializers.ModelSerializer):
+    detalles = DetalleCompraWriteSerializer(many=True, write_only=True)
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
     sucursal_destino_nombre = serializers.CharField(source='sucursal_destino.nombre', read_only=True)
-    creado_por_username = serializers.CharField(source='creado_por.username', read_only=True)
-    cotizacion_base_numero = serializers.CharField(source='cotizacion_base.numero_cotizacion', read_only=True)
-    detalles = DetalleOrdenCompraSerializer(many=True, read_only=True) # Anidamos los detalles
+    registrado_por_username = serializers.CharField(source='registrado_por.username', read_only=True)
 
     class Meta:
-        model = OrdenCompra
+        model = Compra
         fields = [
-            'id', 'proveedor', 'proveedor_nombre', 'sucursal_destino', 'sucursal_destino_nombre',
-            'cotizacion_base', 'cotizacion_base_numero', 'fecha_orden', 'fecha_entrega_estimada',
-            'numero_orden', 'subtotal', 'impuestos', 'total_orden', 'estado',
-            'observaciones', 'creado_por', 'creado_por_username', 'detalles'
+            'id', 'proveedor', 'sucursal_destino', 'numero_factura_proveedor', 
+            'observaciones', 'estado', 'detalles', 
+            'proveedor_nombre', 'sucursal_destino_nombre', 
+            'registrado_por', # <-- Añadimos 'registrado_por' para que esté en los campos de lectura
+            'registrado_por_username', 
+            'fecha_recepcion', 'subtotal', 'impuestos', 'total_compra'
         ]
-        read_only_fields = ['subtotal', 'impuestos', 'total_orden', 'fecha_orden']
-
+        # --- CORRECCIÓN CLAVE AQUÍ ---
+        # Le decimos a DRF que 'registrado_por' no debe venir del cliente,
+        # sino que se asignará en el servidor.
+        read_only_fields = ['registrado_por']
+    
     def create(self, validated_data):
-        detalles_data = validated_data.pop('detalles', [])
-        orden_compra = OrdenCompra.objects.create(**validated_data)
-        for detalle_data in detalles_data:
-            DetalleOrdenCompra.objects.create(orden_compra=orden_compra, **detalle_data)
-        orden_compra.calcular_totales()
-        return orden_compra
+        detalles_data = validated_data.pop('detalles')
+        usuario = self.context['request'].user
 
-    def update(self, instance, validated_data):
-        detalles_data = validated_data.pop('detalles', [])
-        instance = super().update(instance, validated_data)
-        instance.calcular_totales()
-        return instance
+        with transaction.atomic():
+            # Creamos la compra. 'registrado_por' ya no viene en validated_data.
+            compra = Compra.objects.create(registrado_por=usuario, estado='PROCESADA', **validated_data)
 
-# Serializador para DetalleCompra
+            for detalle_data in detalles_data:
+                detalle = DetalleCompra.objects.create(compra=compra, **detalle_data)
+                detalle.actualizar_stock_por_compra(usuario_accion=usuario)
+            
+            compra.calcular_totales()
+        
+        return compra
+# --- Serializador Estándar para DetalleCompra (AÑADIDO) ---
 class DetalleCompraSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
-
+    
     class Meta:
         model = DetalleCompra
         fields = [
             'id', 'compra', 'producto', 'producto_nombre', 'cantidad_recibida',
             'precio_unitario_compra', 'lote', 'fecha_vencimiento', 'subtotal_linea'
         ]
-        read_only_fields = ['subtotal_linea']
 
-# Serializador para Compra
-class CompraSerializer(serializers.ModelSerializer):
+
+# --- Serializadores Adicionales (Configurados como solo lectura para simplificar) ---
+
+class DetalleCotizacionSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    class Meta:
+        model = DetalleCotizacion
+        fields = ['id', 'producto', 'producto_nombre', 'cantidad', 'precio_unitario_cotizado', 'subtotal_linea']
+
+class CotizacionProveedorSerializer(serializers.ModelSerializer):
+    detalles = DetalleCotizacionSerializer(many=True, read_only=True)
+    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
+    class Meta:
+        model = CotizacionProveedor
+        fields = '__all__'
+
+class DetalleOrdenCompraSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    class Meta:
+        model = DetalleOrdenCompra
+        fields = ['id', 'producto', 'producto_nombre', 'cantidad_solicitada', 'cantidad_recibida', 'precio_unitario_oc', 'subtotal_linea']
+
+class OrdenCompraSerializer(serializers.ModelSerializer):
+    detalles = DetalleOrdenCompraSerializer(many=True, read_only=True)
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
     sucursal_destino_nombre = serializers.CharField(source='sucursal_destino.nombre', read_only=True)
-    orden_compra_asociada_numero = serializers.CharField(source='orden_compra_asociada.numero_orden', read_only=True)
-    registrado_por_username = serializers.CharField(source='registrado_por.username', read_only=True)
-    detalles = DetalleCompraSerializer(many=True, read_only=True) # Anidamos los detalles
-
     class Meta:
-        model = Compra
-        fields = [
-            'id', 'proveedor', 'proveedor_nombre', 'sucursal_destino', 'sucursal_destino_nombre',
-            'orden_compra_asociada', 'orden_compra_asociada_numero', 'fecha_recepcion',
-            'numero_factura_proveedor', 'subtotal', 'impuestos', 'total_compra',
-            'estado', 'observaciones', 'registrado_por', 'registrado_por_username', 'detalles'
-        ]
-        read_only_fields = ['subtotal', 'impuestos', 'total_compra', 'fecha_recepcion']
-
-    def create(self, validated_data):
-        detalles_data = validated_data.pop('detalles', [])
-        compra = Compra.objects.create(**validated_data)
-        for detalle_data in detalles_data:
-            # Aquí, al crear DetalleCompra, podrías querer llamar a actualizar_stock_por_compra
-            # pero es mejor hacerlo en el ViewSet o una acción separada para controlar el "procesamiento"
-            DetalleCompra.objects.create(compra=compra, **detalle_data)
-        compra.calcular_totales()
-        return compra
-
-    def update(self, instance, validated_data):
-        detalles_data = validated_data.pop('detalles', [])
-        instance = super().update(instance, validated_data)
-        instance.calcular_totales()
-        return instance
-
+        model = OrdenCompra
+        fields = '__all__'
