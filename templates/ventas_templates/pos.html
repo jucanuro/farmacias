@@ -1,0 +1,119 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+
+{% block title %}Punto de Venta (POS){% endblock %}
+
+{% block app_content %}
+<div class="flex flex-col h-full">
+    <header class="mb-4">
+        <div class="relative">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input type="text" id="product-search-input" class="form-input !pl-11 !py-3"
+                placeholder="Buscar producto por nombre o código...">
+        </div>
+    </header>
+
+    <div class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+
+        <div class="lg:col-span-2 bg-slate-900/50 rounded-2xl p-4 overflow-y-auto">
+            <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe en la barra para
+                    buscar productos...</p>
+            </div>
+        </div>
+
+        <div id="sale-cart" class="bg-slate-900/50 rounded-2xl p-6 flex flex-col">
+            <h2 class="text-lg font-bold text-white mb-4">Detalle de Venta</h2>
+            <div id="cart-items" class="flex-grow space-y-3 overflow-y-auto">
+                <p class="text-center text-slate-500 pt-16">Selecciona productos para añadirlos a la venta.</p>
+            </div>
+            <div class="pt-4 border-t border-slate-700">
+                <div class="flex justify-between font-bold text-xl text-white">
+                    <span>TOTAL:</span>
+                    <span id="cart-total">S/ 0.00</span>
+                </div>
+                <button
+                    class="w-full mt-4 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors">
+                    PROCEDER AL PAGO
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('product-search-input');
+        const productGrid = document.getElementById('product-grid');
+        const gridPlaceholder = document.getElementById('grid-placeholder');
+
+        let searchTimeout;
+
+        // --- Función para buscar productos y renderizar las tarjetas ---
+        const buscarProductos = async (query) => {
+            if (query.length < 2) {
+                productGrid.innerHTML = '';
+                gridPlaceholder.textContent = 'Escribe al menos 2 letras para buscar...';
+                productGrid.appendChild(gridPlaceholder);
+                return;
+            }
+
+            gridPlaceholder.textContent = 'Buscando...';
+
+            try {
+                // Llamamos a la API de productos que ya existe
+                const response = await fetch(`/inventario/api/productos/?search=${query}`);
+                if (!response.ok) throw new Error('Error al buscar productos');
+
+                const data = await response.json();
+                const productos = data.results || data;
+
+                productGrid.innerHTML = ''; // Limpiar resultados anteriores
+
+                if (productos.length === 0) {
+                    gridPlaceholder.textContent = 'No se encontraron productos.';
+                    productGrid.appendChild(gridPlaceholder);
+                    return;
+                }
+
+                productos.forEach(producto => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-slate-800 rounded-lg p-3 flex flex-col items-center text-center cursor-pointer hover:bg-slate-700 transition-colors shadow-lg';
+                    card.dataset.productoId = producto.id; // Guardamos el ID para usarlo después
+
+                    // Usamos un placeholder si no hay imagen
+                    const imageUrl = producto.imagen || 'https://via.placeholder.com/150';
+
+                    card.innerHTML = `
+                    <img src="${imageUrl}" alt="${producto.nombre}" class="w-24 h-24 object-cover rounded-md mb-2">
+                    <p class="text-sm font-semibold text-white leading-tight">${producto.nombre}</p>
+                    <p class="text-xs text-slate-400">${producto.laboratorio_nombre || ''}</p>
+                    <p class="text-lg font-bold text-emerald-400 mt-2">S/ ${parseFloat(producto.precio_venta).toFixed(2)}</p>
+                `;
+                    productGrid.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error de búsqueda:', error);
+                gridPlaceholder.textContent = 'Error al cargar productos.';
+                productGrid.appendChild(gridPlaceholder);
+            }
+        };
+
+        // --- Event Listener para el input de búsqueda ---
+        searchInput.addEventListener('keyup', (e) => {
+            clearTimeout(searchTimeout);
+            // Espera 300ms después de que el usuario deja de teclear para buscar
+            searchTimeout = setTimeout(() => {
+                buscarProductos(e.target.value.trim());
+            }, 300);
+        });
+    });
+</script>
+{% endblock %}

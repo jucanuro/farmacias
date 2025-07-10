@@ -14,9 +14,9 @@ app_name = 'ventas' # Define un espacio de nombres para las URLs de esta app
 
 urlpatterns = [
     # URLs para vistas web tradicionales (si las tienes)
-    path('', views.ventas_home_view, name='home'),
+    #path('', views.ventas_home_view, name='home'),
 
-    # URLs para la API REST de la aplicación 'ventas'
-    # Las URLs generadas por el router se incluyen aquí bajo un prefijo 'api/'
+    path('pos/', views.pos_view, name='pos'),
+
     path('api/', include(router.urls)),
 ]

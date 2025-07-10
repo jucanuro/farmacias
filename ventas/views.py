@@ -1,13 +1,12 @@
 # ventas/views.py
+
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
 
-def ventas_home_view(request):
+@login_required
+def pos_view(request):
     """
-    Vista de ejemplo para la página de inicio de la aplicación de ventas.
-    Aquí se podría mostrar un resumen de ventas recientes o un punto de venta (POS).
+    Renderiza la interfaz principal del Punto de Venta (POS).
+    Toda la lógica será manejada por JavaScript.
     """
-    return HttpResponse("<h1>Gestión de Ventas</h1><p>Esta es la página de inicio de la aplicación de ventas. Aquí podrás registrar y consultar todas las transacciones de venta.</p>")
-
-# Más adelante, aquí irán las vistas para el Punto de Venta (POS),
-# listado de ventas, detalles de venta, etc.
+    return render(request, 'ventas_templates/pos.html')
