@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
 
 # Importaciones de tus Modelos (¡LA CLAVE ESTÁ AQUÍ!)
 from .models import (
@@ -101,17 +102,18 @@ def compra_edit_view(request, pk):
     """
     Prepara y muestra el formulario para editar una compra existente.
     """
-    # Obtenemos la compra específica o mostramos un error 404 si no existe
     compra = get_object_or_404(Compra, pk=pk)
     
-    # Aunque los campos estarán deshabilitados, es bueno tenerlos por si los necesitas
+    # --- PASO 1: SERIALIZA EL OBJETO COMPRA ---
+    serializer = CompraSerializer(compra)
+    
     proveedores = Proveedor.objects.filter(activo=True).order_by('nombre_comercial')
     sucursales = Sucursal.objects.all().order_by('nombre')
     
     context = {
-        'compra': compra, # Pasamos la instancia de la compra a la plantilla
+        'compra': compra, # Mantenemos el objeto para usarlo en el título, etc.
+        'compra_json': serializer.data, # ¡Pasamos los datos serializados a la plantilla!
         'proveedores': proveedores,
         'sucursales': sucursales,
     }
-    # Reutilizaremos el mismo formulario de creación
     return render(request, 'compras_templates/compra_form.html', context)

@@ -1,0 +1,152 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}Listado de Clientes{% endblock %}
+
+{% block app_content %}
+<header class="mb-10 flex justify-between items-center">
+    <div>
+        <h1 class="text-xl font-extrabold text-white">Gestión de Clientes</h1>
+        <p class="text-slate-400 mt-1 text-sm">Consulta, registra y edita la información de tus clientes.</p>
+    </div>
+    <a href="{% url 'clientes:crear' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+        Registrar Cliente
+    </a>
+</header>
+
+<div class="glass-card rounded-2xl p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="border-b border-slate-700">
+                <tr>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Nombre Completo</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Documento</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Teléfono</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Email</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Estado</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clientes-list-body">
+                <tr>
+                    <td colspan="6" class="text-center p-8">
+                        <div class="text-slate-400">Cargando clientes...</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const clientesTableBody = document.getElementById('clientes-list-body');
+        // El token CSRF es necesario para hacer peticiones que modifican datos (PATCH)
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+        const desactivarCliente = async (clienteId, boton) => {
+            // Se usa el span del estado para saber el estado actual y evitar otra llamada a la API
+            const fila = boton.closest('tr');
+            const estadoActual = fila.querySelector('.estado-cliente').dataset.activo === 'true';
+            const nuevaAccion = estadoActual ? 'desactivar' : 'activar';
+
+            if (!confirm(`¿Estás seguro de que quieres ${nuevaAccion} a este cliente?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/clientes/api/clientes/${clienteId}/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ activo: !estadoActual }), // Enviamos el estado opuesto
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudo actualizar el estado del cliente.');
+                }
+
+                // Recargamos la lista para mostrar el cambio visualmente.
+                cargarClientes();
+                alert('Estado del cliente actualizado con éxito.');
+
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+            }
+        };
+
+        const cargarClientes = async () => {
+            try {
+                const response = await fetch('/clientes/api/clientes/');
+                if (!response.ok) throw new Error('No se pudieron cargar los datos.');
+
+                const data = await response.json();
+                const clientes = data.results || data;
+
+                clientesTableBody.innerHTML = '';
+
+                if (clientes.length === 0) {
+                    clientesTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-slate-400">No hay clientes registrados.</td></tr>`;
+                    return;
+                }
+
+                clientes.forEach(cliente => {
+                    const nombreCompleto = `${cliente.nombres} ${cliente.apellidos}`.trim();
+                    // Añadimos una clase y un data-attribute al span del estado
+                    const estadoHtml = cliente.activo
+                        ? `<span class="px-2 py-1 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 estado-cliente" data-activo="true">Activo</span>`
+                        : `<span class="px-2 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 estado-cliente" data-activo="false">Inactivo</span>`;
+
+                    const row = `
+                        <tr class="border-b border-slate-800 hover:bg-slate-800/50 text-sm">
+                            <td class="p-3 text-white font-semibold">${nombreCompleto}</td>
+                            <td class="p-3 text-slate-300">${cliente.tipo_documento}: ${cliente.numero_documento}</td>
+                            <td class="p-3 text-slate-300">${cliente.telefono || 'N/A'}</td>
+                            <td class="p-3 text-slate-300">${cliente.email || 'N/A'}</td>
+                            <td class="p-3">${estadoHtml}</td>
+                            <td class="p-3">
+                                <div class="flex items-center justify-center gap-3">
+                                    <a href="/clientes/${cliente.id}/editar/" title="Editar Cliente" class="text-slate-400 hover:text-amber-400 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                                    </a>
+                                    <button title="Activar/Desactivar Cliente" class="text-slate-400 hover:text-rose-400 transition-colors delete-btn" data-cliente-id="${cliente.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    clientesTableBody.innerHTML += row;
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                clientesTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-rose-400">Error al cargar los datos.</td></tr>`;
+            }
+        };
+
+        // Se usa delegación de eventos para manejar los clics de los botones de la tabla
+        clientesTableBody.addEventListener('click', (e) => {
+            const botonDesactivar = e.target.closest('.delete-btn');
+            if (botonDesactivar) {
+                const clienteId = botonDesactivar.dataset.clienteId;
+                desactivarCliente(clienteId, botonDesactivar);
+            }
+        });
+
+        // Carga inicial de los datos
+        cargarClientes();
+    });
+</script>
+{% endblock %}

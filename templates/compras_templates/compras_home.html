@@ -45,12 +45,147 @@
         </table>
     </div>
 </div>
+<div id="main-pagination-controls" class="flex justify-between items-center mt-6 hidden">
+    <span id="main-page-info" class="text-sm text-slate-400"></span>
+    <div class="flex items-center gap-3">
+        <button id="main-prev-btn"
+            class="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Anterior
+        </button>
+        <button id="main-next-btn"
+            class="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            Siguiente
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    </div>
+</div>
+</div>
+<div id="details-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-5xl max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-title" class="text-xl font-extrabold text-white">Detalle de la Compra</h3>
+            <button id="modal-close-btn" class="text-slate-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="overflow-y-auto pr-2 flex-grow">
+            <div id="modal-header-info" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold">Proveedor</p>
+                    <p id="modal-proveedor" class="text-white font-semibold">-</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold">N° Factura</p>
+                    <p id="modal-factura" class="text-white font-semibold">-</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold">Sucursal</p>
+                    <p id="modal-sucursal" class="text-white font-semibold">-</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold">Fecha Recepción</p>
+                    <p id="modal-fecha" class="text-white font-semibold">-</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="border-b border-slate-700">
+                        <tr>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400">Producto</th>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400">Lote</th>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400">Vencimiento</th>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400 text-right">Cantidad</th>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400 text-right">Costo Unit.</th>
+                            <th class="p-3 text-xs font-bold uppercase text-slate-400 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-details-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="modal-footer" class="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center">
+            <div id="modal-pagination-controls" class="flex items-center gap-3">
+                <button id="modal-prev-btn"
+                    class="flex items-center gap-2 px-3 py-1.5 bg-slate-600/70 hover:bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Anterior
+                </button>
+                <span id="modal-page-info" class="text-sm font-semibold text-slate-300 w-24 text-center"></span>
+                <button id="modal-next-btn"
+                    class="flex items-center gap-2 px-3 py-1.5 bg-slate-600/70 hover:bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex items-end gap-6">
+                <div class="text-right">
+                    <p class="text-slate-400 text-xs">IMPUESTOS (IGV)</p>
+                    <p id="modal-taxes" class="text-sm font-bold text-slate-300">S/ 0.00</p>
+                </div>
+
+                <div class="text-right">
+                    <p class="text-slate-400 text-sm">TOTAL COMPRA</p>
+                    <p id="modal-grand-total" class="text-lg font-bold text-emerald-400">S/ 0.00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const comprasTableBody = document.getElementById('compras-list-body');
+        const modal = document.getElementById('details-modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalTitle = document.getElementById('modal-title');
+        const modalProveedor = document.getElementById('modal-proveedor');
+        const modalFactura = document.getElementById('modal-factura');
+        const modalSucursal = document.getElementById('modal-sucursal');
+        const modalFecha = document.getElementById('modal-fecha');
+        const modalDetailsBody = document.getElementById('modal-details-body');
+        const modalGrandTotal = document.getElementById('modal-grand-total');
+        const modalTaxes = document.getElementById('modal-taxes');
+        const modalPaginationControls = document.getElementById('modal-pagination-controls');
+        const modalPrevBtn = document.getElementById('modal-prev-btn');
+        const modalNextBtn = document.getElementById('modal-next-btn');
+        const modalPageInfo = document.getElementById('modal-page-info');
+
+        // --- INICIO DE LA SOLUCIÓN: NUEVOS ELEMENTOS Y ESTADO PARA PAGINACIÓN PRINCIPAL ---
+        const mainPaginationControls = document.getElementById('main-pagination-controls');
+        const mainPageInfo = document.getElementById('main-page-info');
+        const mainPrevBtn = document.getElementById('main-prev-btn');
+        const mainNextBtn = document.getElementById('main-next-btn');
+
+        let nextUrl = null;
+        let prevUrl = null;
+        // --- FIN DE LA SOLUCIÓN ---
+
+        let allDetails = [];
+        let currentPage = 1;
+        const itemsPerPage = 5;
 
         const estadoStyles = {
             'PENDIENTE': 'bg-amber-500/20 text-amber-400',
@@ -58,9 +193,13 @@
             'ANULADA': 'bg-rose-500/20 text-rose-400'
         };
 
-        const cargarCompras = async () => {
+        // --- INICIO DE LA SOLUCIÓN: FUNCIÓN 'cargarCompras' ACTUALIZADA ---
+        const cargarCompras = async (url = '/compras/api/compras/') => {
+            comprasTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400">Cargando compras...</td></tr>`;
+            if (mainPaginationControls) mainPaginationControls.classList.add('hidden');
+
             try {
-                const response = await fetch('/compras/api/compras/');
+                const response = await fetch(url);
                 if (!response.ok) throw new Error('No se pudieron cargar los datos.');
 
                 const data = await response.json();
@@ -73,14 +212,15 @@
                     return;
                 }
 
+                // Guardar URLs de paginación
+                nextUrl = data.next;
+                prevUrl = data.previous;
+
                 compras.forEach(compra => {
                     const fecha = new Date(compra.fecha_recepcion).toLocaleDateString('es-PE', {
                         year: 'numeric', month: '2-digit', day: '2-digit'
                     });
-
                     const estilo = estadoStyles[compra.estado] || 'bg-slate-500/20 text-slate-400';
-
-                    // --- HTML DE LA FILA ACTUALIZADO ---
                     const row = `
                         <tr class="border-b border-slate-800 hover:bg-slate-800/50 text-sm">
                             <td class="p-3 font-mono text-slate-400">#${compra.id}</td>
@@ -92,10 +232,10 @@
                             <td class="p-3 text-slate-400">${fecha}</td>
                             <td class="p-3">
                                 <div class="flex items-center justify-center gap-3">
-                                    <a href="#" title="Ver Detalles" class="text-slate-400 hover:text-blue-400 transition-colors">
+                                    <button type="button" title="Ver Detalles" class="text-slate-400 hover:text-blue-400 transition-colors view-details-btn" data-compra-id="${compra.id}">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.27 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                                    </a>
-                                    <a href="#" title="Editar Compra" class="text-slate-400 hover:text-amber-400 transition-colors">
+                                    </button>
+                                    <a href="/compras/${compra.id}/editar/" title="Editar Compra" class="text-slate-400 hover:text-amber-400 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                                     </a>
                                 </div>
@@ -105,13 +245,130 @@
                     comprasTableBody.innerHTML += row;
                 });
 
+                // Actualizar y mostrar los controles de paginación si es necesario
+                if (data.count > 10) { // Asumiendo que tu page_size en el backend es 10
+                    const pageNumber = new URL(url, window.location.origin).searchParams.get('page') || '1';
+                    const totalPages = Math.ceil(data.count / 10);
+                    mainPageInfo.textContent = `Página ${pageNumber} de ${totalPages}`;
+                    mainPrevBtn.disabled = !prevUrl;
+                    mainNextBtn.disabled = !nextUrl;
+                    mainPaginationControls.classList.remove('hidden');
+                }
+
             } catch (error) {
                 console.error('Error:', error);
                 comprasTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-rose-400">Error al cargar los datos.</td></tr>`;
             }
         };
+        // --- FIN DE LA SOLUCIÓN ---
+
+        const renderizarPagina = () => {
+            modalDetailsBody.innerHTML = '';
+            const totalPages = Math.ceil(allDetails.length / itemsPerPage);
+            modalPageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+            modalPrevBtn.disabled = currentPage === 1;
+            modalNextBtn.disabled = currentPage === totalPages;
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const pageItems = allDetails.slice(startIndex, startIndex + itemsPerPage);
+            pageItems.forEach(detalle => {
+                const subtotal = (detalle.cantidad_recibida * detalle.precio_unitario_compra).toFixed(2);
+                const fechaVenc = detalle.fecha_vencimiento ? new Date(detalle.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A';
+                const detalleRow = `
+                    <tr class="border-b border-slate-800 text-sm">
+                        <td class="p-3 text-white font-medium">${detalle.producto_nombre}</td>
+                        <td class="p-3 text-slate-300">${detalle.lote}</td>
+                        <td class="p-3 text-slate-300">${fechaVenc}</td>
+                        <td class="p-3 text-slate-300 text-right">${detalle.cantidad_recibida}</td>
+                        <td class="p-3 text-slate-300 text-right font-mono">S/ ${parseFloat(detalle.precio_unitario_compra).toFixed(2)}</td>
+                        <td class="p-3 text-white text-right font-mono">S/ ${subtotal}</td>
+                    </tr>
+                `;
+                modalDetailsBody.innerHTML += detalleRow;
+            });
+        };
+
+        const mostrarDetalles = async (compraId) => {
+            modal.classList.remove('hidden');
+            modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Cargando detalles...</td></tr>`;
+            modalTaxes.textContent = 'S/ 0.00';
+            modalGrandTotal.textContent = 'S/ 0.00';
+            modalPaginationControls.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/compras/api/compras/${compraId}/`);
+                if (!response.ok) throw new Error('No se pudo cargar la información.');
+                const compra = await response.json();
+                modalTaxes.textContent = `S/ ${parseFloat(compra.impuestos || 0).toFixed(2)}`;
+                modalGrandTotal.textContent = `S/ ${parseFloat(compra.total_compra || 0).toFixed(2)}`;
+                modalTitle.textContent = `Detalle de la Compra #${compra.id}`;
+                modalProveedor.textContent = compra.proveedor_nombre;
+                modalFactura.textContent = compra.numero_factura_proveedor;
+                modalSucursal.textContent = compra.sucursal_destino_nombre;
+                modalFecha.textContent = new Date(compra.fecha_recepcion).toLocaleDateString('es-PE', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                allDetails = compra.detalles || [];
+                currentPage = 1;
+                if (allDetails.length > 0) {
+                    if (allDetails.length > itemsPerPage) {
+                        modalPaginationControls.classList.remove('hidden');
+                    }
+                    renderizarPagina();
+                } else {
+                    modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Esta compra no tiene productos detallados.</td></tr>`;
+                }
+            } catch (error) {
+                modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400">Error al cargar los detalles.</td></tr>`;
+                console.error(error);
+            }
+        };
+
+        comprasTableBody.addEventListener('click', e => {
+            const viewButton = e.target.closest('.view-details-btn');
+            if (viewButton) {
+                mostrarDetalles(viewButton.dataset.compraId);
+            }
+        });
+
+        modalPrevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderizarPagina();
+            }
+        });
+
+        modalNextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allDetails.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderizarPagina();
+            }
+        });
+
+        const cerrarModal = () => modal.classList.add('hidden');
+        modalCloseBtn.addEventListener('click', cerrarModal);
+        modal.addEventListener('click', e => {
+            if (e.target === modal) {
+                cerrarModal();
+            }
+        });
+
+        // --- INICIO DE LA SOLUCIÓN: NUEVOS LISTENERS PARA PAGINACIÓN PRINCIPAL ---
+        mainPrevBtn.addEventListener('click', () => {
+            if (prevUrl) {
+                cargarCompras(prevUrl);
+            }
+        });
+
+        mainNextBtn.addEventListener('click', () => {
+            if (nextUrl) {
+                cargarCompras(nextUrl);
+            }
+        });
+        // --- FIN DE LA SOLUCIÓN ---
 
         cargarCompras();
+
     });
 </script>
 {% endblock %}

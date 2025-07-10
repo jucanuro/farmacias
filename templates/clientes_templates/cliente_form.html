@@ -1,0 +1,223 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}
+{% if cliente %}
+Editar Cliente
+{% else %}
+Registrar Nuevo Cliente
+{% endif %}
+{% endblock %}
+
+{% block app_content %}
+<header class="mb-10">
+    <a href="{% url 'clientes:lista' %}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        Volver al Listado
+    </a>
+    <h1 id="form-title" class="text-xl font-extrabold text-white mt-6">
+        {% if cliente %}
+        Editando Cliente: {{ cliente.get_full_name }}
+        {% else %}
+        Registrar Nuevo Cliente
+        {% endif %}
+    </h1>
+    <p class="text-slate-400 text-sm mt-1">Completa la información del cliente.</p>
+</header>
+
+{% if cliente %}
+<script id="cliente-data" type="application/json">{{ cliente.pk }}</script>
+{% endif %}
+
+<form id="cliente-form" class="space-y-8">
+    {% csrf_token %}
+    <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-white mb-6">Información de Identificación</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                <select id="tipo_documento" class="form-select">
+                    {% for value, display in tipos_documento %}
+                    {# Esta estructura es diferente y evita el problema de formato #}
+                    {% if cliente.tipo_documento == value %}
+                    <option value="{{ value }}" selected>{{ display }}</option>
+                    {% else %}
+                    <option value="{{ value }}">{{ display }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="numero_documento" class="form-label">Número de Documento</label>
+                <input type="text" id="numero_documento" class="form-input" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-white mb-6">Información Personal y de Contacto</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="nombres" class="form-label">Nombres</label>
+                <input type="text" id="nombres" class="form-input" required>
+            </div>
+            <div>
+                <label for="apellidos" class="form-label">Apellidos</label>
+                <input type="text" id="apellidos" class="form-input">
+            </div>
+            <div>
+                <label for="telefono" class="form-label">Teléfono</label>
+                <input type="tel" id="telefono" class="form-input">
+            </div>
+            <div>
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-input">
+            </div>
+            <div class="md:col-span-2">
+                <label for="direccion" class="form-label">Dirección</label>
+                <input type="text" id="direccion" class="form-input">
+            </div>
+            <div>
+                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" class="form-input">
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-white mb-6">Configuración Adicional</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="farmacia" class="form-label">Farmacia Asociada (Opcional)</label>
+                <select id="farmacia" class="form-select">
+                    <option value="">Ninguna</option>
+                    {% for farmacia in farmacias %}
+                    <option value="{{ farmacia.pk }}">{{ farmacia.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="activo" class="form-label">Estado</label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" id="activo" class="form-checkbox" checked>
+                    <span class="text-white">Cliente Activo</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-end pt-4">
+        <button type="submit" id="save-button"
+            class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors shadow-lg">
+            Guardar Cliente
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('cliente-form');
+        const saveButton = document.getElementById('save-button');
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Identificar si estamos en modo edición
+        const clienteDataElement = document.getElementById('cliente-data');
+        const clienteId = clienteDataElement ? clienteDataElement.textContent : null;
+
+        const inicializarFormulario = async () => {
+            if (!clienteId) {
+                console.log("Modo: Creación");
+                return;
+            }
+
+            console.log("Modo: Edición de Cliente ID:", clienteId);
+            saveButton.textContent = 'Actualizar Cliente';
+
+            try {
+                const response = await fetch(`/clientes/api/clientes/${clienteId}/`);
+                if (!response.ok) throw new Error('No se pudo cargar los datos del cliente.');
+
+                const cliente = await response.json();
+
+                // Rellenar el formulario con los datos del cliente
+                document.getElementById('tipo_documento').value = cliente.tipo_documento;
+                document.getElementById('numero_documento').value = cliente.numero_documento;
+                document.getElementById('nombres').value = cliente.nombres;
+                document.getElementById('apellidos').value = cliente.apellidos;
+                document.getElementById('telefono').value = cliente.telefono;
+                document.getElementById('email').value = cliente.email;
+                document.getElementById('direccion').value = cliente.direccion;
+                document.getElementById('fecha_nacimiento').value = cliente.fecha_nacimiento;
+                document.getElementById('farmacia').value = cliente.farmacia || '';
+                document.getElementById('activo').checked = cliente.activo;
+
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+            }
+        };
+
+        const guardarCliente = async (e) => {
+            e.preventDefault();
+            saveButton.disabled = true;
+            saveButton.textContent = 'Guardando...';
+
+            const url = clienteId ? `/clientes/api/clientes/${clienteId}/` : '/clientes/api/clientes/';
+            const method = clienteId ? 'PUT' : 'POST';
+
+            const formData = {
+                tipo_documento: document.getElementById('tipo_documento').value,
+                numero_documento: document.getElementById('numero_documento').value,
+                nombres: document.getElementById('nombres').value,
+                apellidos: document.getElementById('apellidos').value,
+                telefono: document.getElementById('telefono').value,
+                email: document.getElementById('email').value,
+                direccion: document.getElementById('direccion').value,
+                fecha_nacimiento: document.getElementById('fecha_nacimiento').value || null,
+                farmacia: document.getElementById('farmacia').value || null,
+                activo: document.getElementById('activo').checked,
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw errorData;
+                }
+
+                alert(`Cliente ${clienteId ? 'actualizado' : 'creado'} con éxito.`);
+                window.location.href = "{% url 'clientes:lista' %}";
+
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                // Manejo de errores de validación (ejemplo simple)
+                let errorMessage = "No se pudo guardar el cliente.\n\n";
+                for (const field in error) {
+                    errorMessage += `${field}: ${error[field]}\n`;
+                }
+                alert(errorMessage);
+                saveButton.disabled = false;
+                saveButton.textContent = clienteId ? 'Actualizar Cliente' : 'Guardar Cliente';
+            }
+        };
+
+        form.addEventListener('submit', guardarCliente);
+        inicializarFormulario();
+    });
+</script>
+{% endblock %}

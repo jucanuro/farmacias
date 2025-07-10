@@ -1,25 +1,29 @@
 # clientes/views.py
-from django.shortcuts import render
-from django.http import HttpResponse
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Cliente
+from core.models import Farmacia
+
+@login_required
 def clientes_home_view(request):
     """
-    Vista de ejemplo para la página de inicio de la aplicación de clientes.
-    Más adelante, aquí se podría listar clientes, añadir formularios, etc.
+    Muestra la página principal con el listado de clientes.
     """
-    return HttpResponse("<h1>Gestión de Clientes</h1><p>Esta es la página de inicio de la aplicación de clientes. Aquí podrás ver, añadir y gestionar a los clientes.</p>")
+    return render(request, 'clientes_templates/clientes_home.html')
 
-# Puedes añadir más vistas aquí para listar clientes, ver detalles de un cliente, etc.
-# from .models import Cliente
-# from django.views.generic import ListView, DetailView
-
-# class ClienteListView(ListView):
-#     model = Cliente
-#     template_name = 'clientes/cliente_list.html' # Asegúrate de crear este template
-#     context_object_name = 'clientes'
-#     paginate_by = 10
-
-# class ClienteDetailView(DetailView):
-#     model = Cliente
-#     template_name = 'clientes/cliente_detail.html' # Asegúrate de crear este template
-#     context_object_name = 'cliente'
+@login_required
+def cliente_form_view(request, pk=None):
+    """
+    Muestra el formulario para CREAR o EDITAR un cliente.
+    """
+    context = {
+        'cliente': None,
+        'farmacias': Farmacia.objects.filter(activo=True).order_by('nombre'),
+        # --- AÑADE ESTA LÍNEA ---
+        'tipos_documento': Cliente.TIPO_DOCUMENTO_CHOICES,
+    }
+    if pk:
+        context['cliente'] = get_object_or_404(Cliente, pk=pk)
+        
+    return render(request, 'clientes_templates/cliente_form.html', context)

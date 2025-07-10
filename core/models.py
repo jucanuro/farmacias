@@ -108,6 +108,7 @@ class Farmacia(models.Model):
         verbose_name="Configuración FE Asociada",
         help_text="Configuración de facturación electrónica específica para esta farmacia."
     )
+    activo = models.BooleanField(default=True, verbose_name="Activa")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
 
     class Meta:

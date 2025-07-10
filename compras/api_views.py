@@ -6,6 +6,7 @@ from django.db import transaction # Para operaciones atómicas
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .models import (
     CotizacionProveedor, DetalleCotizacion,
@@ -19,6 +20,11 @@ from .serializers import (
 )
 from core.permissions import IsAdminOrManager, IsAdminOrSucursalManager # Importar permisos personalizados
 from inventario.models import StockProducto, MovimientoInventario # Para la lógica de stock
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10  # Número de compras por página. Puedes cambiarlo si quieres.
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class CotizacionProveedorViewSet(viewsets.ModelViewSet):
     """
@@ -148,9 +154,10 @@ class CompraViewSet(viewsets.ModelViewSet):
     Administradores y Gerentes de Sucursal pueden gestionar.
     Los gerentes de sucursal ven las compras para su sucursal.
     """
-    queryset = Compra.objects.all().order_by('-fecha_recepcion')
+    queryset = Compra.objects.all().order_by('-fecha_recepcion','-id')
     serializer_class = CompraSerializer
     permission_classes = [IsAdminOrManager] # Solo Administradores y Gerentes pueden gestionar compras
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['proveedor', 'sucursal_destino', 'estado', 'registrado_por', 'fecha_recepcion']
     search_fields = ['numero_factura_proveedor', 'proveedor__nombre_comercial', 'observaciones']

@@ -1,24 +1,36 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}VQL - Registrar Nueva Compra{% endblock %}
+{% block title %}
+{# MODIFICACIÓN 1: Título dinámico #}
+{% if compra %}
+VQL - Editando Compra #{{ compra.id }}
+{% else %}
+VQL - Registrar Nueva Compra
+{% endif %}
+{% endblock %}
 
 {% block app_content %}
 <header class="mb-10">
-    <a href="{% url 'dashboard' %}"
+    <a href="{% url 'compras:home' %}"
         class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd"
                 d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
                 clip-rule="evenodd" />
         </svg>
-        Volver al Dashboard
+        Volver al Listado
     </a>
-    <h1 class="text-xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
+    <h1 id="form-title" class="text-xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
     <p class="text-slate-400 text-sm mt-1">Registra los productos recibidos de un proveedor según la factura o guía de
-        remisión.
-    </p>
+        remisión.</p>
 </header>
+
+{# MODIFICACIÓN 2: Insertar datos de la compra si estamos en modo edición #}
+{% if compra %}
+{{ compra_json|json_script:"compra-data" }}
+{% endif %}
+
 
 <form id="purchase-form" autocomplete="off">
     {% csrf_token %}
@@ -105,8 +117,8 @@
                 <p id="total-display" class="text-3xl font-extrabold text-emerald-400">S/ 0.00</p>
             </div>
             <button type="button" id="save-purchase-button"
-                class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Guardar
-                Compra</button>
+                class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Finalizar
+                y Procesar</button>
         </div>
     </div>
 </form>
@@ -126,6 +138,7 @@
         const proveedorSelect = document.getElementById('proveedor');
         const sucursalSelect = document.getElementById('sucursal');
         const numeroFacturaInput = document.getElementById('numero_factura');
+        const formTitle = document.getElementById('form-title');
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         // --- ESTADO DE LA COMPRA ---
@@ -133,13 +146,81 @@
         let compraId = null;
 
         // =================================================================
-        // LÓGICA PRINCIPAL
+        // MODIFICACIÓN 3: LÓGICA DE INICIALIZACIÓN (LA PARTE MÁS IMPORTANTE)
+        // =================================================================
+        function inicializarModoEdicion() {
+            const compraDataElement = document.getElementById('compra-data');
+            if (!compraDataElement) {
+                console.log("Modo: CREACIÓN de nueva compra.");
+                return; // Salimos, es una compra nueva
+            }
+
+            console.log("Modo: EDICIÓN de compra existente.");
+            const compra = JSON.parse(compraDataElement.textContent);
+
+            // 1. Establecer el ID de la compra global
+            compraId = compra.id;
+
+            // 2. Poblar y deshabilitar la cabecera
+            formTitle.textContent = `Editando Compra #${compra.id}`;
+            processButton.textContent = 'Actualizar y Procesar';
+            proveedorSelect.value = compra.proveedor;
+            sucursalSelect.value = compra.sucursal_destino;
+            numeroFacturaInput.value = compra.numero_factura_proveedor;
+
+            proveedorSelect.disabled = true;
+            sucursalSelect.disabled = true;
+
+            // Permitimos editar el número de factura
+            // numeroFacturaInput.disabled = true; 
+
+            // 3. Transformar los detalles de la compra al formato que usa el frontend (lineItems)
+            lineItems = compra.detalles.map(detalle => {
+                // Recreamos la estructura que el frontend espera, incluyendo campos que
+                // no vienen del serializer pero son necesarios para la UI, como 'unidades_disponibles'.
+                return {
+                    ...detalle, // Copia todos los campos del detalle (id, lote, etc.)
+                    producto_nombre: detalle.producto_nombre,
+                    unidad_seleccionada_id: detalle.presentacion,
+                    // ¡Importante! 'unidades_disponibles' no viene en el serializer de la compra.
+                    // Como no podemos saber todas las unidades posibles sin una llamada a la API,
+                    // dejamos este array vacío. La función renderTableRows lo manejará correctamente.
+                    unidades_disponibles: [],
+                };
+            });
+            if (compra.estado !== 'PENDIENTE') {
+                // Deshabilitar el botón principal
+                processButton.disabled = true;
+                processButton.textContent = `Ya está ${compra.estado}`;
+                processButton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                processButton.classList.add('bg-slate-500', 'cursor-not-allowed');
+
+                // Deshabilitar la barra para añadir nuevos productos
+                productSearchInput.disabled = true;
+                productSearchInput.placeholder = 'No se pueden añadir productos a esta compra.';
+
+                // Opcional: Deshabilitar la edición en las filas existentes
+                setTimeout(() => { // Usamos un pequeño delay para asegurar que las filas ya se renderizaron
+                    purchaseDetailsBody.querySelectorAll('.data-field, .delete-row-btn').forEach(el => {
+                        el.disabled = true;
+                    });
+                }, 100);
+            }
+
+            // 4. Renderizar la tabla con los detalles cargados
+            renderTableRows();
+        }
+
+
+        // =================================================================
+        // LÓGICA PRINCIPAL (EXISTENTE)
         // =================================================================
 
-        processButton.textContent = 'Procesar Compra';
-        processButton.addEventListener('click', procesarCompra);
+        // ¡Llamamos a la nueva función de inicialización aquí mismo!
+        inicializarModoEdicion();
 
-        // El único evento que crea/actualiza el encabezado es el 'blur' del N° de Factura
+        // El resto del código no necesita cambios y funcionará para ambos modos (crear/editar)
+        processButton.addEventListener('click', procesarCompra);
         numeroFacturaInput.addEventListener('blur', crearOActualizarCompraHeader);
 
         // FUNCIÓN DE CREACIÓN/ACTUALIZACIÓN DE ENCABEZADO
@@ -149,6 +230,7 @@
             }
 
             const url = compraId ? `/compras/api/compras/${compraId}/` : `/compras/api/compras/`;
+            // En modo edición, siempre usamos PATCH. En creación, POST.
             const method = compraId ? 'PATCH' : 'POST';
 
             const data = {
@@ -173,7 +255,7 @@
                     compraId = savedCompra.id;
                     proveedorSelect.disabled = true;
                     sucursalSelect.disabled = true;
-                    numeroFacturaInput.disabled = true;
+                    // No deshabilitamos N° Factura para que pueda ser corregido
                     console.log(`Borrador de Compra #${compraId} creado.`);
                 } else {
                     console.log(`Borrador de Compra #${compraId} actualizado.`);
@@ -194,7 +276,7 @@
             }
         };
 
-        // LÓGICA DE AUTOCOMPLETADO DE PRODUCTOS
+        // LÓGICA DE AUTOCOMPLETADO DE PRODUCTOS (SIN CAMBIOS)
         productSearchInput.addEventListener('input', (e) => {
             const query = e.target.value;
             if (query.length < 2) {
@@ -228,7 +310,7 @@
                 });
         });
 
-        // AÑADIR PRODUCTO (se llama desde el autocompletado)
+        // AÑADIR PRODUCTO (se llama desde el autocompletado) (SIN CAMBIOS)
         const handleSuggestionClick = (e) => {
             if (!compraId) {
                 alert('Por favor, primero completa la información de la factura (Proveedor, Sucursal y N° de Factura).');
@@ -241,7 +323,7 @@
                 unidades_disponibles: productData.unidades_jerarquia || [],
                 lote: '',
                 fecha_vencimiento: '',
-                cantidad_recibida: '', // <-- Solución 1: Cantidad inicial vacía
+                cantidad_recibida: '',
                 precio_unitario_compra: '',
             };
             lineItems.push(newItem);
@@ -250,7 +332,7 @@
             renderTableRows();
         };
 
-        // GUARDAR O ACTUALIZAR UNA LÍNEA DE DETALLE (autoguardado)
+        // GUARDAR O ACTUALIZAR UNA LÍNEA DE DETALLE (autoguardado) (SIN CAMBIOS)
         const guardarDetalle = async (itemIndex) => {
             const item = lineItems[itemIndex];
             if (!item || !item.lote || !item.fecha_vencimiento || !(parseFloat(item.cantidad_recibida) > 0) || !(parseFloat(item.precio_unitario_compra) > 0)) {
@@ -261,15 +343,13 @@
             const url = esNuevo ? `/compras/api/detalles-compra/` : `/compras/api/detalles-compra/${item.id}/`;
             const method = esNuevo ? 'POST' : 'PATCH';
 
-            // El 'name' del <select> es 'unidad_seleccionada_id', pero el modelo espera 'unidad_medida'.
-            // Creamos un objeto de datos limpio para enviar.
             const data = {
                 producto: item.producto,
                 lote: item.lote,
                 fecha_vencimiento: item.fecha_vencimiento,
                 cantidad_recibida: item.cantidad_recibida,
                 precio_unitario_compra: item.precio_unitario_compra,
-                presentacion: item.unidad_seleccionada_id, // <-- La clave debe ser 'presentacion'
+                presentacion: item.unidad_seleccionada_id,
             };
 
             if (esNuevo) {
@@ -285,10 +365,6 @@
                 if (!response.ok) throw await response.json();
 
                 const savedDetalle = await response.json();
-
-                // --- CAMBIO CLAVE AQUÍ ---
-                // En lugar de reemplazar todo el objeto, lo fusionamos.
-                // Esto preserva 'unidades_disponibles' y 'producto_nombre' que ya teníamos en el frontend.
                 Object.assign(lineItems[itemIndex], savedDetalle);
 
                 console.log(`Detalle ${esNuevo ? 'creado' : 'actualizado'} con ID: ${lineItems[itemIndex].id}`);
@@ -297,7 +373,8 @@
                 console.error(`Error guardando detalle:`, error);
             }
         };
-        // ELIMINAR UNA LÍNEA DE DETALLE
+
+        // ELIMINAR UNA LÍNEA DE DETALLE (SIN CAMBIOS)
         const eliminarDetalle = async (itemIndex) => {
             const item = lineItems[itemIndex];
             if (item && item.id) {
@@ -316,7 +393,9 @@
             renderTableRows();
         };
 
-        // PROCESAR LA COMPRA (botón final)
+        // PROCESAR LA COMPRA (botón final) (SIN CAMBIOS)
+        // NOTA: El texto de este botón cambiará a 'Actualizar Compra' pero la acción final es la misma.
+        // Si quisieras una acción diferente para editar, aquí se debería bifurcar la lógica.
         async function procesarCompra() {
             if (!compraId) {
                 alert('No hay una compra activa para procesar.');
@@ -327,6 +406,8 @@
             processButton.textContent = 'Procesando...';
 
             try {
+                // Esta acción de 'procesar' es la que actualiza el stock.
+                // Funciona igual para una compra nueva o una que se está editando.
                 const response = await fetch(`/compras/api/compras/${compraId}/procesar/`, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrftoken },
@@ -339,11 +420,12 @@
             } catch (error) {
                 alert('Error: ' + (error.error || 'No se pudo procesar la compra.'));
                 processButton.disabled = false;
-                processButton.textContent = 'Procesar Compra';
+                // Restaura el texto según el modo en el que estemos
+                processButton.textContent = document.getElementById('compra-data') ? 'Actualizar Compra' : 'Guardar Compra';
             }
         }
 
-        // RENDERIZAR LAS FILAS DE LA TABLA
+        // RENDERIZAR LAS FILAS DE LA TABLA (CON UNA PEQUEÑA MEJORA)
         function renderTableRows() {
             purchaseDetailsBody.innerHTML = '';
             lineItems.forEach((item, index) => {
@@ -353,15 +435,30 @@
                 row.className = `transition-all duration-300 ${guardadoIndicator}`;
                 const subtotal = (parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0);
 
+                // --- LÓGICA DE PRESENTACIÓN SIMPLIFICADA Y CORREGIDA ---
                 let unitOptionsHTML = '';
-                if (item.unidades_disponibles && item.unidades_disponibles.length > 0) {
-                    item.unidades_disponibles.forEach(unit => {
-                        const isSelected = item.unidad_seleccionada_id ? unit.id == item.unidad_seleccionada_id : unit.nombre.toLowerCase().includes('caja');
+                const unidades = item.unidades_disponibles || [];
+
+                if (unidades.length > 0) {
+                    // Caso 1: Tenemos la lista de unidades (al añadir un producto nuevo).
+                    const idSeleccionado = item.unidad_seleccionada_id;
+                    // Buscar la unidad "Caja" solo si no hay nada seleccionado aún.
+                    const cajaDefault = !idSeleccionado ? unidades.find(u => u.nombre.toLowerCase().includes('caja')) : null;
+
+                    unidades.forEach(unit => {
+                        // Se selecciona si el ID coincide, o si es la opción "Caja" por defecto.
+                        const isSelected = (idSeleccionado && unit.id == idSeleccionado) || (cajaDefault && unit.id == cajaDefault.id);
                         const selectedAttr = isSelected ? 'selected' : '';
                         unitOptionsHTML += `<option value="${unit.id}" ${selectedAttr}>${unit.nombre}</option>`;
                     });
+                } else if (item.id && item.presentacion) {
+                    // Caso 2: Estamos en modo edición. Lo ideal es que el serializer envíe 'presentacion_nombre'.
+                    // Como fallback, mostramos el ID si no tenemos el nombre.
+                    const nombrePresentacion = item.presentacion_nombre || `ID: ${item.presentacion}`;
+                    unitOptionsHTML = `<option value="${item.presentacion}" selected>${nombrePresentacion}</option>`;
                 } else {
-                    unitOptionsHTML = '<option value="">N/A</option>';
+                    // Fallback final: si no hay unidades de ninguna forma.
+                    unitOptionsHTML = '<option value="">Sin unidades</option>';
                 }
 
                 row.innerHTML = `
@@ -377,27 +474,21 @@
                 purchaseDetailsBody.appendChild(row);
             });
 
-            // Solución 2: Lógica de eventos mejorada para cálculo en vivo
+            // --- El resto de la función (event listeners) no cambia ---
             purchaseDetailsBody.querySelectorAll('.data-field').forEach(input => {
                 input.addEventListener('input', e => {
                     const row = e.target.closest('tr');
                     const index = row.dataset.index;
                     lineItems[index][e.target.name] = e.target.value;
-
                     const cantidad = parseFloat(lineItems[index].cantidad_recibida) || 0;
                     const precio = parseFloat(lineItems[index].precio_unitario_compra) || 0;
-                    const subtotalCell = row.querySelector('.subtotal-cell');
-                    subtotalCell.textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
-
+                    row.querySelector('.subtotal-cell').textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
                     updateTotalsUI();
                 });
-
                 input.addEventListener('blur', e => {
-                    const index = e.target.closest('tr').dataset.index;
-                    guardarDetalle(index);
+                    guardarDetalle(e.target.closest('tr').dataset.index);
                 });
             });
-
             purchaseDetailsBody.querySelectorAll('.delete-row-btn').forEach(button => {
                 button.addEventListener('click', e => {
                     if (confirm('¿Estás seguro de que quieres eliminar esta fila?')) {
@@ -405,11 +496,10 @@
                     }
                 });
             });
-
             updateTotalsUI();
         }
 
-        // ACTUALIZAR TOTALES GENERALES
+        // ACTUALIZAR TOTALES GENERALES (SIN CAMBIOS)
         function updateTotalsUI() {
             const subtotal = lineItems.reduce((acc, item) => acc + ((parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0)), 0);
             const impuestos = subtotal * 0.18;
@@ -419,7 +509,7 @@
             totalDisplay.textContent = `S/ ${total.toFixed(2)}`;
         }
 
-        // OCULTAR SUGERENCIAS AL HACER CLIC FUERA
+        // OCULTAR SUGERENCIAS AL HACER CLIC FUERA (SIN CAMBIOS)
         document.addEventListener('click', (e) => {
             if (!productSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
                 suggestionsContainer.classList.add('hidden');

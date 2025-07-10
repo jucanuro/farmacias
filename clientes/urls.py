@@ -1,21 +1,22 @@
 # clientes/urls.py
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views # Para las vistas web tradicionales (ej. clientes_home_view)
-from . import api_views # Para las vistas de la API
+from . import views
+from . import api_views
 
-# Crea un router y registra nuestros ViewSets con él.
 router = DefaultRouter()
-router.register(r'clientes', api_views.ClienteViewSet)
+# El basename es importante para que Django pueda generar las URLs automáticamente
+router.register(r'clientes', api_views.ClienteViewSet, basename='cliente')
 
-
-app_name = 'clientes' # Define un espacio de nombres para las URLs de esta app
+app_name = 'clientes'
 
 urlpatterns = [
-    # URLs para vistas web tradicionales (si las tienes)
-    path('', views.clientes_home_view, name='home'),
-
-    # URLs para la API REST de la aplicación 'clientes'
-    # Las URLs generadas por el router se incluyen aquí bajo un prefijo 'api/'
+    # URLs para la API REST
     path('api/', include(router.urls)),
+
+    # --- URLs para la Interfaz de Usuario ---
+    path('', views.clientes_home_view, name='lista'), # Cambiado a 'lista' por claridad
+    path('nuevo/', views.cliente_form_view, name='crear'), # <-- AÑADIDA
+    path('<int:pk>/editar/', views.cliente_form_view, name='editar'), # <-- AÑADIDA
 ]
