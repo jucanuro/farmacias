@@ -3,7 +3,7 @@ from django.conf import settings
 from decimal import Decimal # <-- Importante añadir esta línea
 from core.models import Sucursal, Usuario
 from proveedores.models import Proveedor
-from inventario.models import Producto, StockProducto, MovimientoInventario
+from inventario.models import Producto, StockProducto, MovimientoInventario, UnidadPresentacion
 
 class CotizacionProveedor(models.Model):
     # ... (sin cambios)
@@ -92,52 +92,72 @@ class DetalleOrdenCompra(models.Model):
         super().save(*args, **kwargs)
 
 class Compra(models.Model):
-    # ... (código existente)
+    # ... (todos tus campos como proveedor, sucursal_destino, etc., se quedan igual) ...
     ESTADO_COMPRA_CHOICES = [('PENDIENTE', 'Pendiente de Procesamiento'), ('PROCESADA', 'Procesada y Stock Actualizado'), ('ANULADA', 'Anulada (Stock no afectado o revertido)')]
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, verbose_name="Proveedor")
-    sucursal_destino = models.ForeignKey(Sucursal, on_delete=models.PROTECT, verbose_name="Sucursal de Destino", help_text="Sucursal donde se recibirán los productos.")
-    orden_compra_asociada = models.ForeignKey(OrdenCompra, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Orden de Compra Asociada", help_text="Orden de Compra a la que corresponde esta recepción (opcional).")
+    sucursal_destino = models.ForeignKey(Sucursal, on_delete=models.PROTECT, verbose_name="Sucursal de Destino")
+    orden_compra_asociada = models.ForeignKey(OrdenCompra, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Orden de Compra Asociada")
     fecha_recepcion = models.DateField(auto_now_add=True, verbose_name="Fecha de Recepción")
-    numero_factura_proveedor = models.CharField(max_length=100, unique=True, verbose_name="Número de Factura/Guía de Remisión del Proveedor", help_text="Número del documento fiscal emitido por el proveedor.")
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Subtotal")
-    impuestos = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Impuestos")
-    total_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total de la Compra")
+    numero_factura_proveedor = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Subtotal")
+    impuestos = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Impuestos")
+    total_compra = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total de la Compra")
     estado = models.CharField(max_length=20, choices=ESTADO_COMPRA_CHOICES, default='PENDIENTE', verbose_name="Estado de la Compra")
     observaciones = models.TextField(blank=True, verbose_name="Observaciones")
-    registrado_por = models.ForeignKey(Usuario, on_delete=models.PROTECT, verbose_name="Registrado Por", help_text="Usuario que registró la recepción de esta compra.")
+    registrado_por = models.ForeignKey(Usuario, on_delete=models.PROTECT, verbose_name="Registrado Por")
+    
     class Meta:
+        # Tu clase Meta se queda igual
         verbose_name = "Compra (Recepción)"
         verbose_name_plural = "Compras (Recepciones)"
         ordering = ['-fecha_recepcion', 'numero_factura_proveedor']
+
     def __str__(self):
+        # Tu método __str__ se queda igual
         return f"Compra #{self.id} - {self.proveedor.nombre_comercial} ({self.numero_factura_proveedor})"
 
-    def calcular_totales(self):
-        self.subtotal = sum(item.subtotal_linea for item in self.detalles.all())
-        # --- CORRECCIÓN AQUÍ ---
-        IMPUESTO_PORCENTAJE = Decimal('0.18')
+    def recalcular_totales(self):
+        """
+        Calcula los totales basándose en los detalles. No guarda.
+        """
+        detalles = self.detalles.all()
+        self.subtotal = sum(item.subtotal_linea for item in detalles)
+        
+        IMPUESTO_PORCENTAJE = Decimal('0.18') # 18% IGV
         self.impuestos = self.subtotal * IMPUESTO_PORCENTAJE
         self.total_compra = self.subtotal + self.impuestos
-        self.save()
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            self.recalcular_totales()
+        super().save(*args, **kwargs)
 
 class DetalleCompra(models.Model):
-    # ... (código existente)
     compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name='detalles', verbose_name="Compra Asociada")
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, verbose_name="Producto Recibido")
-    cantidad_recibida = models.IntegerField(verbose_name="Cantidad Recibida")
+    cantidad_recibida = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cantidad Recibida")
     precio_unitario_compra = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio Unitario de Compra")
+    presentacion = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, verbose_name="Presentación", null=True, blank=True)
     lote = models.CharField(max_length=50, verbose_name="Número de Lote")
     fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento del Lote")
-    subtotal_linea = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Subtotal de Línea")
+    subtotal_linea = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Subtotal de Línea", editable=False)
+
     class Meta:
         verbose_name = "Detalle de Compra"
         verbose_name_plural = "Detalles de Compras"
         unique_together = ('compra', 'producto', 'lote')
+
     def __str__(self):
         return f"{self.cantidad_recibida} de {self.producto.nombre} (Lote: {self.lote}) en Compra #{self.compra.id}"
+    
+    # CORRECCIÓN: Método save más seguro para el cálculo.
     def save(self, *args, **kwargs):
-        self.subtotal_linea = self.cantidad_recibida * self.precio_unitario_compra
-        super().save(*args, **kwargs)
+        cantidad = Decimal(self.cantidad_recibida or 0)
+        precio = Decimal(self.precio_unitario_compra or 0)
+        self.subtotal_linea = cantidad * precio
+        super().save(*args, **kwargs) # Guarda el objeto con el subtotal ya calculado
+    
+    # Tu lógica de negocio para actualizar stock se mantiene igual.
     def actualizar_stock_por_compra(self, usuario_accion):
         stock_existente, created = StockProducto.objects.get_or_create(
             producto=self.producto, sucursal=self.compra.sucursal_destino, lote=self.lote,

@@ -16,6 +16,8 @@ app_name = 'compras'
 urlpatterns = [
     path('', views.compras_home_view, name='home'),
     path('nueva/', views.compra_create_view, name='compra_create'),
+    path('<int:pk>/editar/', views.compra_edit_view, name='compra_edit'),
+
 
     path('api/', include(router.urls)),
 ]

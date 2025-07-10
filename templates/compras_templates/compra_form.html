@@ -1,5 +1,6 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
+
 {% block title %}VQL - Registrar Nueva Compra{% endblock %}
 
 {% block app_content %}
@@ -13,8 +14,9 @@
         </svg>
         Volver al Dashboard
     </a>
-    <h1 class="text-4xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
-    <p class="text-slate-400 mt-1">Registra los productos recibidos de un proveedor según la factura o guía de remisión.
+    <h1 class="text-xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
+    <p class="text-slate-400 text-sm mt-1">Registra los productos recibidos de un proveedor según la factura o guía de
+        remisión.
     </p>
 </header>
 
@@ -22,7 +24,7 @@
     {% csrf_token %}
     <div class="space-y-8">
         <div class="glass-card rounded-2xl p-6">
-            <h3 class="text-xl font-bold text-white mb-4">Información de la Factura</h3>
+            <h3 class="text-lg font-bold text-white mb-4">Información de la Factura</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="proveedor" class="block text-sm font-medium text-slate-300 mb-1">Proveedor</label>
@@ -51,7 +53,7 @@
         </div>
 
         <div class="glass-card rounded-2xl p-6">
-            <h3 class="text-xl font-bold text-white mb-4">Detalle de Productos</h3>
+            <h3 class="text-lg font-bold text-white mb-4">Detalle de Productos</h3>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="border-b border-slate-700">
@@ -120,31 +122,88 @@
         const subtotalDisplay = document.getElementById('subtotal-display');
         const impuestosDisplay = document.getElementById('impuestos-display');
         const totalDisplay = document.getElementById('total-display');
-        const saveButton = document.getElementById('save-purchase-button');
+        const processButton = document.getElementById('save-purchase-button');
         const proveedorSelect = document.getElementById('proveedor');
         const sucursalSelect = document.getElementById('sucursal');
         const numeroFacturaInput = document.getElementById('numero_factura');
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         // --- ESTADO DE LA COMPRA ---
         let lineItems = [];
+        let compraId = null;
 
-        // --- LÓGICA DE AUTOCOMPLETADO ---
+        // =================================================================
+        // LÓGICA PRINCIPAL
+        // =================================================================
+
+        processButton.textContent = 'Procesar Compra';
+        processButton.addEventListener('click', procesarCompra);
+
+        // El único evento que crea/actualiza el encabezado es el 'blur' del N° de Factura
+        numeroFacturaInput.addEventListener('blur', crearOActualizarCompraHeader);
+
+        // FUNCIÓN DE CREACIÓN/ACTUALIZACIÓN DE ENCABEZADO
+        async function crearOActualizarCompraHeader() {
+            if (!proveedorSelect.value || !sucursalSelect.value || !numeroFacturaInput.value) {
+                return;
+            }
+
+            const url = compraId ? `/compras/api/compras/${compraId}/` : `/compras/api/compras/`;
+            const method = compraId ? 'PATCH' : 'POST';
+
+            const data = {
+                proveedor: proveedorSelect.value,
+                sucursal_destino: sucursalSelect.value,
+                numero_factura_proveedor: numeroFacturaInput.value,
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify(data),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw errorData;
+                }
+                const savedCompra = await response.json();
+
+                if (!compraId) {
+                    compraId = savedCompra.id;
+                    proveedorSelect.disabled = true;
+                    sucursalSelect.disabled = true;
+                    numeroFacturaInput.disabled = true;
+                    console.log(`Borrador de Compra #${compraId} creado.`);
+                } else {
+                    console.log(`Borrador de Compra #${compraId} actualizado.`);
+                }
+            } catch (error) {
+                console.error('Error al guardar encabezado:', error);
+                let errorMessage = 'No se pudo crear o actualizar la compra.\n\n';
+                if (typeof error === 'object' && error !== null) {
+                    for (const field in error) {
+                        if (Array.isArray(error[field])) {
+                            errorMessage += `${field}: ${error[field].join(', ')}\n`;
+                        }
+                    }
+                } else {
+                    errorMessage += 'Error desconocido.';
+                }
+                alert(errorMessage);
+            }
+        };
+
+        // LÓGICA DE AUTOCOMPLETADO DE PRODUCTOS
         productSearchInput.addEventListener('input', (e) => {
             const query = e.target.value;
             if (query.length < 2) {
                 suggestionsContainer.classList.add('hidden');
                 return;
             }
-
-            // La opción 'credentials' va dentro de un objeto {} como segundo argumento de fetch
-            fetch(`/inventario/api/productos/autocomplete/?search=${query}`, {
-                credentials: 'include'
-            })
+            fetch(`/inventario/api/productos/autocomplete/?search=${query}`, { credentials: 'include' })
                 .then(response => {
-                    // Si la respuesta no es 'ok', lanza un error con más detalles
-                    if (!response.ok) {
-                        throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
-                    }
+                    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
@@ -163,184 +222,209 @@
                         suggestionsContainer.classList.add('hidden');
                     }
                 })
-                // El .catch ahora mostrará un error más descriptivo
                 .catch(error => {
                     console.error('Error en autocomplete:', error);
                     suggestionsContainer.classList.add('hidden');
                 });
         });
-        // --- LÓGICA DE LA TABLA DINÁMICA ---
+
+        // AÑADIR PRODUCTO (se llama desde el autocompletado)
         const handleSuggestionClick = (e) => {
+            if (!compraId) {
+                alert('Por favor, primero completa la información de la factura (Proveedor, Sucursal y N° de Factura).');
+                return;
+            }
             const productData = JSON.parse(e.currentTarget.dataset.product);
-            const defaultUnit = productData.unidades_jerarquia.length > 0 ? productData.unidades_jerarquia[0] : { id: productData.unidad_venta, factor_conversion_a_base: 1, nombre: 'Unidad' };
-
-            lineItems.push({
-                producto_id: productData.id,
+            const newItem = {
+                producto: productData.id,
                 producto_nombre: `${productData.nombre} ${productData.concentracion || ''}`,
-                lote: '', fecha_vencimiento: '', cantidad_ingresada: '', precio_unitario_ingresado: '',
-                unidades_disponibles: productData.unidades_jerarquia,
-                unidad_seleccionada_id: defaultUnit.id,
-            });
-
+                unidades_disponibles: productData.unidades_jerarquia || [],
+                lote: '',
+                fecha_vencimiento: '',
+                cantidad_recibida: '', // <-- Solución 1: Cantidad inicial vacía
+                precio_unitario_compra: '',
+            };
+            lineItems.push(newItem);
             productSearchInput.value = '';
             suggestionsContainer.classList.add('hidden');
-            renderTableAndTotals();
-
-            setTimeout(() => {
-                const lastRow = purchaseDetailsBody.querySelector('tr:last-child');
-                if (lastRow) { lastRow.querySelector('input[name="lote"]').focus(); }
-            }, 100);
-            /* llamar la nueva funcion*/
+            renderTableRows();
         };
 
-        const renderTableRows = () => {
+        // GUARDAR O ACTUALIZAR UNA LÍNEA DE DETALLE (autoguardado)
+        const guardarDetalle = async (itemIndex) => {
+            const item = lineItems[itemIndex];
+            if (!item || !item.lote || !item.fecha_vencimiento || !(parseFloat(item.cantidad_recibida) > 0) || !(parseFloat(item.precio_unitario_compra) > 0)) {
+                return;
+            }
+
+            const esNuevo = !item.id;
+            const url = esNuevo ? `/compras/api/detalles-compra/` : `/compras/api/detalles-compra/${item.id}/`;
+            const method = esNuevo ? 'POST' : 'PATCH';
+
+            // El 'name' del <select> es 'unidad_seleccionada_id', pero el modelo espera 'unidad_medida'.
+            // Creamos un objeto de datos limpio para enviar.
+            const data = {
+                producto: item.producto,
+                lote: item.lote,
+                fecha_vencimiento: item.fecha_vencimiento,
+                cantidad_recibida: item.cantidad_recibida,
+                precio_unitario_compra: item.precio_unitario_compra,
+                presentacion: item.unidad_seleccionada_id, // <-- La clave debe ser 'presentacion'
+            };
+
+            if (esNuevo) {
+                data.compra = compraId;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify(data),
+                });
+                if (!response.ok) throw await response.json();
+
+                const savedDetalle = await response.json();
+
+                // --- CAMBIO CLAVE AQUÍ ---
+                // En lugar de reemplazar todo el objeto, lo fusionamos.
+                // Esto preserva 'unidades_disponibles' y 'producto_nombre' que ya teníamos en el frontend.
+                Object.assign(lineItems[itemIndex], savedDetalle);
+
+                console.log(`Detalle ${esNuevo ? 'creado' : 'actualizado'} con ID: ${lineItems[itemIndex].id}`);
+                renderTableRows();
+            } catch (error) {
+                console.error(`Error guardando detalle:`, error);
+            }
+        };
+        // ELIMINAR UNA LÍNEA DE DETALLE
+        const eliminarDetalle = async (itemIndex) => {
+            const item = lineItems[itemIndex];
+            if (item && item.id) {
+                try {
+                    const response = await fetch(`/compras/api/detalles-compra/${item.id}/`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRFToken': csrftoken },
+                    });
+                    if (!response.ok) throw new Error('Falló el borrado en el servidor');
+                } catch (error) {
+                    alert('No se pudo eliminar el item de la base de datos.');
+                    return;
+                }
+            }
+            lineItems.splice(itemIndex, 1);
+            renderTableRows();
+        };
+
+        // PROCESAR LA COMPRA (botón final)
+        async function procesarCompra() {
+            if (!compraId) {
+                alert('No hay una compra activa para procesar.');
+                return;
+            }
+
+            processButton.disabled = true;
+            processButton.textContent = 'Procesando...';
+
+            try {
+                const response = await fetch(`/compras/api/compras/${compraId}/procesar/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken },
+                });
+                if (!response.ok) throw await response.json();
+
+                const result = await response.json();
+                alert(result.status || '¡Compra procesada con éxito!');
+                window.location.href = "{% url 'compras:home' %}";
+            } catch (error) {
+                alert('Error: ' + (error.error || 'No se pudo procesar la compra.'));
+                processButton.disabled = false;
+                processButton.textContent = 'Procesar Compra';
+            }
+        }
+
+        // RENDERIZAR LAS FILAS DE LA TABLA
+        function renderTableRows() {
             purchaseDetailsBody.innerHTML = '';
             lineItems.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.dataset.index = index;
-                const cantidad = parseFloat(item.cantidad_ingresada) || 0;
-                const precio = parseFloat(item.precio_unitario_ingresado) || 0;
-                const subtotal = (cantidad * precio).toFixed(2);
+                const guardadoIndicator = item.id ? 'border-l-4 border-emerald-500' : 'border-l-4 border-amber-500';
+                row.className = `transition-all duration-300 ${guardadoIndicator}`;
+                const subtotal = (parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0);
+
                 let unitOptionsHTML = '';
                 if (item.unidades_disponibles && item.unidades_disponibles.length > 0) {
                     item.unidades_disponibles.forEach(unit => {
-                        const selected = unit.id == item.unidad_seleccionada_id ? 'selected' : '';
-                        unitOptionsHTML += `<option value="${unit.id}" data-factor="${unit.factor_conversion_a_base}" ${selected}>${unit.nombre}</option>`;
+                        const isSelected = item.unidad_seleccionada_id ? unit.id == item.unidad_seleccionada_id : unit.nombre.toLowerCase().includes('caja');
+                        const selectedAttr = isSelected ? 'selected' : '';
+                        unitOptionsHTML += `<option value="${unit.id}" ${selectedAttr}>${unit.nombre}</option>`;
                     });
+                } else {
+                    unitOptionsHTML = '<option value="">N/A</option>';
                 }
-                row.innerHTML = `<td class="p-2 align-middle"><p class="text-white font-medium text-sm">${item.producto_nombre}</p></td><td class="p-2 align-middle"><select class="form-select py-1 data-field" name="unidad_seleccionada_id">${unitOptionsHTML}</select></td><td class="p-2 align-middle"><input type="text" class="form-input py-1 data-field" name="lote" value="${item.lote}"></td><td class="p-2 align-middle"><input type="date" class="form-input py-1 data-field" name="fecha_vencimiento" value="${item.fecha_vencimiento}"></td><td class="p-2 align-middle"><input type="number" class="form-input py-1 text-right data-field" name="cantidad_ingresada" value="${item.cantidad_ingresada}" min="1" placeholder="0"></td><td class="p-2 align-middle"><input type="number" class="form-input py-1 text-right data-field" name="precio_unitario_ingresado" value="${item.precio_unitario_ingresado}" step="0.01" min="0" placeholder="0.00"></td><td class="p-2 align-middle text-right font-mono text-white subtotal-cell">S/ ${subtotal}</td><td class="p-2 align-middle text-center"><button type="button" class="text-rose-400 hover:text-rose-300 delete-row-btn" title="Eliminar Fila"><svg class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></button></td>`;
+
+                row.innerHTML = `
+                    <td class="p-2 align-middle"><p class="text-white font-medium text-sm">${item.producto_nombre}</p></td>
+                    <td class="p-2 align-middle"><select name="unidad_seleccionada_id" class="form-select py-1 data-field">${unitOptionsHTML}</select></td>
+                    <td class="p-2 align-middle"><input type="text" name="lote" class="form-input py-1 data-field" value="${item.lote || ''}" placeholder="Lote del producto"></td>
+                    <td class="p-2 align-middle"><input type="date" name="fecha_vencimiento" class="form-input py-1 data-field" value="${item.fecha_vencimiento || ''}"></td>
+                    <td class="p-2 align-middle"><input type="number" name="cantidad_recibida" class="form-input py-1 text-right data-field" value="${item.cantidad_recibida || ''}" min="0" placeholder="0"></td>
+                    <td class="p-2 align-middle"><input type="number" name="precio_unitario_compra" class="form-input py-1 text-right data-field" value="${item.precio_unitario_compra || ''}" step="0.01" min="0" placeholder="0.00"></td>
+                    <td class="p-2 align-middle text-right font-mono text-white subtotal-cell">S/ ${subtotal.toFixed(2)}</td>
+                    <td class="p-2 align-middle text-center"><button type="button" class="text-rose-400 hover:text-rose-300 delete-row-btn" title="Eliminar Fila">❌</button></td>
+                `;
                 purchaseDetailsBody.appendChild(row);
             });
-            addEventListenersToRows();
-            updateTotals();
-        };
 
-        const updateTotals = () => {
-            const subtotal = lineItems.reduce((acc, item) => acc + ((parseFloat(item.cantidad_ingresada) || 0) * (parseFloat(item.precio_unitario_ingresado) || 0)), 0);
+            // Solución 2: Lógica de eventos mejorada para cálculo en vivo
+            purchaseDetailsBody.querySelectorAll('.data-field').forEach(input => {
+                input.addEventListener('input', e => {
+                    const row = e.target.closest('tr');
+                    const index = row.dataset.index;
+                    lineItems[index][e.target.name] = e.target.value;
+
+                    const cantidad = parseFloat(lineItems[index].cantidad_recibida) || 0;
+                    const precio = parseFloat(lineItems[index].precio_unitario_compra) || 0;
+                    const subtotalCell = row.querySelector('.subtotal-cell');
+                    subtotalCell.textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
+
+                    updateTotalsUI();
+                });
+
+                input.addEventListener('blur', e => {
+                    const index = e.target.closest('tr').dataset.index;
+                    guardarDetalle(index);
+                });
+            });
+
+            purchaseDetailsBody.querySelectorAll('.delete-row-btn').forEach(button => {
+                button.addEventListener('click', e => {
+                    if (confirm('¿Estás seguro de que quieres eliminar esta fila?')) {
+                        eliminarDetalle(e.target.closest('tr').dataset.index);
+                    }
+                });
+            });
+
+            updateTotalsUI();
+        }
+
+        // ACTUALIZAR TOTALES GENERALES
+        function updateTotalsUI() {
+            const subtotal = lineItems.reduce((acc, item) => acc + ((parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0)), 0);
             const impuestos = subtotal * 0.18;
             const total = subtotal + impuestos;
             subtotalDisplay.textContent = `S/ ${subtotal.toFixed(2)}`;
             impuestosDisplay.textContent = `S/ ${impuestos.toFixed(2)}`;
             totalDisplay.textContent = `S/ ${total.toFixed(2)}`;
-        };
+        }
 
-        const renderTableAndTotals = () => { renderTableRows(); };
-
-        const updateLineItem = (index, field, value) => {
-            const item = lineItems[index];
-            if (!item) return;
-            item[field] = value;
-            const row = purchaseDetailsBody.querySelector(`tr[data-index="${index}"]`);
-            if (row) {
-                const subtotalCell = row.querySelector('.subtotal-cell');
-                const cantidad = parseFloat(item.cantidad_ingresada) || 0;
-                const precio = parseFloat(item.precio_unitario_ingresado) || 0;
-                subtotalCell.textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
+        // OCULTAR SUGERENCIAS AL HACER CLIC FUERA
+        document.addEventListener('click', (e) => {
+            if (!productSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.classList.add('hidden');
             }
-            updateTotals();
-        };
-
-        const deleteLineItem = (index) => {
-            lineItems.splice(index, 1);
-            renderTableAndTotals();
-        };
-
-        const addEventListenersToRows = () => {
-            purchaseDetailsBody.querySelectorAll('.data-field').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    updateLineItem(e.target.closest('tr').dataset.index, e.target.name, e.target.value);
-                });
-            });
-            purchaseDetailsBody.querySelectorAll('.delete-row-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    deleteLineItem(e.target.closest('tr').dataset.index);
-                });
-            });
-        };
-
-        const savePurchase = () => {
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            if (!csrftoken) { alert('Error de seguridad: No se encontró el token CSRF.'); return; }
-
-            if (!proveedorSelect.value) { alert('Por favor, seleccione un proveedor.'); return; }
-            if (!sucursalSelect.value) { alert('Por favor, seleccione una sucursal de destino.'); return; }
-            if (lineItems.length === 0) { alert('Debe añadir al menos un producto a la compra.'); return; }
-
-            for (let i = 0; i < lineItems.length; i++) {
-                const item = lineItems[i];
-                if (!item.lote || !item.fecha_vencimiento || !item.cantidad_ingresada || !item.precio_unitario_ingresado) {
-                    alert(`Por favor, complete todos los campos para el producto en la fila #${i + 1} (${item.producto_nombre}).`);
-                    return;
-                }
-            }
-
-            const purchaseData = {
-                proveedor: proveedorSelect.value,
-                sucursal_destino: sucursalSelect.value,
-                numero_factura_proveedor: numeroFacturaInput.value || 'S/N',
-                observaciones: 'Compra registrada desde la interfaz web.',
-                detalles: lineItems.map((item, index) => {
-                    const row = purchaseDetailsBody.querySelector(`tr[data-index="${index}"]`);
-                    const selectUnidad = row.querySelector('select[name="unidad_seleccionada_id"]');
-                    const selectedOption = selectUnidad.options[selectUnidad.selectedIndex];
-                    const factor = parseFloat(selectedOption.dataset.factor);
-                    const cantidadIngresada = parseFloat(item.cantidad_ingresada) || 0;
-                    const precioUnitarioIngresado = parseFloat(item.precio_unitario_ingresado) || 0;
-                    const cantidadBase = cantidadIngresada * factor;
-                    const precioUnitarioBase = factor > 0 ? precioUnitarioIngresado / factor : 0;
-                    return {
-                        producto: item.producto_id,
-                        cantidad_recibida: cantidadBase,
-                        precio_unitario_compra: precioUnitarioBase.toFixed(2),
-                        lote: item.lote,
-                        fecha_vencimiento: item.fecha_vencimiento || null,
-                    };
-                })
-            };
-
-            saveButton.textContent = 'Guardando...';
-            saveButton.disabled = true;
-
-            fetch(`/compras/api/compras/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-                body: JSON.stringify(purchaseData),
-            })
-                .then(response => {
-                    if (response.status === 201) return response.json();
-                    return response.json().then(err => Promise.reject(err));
-                })
-                .then(data => {
-                    alert('¡Compra registrada y stock actualizado con éxito!');
-                    window.location.href = "{% url 'dashboard' %}";
-                })
-                .catch(error => {
-                    console.error('Error al guardar la compra:', error);
-                    let errorMessages = 'Por favor, corrige los siguientes errores:\n\n';
-                    for (const field in error) {
-                        if (field === 'detalles' && Array.isArray(error[field])) {
-                            error[field].forEach((detalleError, index) => {
-                                if (Object.keys(detalleError).length > 0) {
-                                    errorMessages += `Producto en Fila #${index + 1}:\n`;
-                                    for (const detailField in detalleError) {
-                                        if (Array.isArray(detalleError[detailField]) && detalleError[detailField].length > 0) {
-                                            errorMessages += `  - ${detailField}: ${detalleError[detailField].join(', ')}\n`;
-                                        }
-                                    }
-                                }
-                            });
-                        } else {
-                            errorMessages += `- ${field}: ${Array.isArray(error[field]) ? error[field].join(', ') : error[field]}\n`;
-                        }
-                    }
-                    alert(errorMessages);
-                    saveButton.textContent = 'Guardar Compra';
-                    saveButton.disabled = false;
-                });
-        };
-
-        saveButton.addEventListener('click', savePurchase);
-        document.addEventListener('click', (e) => { if (productSearchInput && !productSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) { suggestionsContainer.classList.add('hidden'); } });
+        });
     });
 </script>
 {% endblock %}

@@ -157,17 +157,20 @@ class CompraViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha_recepcion', 'total_compra']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         user = self.request.user
-        if user.is_authenticated and not user.is_superuser and user.rol:
+        if not user.is_authenticated:
+            return Compra.objects.none()
+        if user.is_superuser:
+            return Compra.objects.all().order_by('-fecha_recepcion')
+
+        if hasattr(user, 'rol') and user.rol:
             if user.rol.nombre == 'Administrador':
-                return queryset
-            elif user.rol.nombre == 'Gerente de Sucursal' and user.sucursal:
-                # Gerentes de Sucursal ven compras para su sucursal
-                return queryset.filter(sucursal_destino=user.sucursal)
-            else:
-                return queryset.none()
-        return queryset.none()
+                return Compra.objects.all().order_by('-fecha_recepcion')
+            
+            if user.rol.nombre == 'Gerente de Sucursal' and hasattr(user, 'sucursal') and user.sucursal:
+                return Compra.objects.filter(sucursal_destino=user.sucursal).order_by('-fecha_recepcion')
+
+        return Compra.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
@@ -201,15 +204,25 @@ class DetalleCompraViewSet(viewsets.ModelViewSet):
     ordering_fields = ['cantidad_recibida', 'fecha_vencimiento']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         user = self.request.user
-        if user.is_authenticated and not user.is_superuser and user.rol:
+
+        # Si el usuario no está autenticado, no devuelve nada.
+        if not user.is_authenticated:
+            return DetalleCompra.objects.none()
+
+        # Si es superusuario, debe ver TODO, sin filtros.
+        if user.is_superuser:
+            return DetalleCompra.objects.all().order_by('compra', 'producto__nombre', 'lote')
+
+        # Si es un usuario normal, aplicamos la lógica de roles.
+        if hasattr(user, 'rol') and user.rol:
             if user.rol.nombre == 'Administrador':
-                return queryset
-            elif user.rol.nombre == 'Gerente de Sucursal' and user.sucursal:
-                # Gerentes ven detalles de compras para su sucursal
-                return queryset.filter(compra__sucursal_destino=user.sucursal)
-            else:
-                return queryset.none()
-        return queryset.none()
+                return DetalleCompra.objects.all().order_by('compra', 'producto__nombre', 'lote')
+            
+            if user.rol.nombre == 'Gerente de Sucursal' and hasattr(user, 'sucursal') and user.sucursal:
+                # Gerentes solo ven detalles de compras para SU sucursal.
+                return DetalleCompra.objects.filter(compra__sucursal_destino=user.sucursal).order_by('compra', 'producto__nombre', 'lote')
+
+        # Si no cumple ninguna condición, no ve nada.
+        return DetalleCompra.objects.none()
 

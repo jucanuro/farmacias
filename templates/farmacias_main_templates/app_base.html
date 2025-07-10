@@ -106,6 +106,9 @@
                 icon: '🛒',
                 title: 'Compras',
                 children: [
+                    // --- LÍNEA AÑADIDA ---
+                    { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras' },
+
                     { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra' },
                     { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores' },
                 ]

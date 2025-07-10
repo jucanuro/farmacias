@@ -13,55 +13,6 @@ from .models import (
 
 
 # --- Serializador para DetalleCompra (para poder escribirlo anidado) ---
-class DetalleCompraWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DetalleCompra
-        fields = [
-            'producto', 
-            'cantidad_recibida', 
-            'precio_unitario_compra', 
-            'lote', 
-            'fecha_vencimiento'
-        ]
-
-# --- Serializador Principal para Compra (Creación y Lectura) ---
-class CompraSerializer(serializers.ModelSerializer):
-    detalles = DetalleCompraWriteSerializer(many=True, write_only=True)
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    sucursal_destino_nombre = serializers.CharField(source='sucursal_destino.nombre', read_only=True)
-    registrado_por_username = serializers.CharField(source='registrado_por.username', read_only=True)
-
-    class Meta:
-        model = Compra
-        fields = [
-            'id', 'proveedor', 'sucursal_destino', 'numero_factura_proveedor', 
-            'observaciones', 'estado', 'detalles', 
-            'proveedor_nombre', 'sucursal_destino_nombre', 
-            'registrado_por', # <-- Añadimos 'registrado_por' para que esté en los campos de lectura
-            'registrado_por_username', 
-            'fecha_recepcion', 'subtotal', 'impuestos', 'total_compra'
-        ]
-        # --- CORRECCIÓN CLAVE AQUÍ ---
-        # Le decimos a DRF que 'registrado_por' no debe venir del cliente,
-        # sino que se asignará en el servidor.
-        read_only_fields = ['registrado_por']
-    
-    def create(self, validated_data):
-        detalles_data = validated_data.pop('detalles')
-        usuario = self.context['request'].user
-
-        with transaction.atomic():
-            # Creamos la compra. 'registrado_por' ya no viene en validated_data.
-            compra = Compra.objects.create(registrado_por=usuario, estado='PROCESADA', **validated_data)
-
-            for detalle_data in detalles_data:
-                detalle = DetalleCompra.objects.create(compra=compra, **detalle_data)
-                detalle.actualizar_stock_por_compra(usuario_accion=usuario)
-            
-            compra.calcular_totales()
-        
-        return compra
-# --- Serializador Estándar para DetalleCompra (AÑADIDO) ---
 class DetalleCompraSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     
@@ -69,9 +20,56 @@ class DetalleCompraSerializer(serializers.ModelSerializer):
         model = DetalleCompra
         fields = [
             'id', 'compra', 'producto', 'producto_nombre', 'cantidad_recibida',
-            'precio_unitario_compra', 'lote', 'fecha_vencimiento', 'subtotal_linea'
+            'precio_unitario_compra', 'lote', 'fecha_vencimiento', 'subtotal_linea','presentacion',
         ]
 
+
+class DetalleCompraWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetalleCompra
+        fields = [
+            'compra',
+            'producto', 
+            'cantidad_recibida', 
+            'precio_unitario_compra', 
+            'lote', 
+            'fecha_vencimiento',
+            'presentacion'
+        ]
+
+# --- Serializador Principal para Compra (Creación y Lectura) ---
+class CompraSerializer(serializers.ModelSerializer):
+    # En esta línea, cambiamos 'write_only=True' por dos nuevos parámetros
+    detalles = DetalleCompraSerializer(many=True, read_only=True)
+    
+    # ... el resto del serializer se queda igual ...
+    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
+    sucursal_destino_nombre = serializers.CharField(source='sucursal_destino.nombre', read_only=True)
+    registrado_por_username = serializers.CharField(source='registrado_por.username', read_only=True)
+
+    class Meta:
+        model = Compra
+        fields = '__all__'
+        read_only_fields = ['registrado_por', 'subtotal', 'impuestos', 'total_compra', 'fecha_recepcion']
+    
+    def create(self, validated_data):
+        """
+        Versión corregida y simplificada.
+        'registrado_por' ya viene en validated_data gracias al ViewSet.
+        """
+        detalles_data = validated_data.pop('detalles', [])
+
+        with transaction.atomic():
+            # Simplemente creamos la compra con los datos validados.
+            # El estado 'PENDIENTE' puede ser un valor por defecto en el modelo.
+            compra = Compra.objects.create(estado='PENDIENTE', **validated_data)
+
+            if detalles_data:
+                for detalle_data in detalles_data:
+                    DetalleCompra.objects.create(compra=compra, **detalle_data)
+                compra.calcular_totales()
+        
+        return compra
 
 # --- Serializadores Adicionales (Configurados como solo lectura para simplificar) ---
 

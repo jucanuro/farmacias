@@ -57,9 +57,12 @@
                 icon: '🛒',
                 category: 'Compras',
                 title: 'Módulo de Compras',
-                desc: 'Registra facturas y gestiona proveedores.',
+                desc: 'Registra facturas, visualiza el historial y gestiona proveedores.',
                 glow: '#0ea5e9',
                 children: [
+                    // --- CÓDIGO AÑADIDO ---
+                    { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras', desc: 'Visualiza y busca todas las compras registradas.', category: 'Compras' },
+
                     { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra', desc: 'Ingresa nuevas facturas de compra.', category: 'Compras' },
                     { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores', desc: 'Administra tus proveedores.', category: 'Compras' },
                 ]
