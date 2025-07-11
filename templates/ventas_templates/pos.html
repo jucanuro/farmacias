@@ -3,6 +3,22 @@
 {% block title %}Punto de Venta (POS){% endblock %}
 
 {% block app_content %}
+<style>
+    .comprobante-btn {
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        background-color: #334155;
+        color: #94a3b8;
+        transition: all 0.2s;
+    }
+
+    .comprobante-btn.selected {
+        background-color: #10b981;
+        color: white;
+    }
+</style>
 <div class="flex flex-col h-full">
     <header class="mb-4">
         <div class="relative">
@@ -16,32 +32,166 @@
         </div>
     </header>
 
-    <div class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+    <div class="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden">
 
         <div class="lg:col-span-2 bg-slate-900/50 rounded-2xl p-4 overflow-y-auto">
-            <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div id="product-grid" class="grid grid-cols-1 gap-2">
                 <p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe en la barra para
                     buscar productos...</p>
             </div>
         </div>
 
-        <div id="sale-cart" class="bg-slate-900/50 rounded-2xl p-6 flex flex-col">
-            <h2 class="text-lg font-bold text-white mb-4">Detalle de Venta</h2>
-            <div id="cart-items" class="flex-grow space-y-3 overflow-y-auto">
+        <div id="sale-cart" class="lg:col-span-3 bg-slate-900/50 rounded-2xl p-6 flex flex-col">
+            <div class="flex-shrink-0">
+                <div class="relative">
+                    <label for="customer-search-input" class="form-label text-xs">Buscar Cliente
+                        (DNI/RUC/Nombre):</label>
+                    <input type="text" id="customer-search-input" class="form-input !py-2 mt-1"
+                        placeholder="Escribe para buscar..." autocomplete="off">
+                    <div id="customer-suggestions"
+                        class="absolute z-20 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-lg hidden">
+                    </div>
+                </div>
+                <div id="customer-display" class="mt-2 hidden">
+                    <p class="text-sm text-slate-400">Cliente:</p>
+                    <div class="flex items-center justify-between bg-slate-800 p-2 rounded-md">
+                        <span id="customer-name" class="font-semibold text-white"></span>
+                        <button id="clear-customer-btn"
+                            class="text-xs text-rose-400 hover:text-rose-300">Quitar</button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="form-label text-xs">Tipo de Comprobante:</label>
+                    <div id="comprobante-selector" class="flex items-center gap-2 mt-1">
+                        <button data-tipo="TICKET" class="comprobante-btn selected">Ticket</button>
+                        <button data-tipo="BOLETA" class="comprobante-btn">Boleta</button>
+                        <button data-tipo="FACTURA" class="comprobante-btn">Factura</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cart-items" class="flex-grow space-y-3 overflow-y-auto my-4 border-y border-slate-700 py-2">
                 <p class="text-center text-slate-500 pt-16">Selecciona productos para añadirlos a la venta.</p>
             </div>
-            <div class="pt-4 border-t border-slate-700">
-                <div class="flex justify-between font-bold text-xl text-white">
-                    <span>TOTAL:</span>
-                    <span id="cart-total">S/ 0.00</span>
+
+            <div class="flex-shrink-0">
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between text-slate-300"><span>Subtotal:</span><span id="cart-subtotal">S/
+                            0.00</span></div>
+                    <div class="flex justify-between text-slate-300"><span>IGV (18%):</span><span id="cart-taxes">S/
+                            0.00</span></div>
+                    <div class="flex justify-between font-bold text-xl text-white pt-2 border-t border-slate-800">
+                        <span>TOTAL:</span><span id="cart-total">S/ 0.00</span>
+                    </div>
                 </div>
-                <button
-                    class="w-full mt-4 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors">
-                    PROCEDER AL PAGO
-                </button>
+                <button id="proceed-to-payment-btn"
+                    class="w-full mt-4 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors">PROCEDER
+                    AL PAGO</button>
             </div>
         </div>
+    </div>
+</div>
 
+<div id="new-customer-modal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-lg">
+        <form id="new-customer-form">
+            {% csrf_token %}
+            <h3 class="text-xl font-bold text-white mb-4">Registrar Nuevo Cliente</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="modal-tipo-documento" class="form-label text-xs">Tipo de Documento</label>
+                    <input type="text" id="modal-tipo-documento-display" class="form-input" readonly>
+                    <input type="hidden" id="modal-tipo-documento">
+                </div>
+                <div>
+                    <label for="modal-numero-documento" class="form-label text-xs">Número de Documento</label>
+                    <input type="text" id="modal-numero-documento" class="form-input">
+                </div>
+                <div>
+                    <label for="modal-nombres" class="form-label text-xs">Nombres / Razón Social</label>
+                    <input type="text" id="modal-nombres" class="form-input" required>
+                </div>
+                <div>
+                    <label for="modal-apellidos" class="form-label text-xs">Apellidos (Opcional si es RUC)</label>
+                    <input type="text" id="modal-apellidos" class="form-input">
+                </div>
+                <div>
+                    <label for="modal-direccion" class="form-label text-xs">Dirección</label>
+                    <input type="text" id="modal-direccion" class="form-input">
+                </div>
+                <div>
+                    <label for="modal-telefono" class="form-label text-xs">Teléfono</label>
+                    <input type="tel" id="modal-telefono" class="form-input">
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button type="button" id="modal-cancel-btn"
+                    class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</button>
+                <button type="submit"
+                    class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Guardar
+                    Cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-[60]">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm text-center">
+        <h3 id="alert-title" class="text-xl font-bold text-white mb-2">Título de la Alerta</h3>
+        <p id="alert-message" class="text-slate-300 mb-6">Este es el mensaje de la alerta.</p>
+        <div id="alert-buttons" class="flex justify-center gap-4">
+        </div>
+    </div>
+</div>
+<div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-md">
+        <form id="payment-form">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Procesar Pago</h3>
+                <button type="button" id="payment-modal-close-btn"
+                    class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+
+            <div class="bg-slate-900/50 p-4 rounded-lg text-center mb-6">
+                <p class="text-slate-400 text-sm">TOTAL A PAGAR</p>
+                <p id="payment-total-display" class="text-4xl font-bold text-emerald-400">S/ 0.00</p>
+            </div>
+
+            <div>
+                <p class="form-label text-xs mb-2">Método de Pago:</p>
+                <div id="payment-method-selector" class="grid grid-cols-3 gap-2">
+                    <button type="button" data-method="EFECTIVO" class="payment-method-btn selected">Efectivo</button>
+                    <button type="button" data-method="TARJETA" class="payment-method-btn">Tarjeta</button>
+                    <button type="button" data-method="YAPE" class="payment-method-btn">Yape/Plin</button>
+                </div>
+            </div>
+
+            <div id="payment-details-container" class="mt-4">
+                <div id="efectivo-details">
+                    <label for="monto-recibido" class="form-label text-xs">Monto Recibido (S/):</label>
+                    <input type="number" id="monto-recibido" class="form-input text-center !text-lg mt-1" step="0.10"
+                        min="0">
+                    <div class="mt-2 text-center">
+                        <span class="text-slate-400 text-sm">Vuelto:</span>
+                        <span id="vuelto-display" class="font-bold text-white text-lg ml-2">S/ 0.00</span>
+                    </div>
+                </div>
+                <div id="yape-details" class="hidden text-center">
+                    <p class="text-slate-300 mb-2">Escanee el código QR para pagar</p>
+                    <div id="yape-qr-code"
+                        class="w-48 h-48 bg-white mx-auto rounded-lg p-2 flex items-center justify-center">
+                        <p class="text-sm text-slate-600">QR no disponible</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" id="confirm-payment-btn"
+                    class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-500 transition-colors">
+                    Confirmar Venta
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
@@ -49,71 +199,221 @@
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- Elementos del DOM ---
         const searchInput = document.getElementById('product-search-input');
         const productGrid = document.getElementById('product-grid');
-        const gridPlaceholder = document.getElementById('grid-placeholder');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const comprobanteSelector = document.getElementById('comprobante-selector');
+        const cartSubtotalSpan = document.getElementById('cart-subtotal');
+        const cartTaxesSpan = document.getElementById('cart-taxes');
+        const cartTotalSpan = document.getElementById('cart-total');
+        const customerSearchInput = document.getElementById('customer-search-input');
+        const customerSuggestions = document.getElementById('customer-suggestions');
+        const customerDisplay = document.getElementById('customer-display');
+        const customerNameSpan = document.getElementById('customer-name');
+        const clearCustomerBtn = document.getElementById('clear-customer-btn');
+        const newCustomerModal = document.getElementById('new-customer-modal');
+        const newCustomerForm = document.getElementById('new-customer-form');
+        const cancelModalBtn = document.getElementById('modal-cancel-btn');
+        const modalNumeroDocumentoInput = document.getElementById('modal-numero-documento');
+        // --- NUEVOS ELEMENTOS PARA EL MODAL DE ALERTA ---
+        const alertModal = document.getElementById('alert-modal');
+        const alertTitle = document.getElementById('alert-title');
+        const alertMessage = document.getElementById('alert-message');
+        const alertButtons = document.getElementById('alert-buttons');
 
-        let searchTimeout;
+        // --- Estado de la Venta ---
+        let cart = [], tipoComprobante = 'TICKET', selectedCustomer = null;
+        const TASA_IGV = 0.18;
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        let productSearchTimeout, customerSearchTimeout;
 
-        // --- Función para buscar productos y renderizar las tarjetas ---
-        const buscarProductos = async (query) => {
-            if (query.length < 2) {
-                productGrid.innerHTML = '';
-                gridPlaceholder.textContent = 'Escribe al menos 2 letras para buscar...';
-                productGrid.appendChild(gridPlaceholder);
+        // --- Funciones para Notificaciones Personalizadas ---
+        const showAlert = (message, title = 'Aviso') => {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertButtons.innerHTML = `<button id="alert-ok-btn" class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold">Aceptar</button>`;
+            alertModal.classList.remove('hidden');
+            document.getElementById('alert-ok-btn').focus();
+        };
+
+        const showConfirm = (message, title = 'Confirmación') => {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertButtons.innerHTML = `
+                <button id="confirm-cancel-btn" class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium">Cancelar</button>
+                <button id="confirm-ok-btn" class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold">Sí, Registrar</button>
+            `;
+            alertModal.classList.remove('hidden');
+            return new Promise((resolve) => {
+                document.getElementById('confirm-ok-btn').onclick = () => { alertModal.classList.add('hidden'); resolve(true); };
+                document.getElementById('confirm-cancel-btn').onclick = () => { alertModal.classList.add('hidden'); resolve(false); };
+            });
+        };
+
+        // --- Funciones de Lógica Principal ---
+        const actualizarTotalesFooter = () => {
+            const subtotalVenta = cart.reduce((acc, item) => (acc + (item.quantity * (item.precio_venta || 0)) - (item.monto_descuento_linea || 0)), 0);
+            let impuestos = (tipoComprobante === 'BOLETA' || tipoComprobante === 'FACTURA') ? subtotalVenta * TASA_IGV : 0;
+            const totalFinal = subtotalVenta + impuestos;
+            cartSubtotalSpan.textContent = `S/ ${subtotalVenta.toFixed(2)}`;
+            cartTaxesSpan.textContent = `S/ ${impuestos.toFixed(2)}`;
+            cartTotalSpan.textContent = `S/ ${totalFinal.toFixed(2)}`;
+        };
+
+        const renderCart = () => {
+            const scrollTop = cartItemsContainer.scrollTop;
+            cartItemsContainer.innerHTML = '';
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p class="text-center text-slate-500 pt-16">Selecciona productos...</p>';
+                actualizarTotalesFooter();
                 return;
             }
+            const headerHTML = `<div class="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase pb-2 border-b border-slate-700"><div class="w-6"></div><div class="flex-grow">Producto</div><div class="w-20 text-center">Cant.</div><div class="w-24 text-right">Subtotal</div><div class="w-6"></div></div>`;
+            cartItemsContainer.innerHTML = headerHTML;
+            cart.forEach(item => {
+                const precioUnitario = item.precio_venta || 0;
+                const subtotal = (item.quantity * precioUnitario) - (item.monto_descuento_linea || 0);
+                const cartItemHTML = `<div class="border-b border-slate-800 py-3"><div class="flex items-center gap-3 text-sm"><div class="w-6 flex justify-center flex-shrink-0"><input type="checkbox" class="form-checkbox h-3.5 w-3.5 discount-checkbox" data-item-id="${item.id}" ${item.hasDiscount ? 'checked' : ''} title="Aplicar Descuento"></div><div class="flex-grow min-w-0"><p class="text-white truncate font-semibold" title="${item.nombre}">${item.nombre}</p><p class="text-xs text-slate-400">P. Unit: S/ ${parseFloat(precioUnitario).toFixed(2)}</p></div><div class="w-20 flex-shrink-0"><input type="number" value="${item.quantity}" min="1" class="w-full text-center form-input !py-1 quantity-input" data-item-id="${item.id}"></div><div class="w-24 text-right text-white font-mono flex-shrink-0">S/ ${subtotal.toFixed(2)}</div><div class="w-6 flex justify-center flex-shrink-0"><button class="text-rose-400 hover:text-rose-300 remove-item-btn" data-item-id="${item.id}" title="Quitar producto"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></div><div class="pl-8 pt-2 flex items-center gap-2 ${item.hasDiscount ? '' : 'hidden'}"><label class="text-xs text-slate-400">Dcto:</label><div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">S/</span><input type="number" value="${item.monto_descuento_linea || '0.00'}" min="0" step="0.10" class="form-input !py-0.5 !pl-5 !text-xs w-20 discount-input" data-item-id="${item.id}"></div></div></div>`;
+                cartItemsContainer.innerHTML += cartItemHTML;
+            });
+            actualizarTotalesFooter();
+            cartItemsContainer.scrollTop = scrollTop;
+        };
 
-            gridPlaceholder.textContent = 'Buscando...';
-
+        const addToCart = async (productoId) => {
+            const existingItem = cart.find(item => item.id === productoId);
+            if (existingItem) { existingItem.quantity++; renderCart(); return; }
             try {
-                // Llamamos a la API de productos que ya existe
-                const response = await fetch(`/inventario/api/productos/?search=${query}`);
-                if (!response.ok) throw new Error('Error al buscar productos');
-
-                const data = await response.json();
-                const productos = data.results || data;
-
-                productGrid.innerHTML = ''; // Limpiar resultados anteriores
-
-                if (productos.length === 0) {
-                    gridPlaceholder.textContent = 'No se encontraron productos.';
-                    productGrid.appendChild(gridPlaceholder);
+                const response = await fetch(`/inventario/api/productos/${productoId}/`);
+                if (!response.ok) throw new Error('Producto no encontrado');
+                const productData = await response.json();
+                if (typeof productData.precio_venta === 'undefined' || productData.precio_venta === null) {
+                    showAlert(`El producto "${productData.nombre}" no tiene un precio de venta definido.`, 'Error');
                     return;
                 }
+                cart.push({ ...productData, quantity: 1, hasDiscount: false, monto_descuento_linea: 0 });
+                renderCart();
+            } catch (error) { console.error('Error al añadir producto:', error); showAlert('No se pudo añadir el producto al carrito.', 'Error'); }
+        };
 
+        const buscarProductos = async (query) => {
+            const gridPlaceholder = document.getElementById('grid-placeholder');
+            if (query.length < 2) { productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe al menos 2 letras para buscar...</p>`; return; }
+            productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Buscando...</p>`;
+            try {
+                const response = await fetch(`/inventario/api/productos/?search=${query}`);
+                if (!response.ok) throw new Error('Error al buscar productos');
+                const data = await response.json();
+                const productos = data.results || data;
+                productGrid.innerHTML = '';
+                if (productos.length === 0) { productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">No se encontraron productos.</p>`; return; }
+                const placeholderSvg = `<svg class="w-full h-full text-slate-700" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
                 productos.forEach(producto => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-slate-800 rounded-lg p-3 flex flex-col items-center text-center cursor-pointer hover:bg-slate-700 transition-colors shadow-lg';
-                    card.dataset.productoId = producto.id; // Guardamos el ID para usarlo después
-
-                    // Usamos un placeholder si no hay imagen
-                    const imageUrl = producto.imagen || 'https://via.placeholder.com/150';
-
-                    card.innerHTML = `
-                    <img src="${imageUrl}" alt="${producto.nombre}" class="w-24 h-24 object-cover rounded-md mb-2">
-                    <p class="text-sm font-semibold text-white leading-tight">${producto.nombre}</p>
-                    <p class="text-xs text-slate-400">${producto.laboratorio_nombre || ''}</p>
-                    <p class="text-lg font-bold text-emerald-400 mt-2">S/ ${parseFloat(producto.precio_venta).toFixed(2)}</p>
-                `;
-                    productGrid.appendChild(card);
+                    const row = document.createElement('div');
+                    row.className = 'bg-slate-800 rounded-lg p-3 grid grid-cols-[auto_1fr_auto] items-center gap-4 cursor-pointer hover:bg-slate-700 transition-colors add-to-cart-btn';
+                    row.dataset.productoId = producto.id;
+                    const imageUrl = producto.imagen_producto;
+                    row.innerHTML = `<div class="w-14 h-14 bg-slate-700/50 rounded-md flex items-center justify-center">${imageUrl ? `<img src="${imageUrl}" alt="${producto.nombre}" class="w-full h-full object-cover rounded-md">` : placeholderSvg}</div><div class="min-w-0"><p class="text-base font-semibold text-white truncate" title="${producto.nombre}">${producto.nombre}</p><p class="text-sm text-slate-400 truncate">${producto.laboratorio_nombre || ''}</p></div><div class="text-right"><p class="text-lg font-bold text-emerald-400 whitespace-nowrap">S/ ${parseFloat(producto.precio_venta || 0).toFixed(2)}</p><p class="text-xs text-slate-400">por unidad</p></div>`;
+                    productGrid.appendChild(row);
                 });
+            } catch (error) { console.error('Error de búsqueda:', error); productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Error al cargar productos.</p>`; }
+        };
 
-            } catch (error) {
-                console.error('Error de búsqueda:', error);
-                gridPlaceholder.textContent = 'Error al cargar productos.';
-                productGrid.appendChild(gridPlaceholder);
+        const seleccionarCliente = (cliente) => {
+            selectedCustomer = cliente;
+            customerNameSpan.textContent = `${cliente.nombres} ${cliente.apellidos || ''}`.trim();
+            customerDisplay.classList.remove('hidden');
+            customerSuggestions.classList.add('hidden');
+            customerSearchInput.value = '';
+            if (cliente.tipo_documento === 'RUC') {
+                comprobanteSelector.querySelector(`[data-tipo='FACTURA']`).click();
+            } else {
+                comprobanteSelector.querySelector(`[data-tipo='BOLETA']`).click();
             }
         };
 
-        // --- Event Listener para el input de búsqueda ---
-        searchInput.addEventListener('keyup', (e) => {
-            clearTimeout(searchTimeout);
-            // Espera 300ms después de que el usuario deja de teclear para buscar
-            searchTimeout = setTimeout(() => {
-                buscarProductos(e.target.value.trim());
-            }, 300);
+        const limpiarCliente = () => {
+            selectedCustomer = null;
+            customerSearchInput.value = '';
+            customerDisplay.classList.add('hidden');
+            customerSuggestions.classList.add('hidden');
+            comprobanteSelector.querySelector(`[data-tipo='TICKET']`).click();
+        };
+
+        const buscarCliente = async (query) => {
+            if (query.length < 3) { customerSuggestions.classList.add('hidden'); return; }
+            try {
+                const response = await fetch(`/clientes/api/clientes/?search=${query}`);
+                const data = await response.json();
+                const clientes = data.results || data;
+                customerSuggestions.innerHTML = '';
+                if (clientes.length > 0) {
+                    customerSuggestions.classList.remove('hidden');
+                    clientes.forEach(cliente => {
+                        const suggestionItem = document.createElement('div');
+                        suggestionItem.className = 'p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-800';
+                        suggestionItem.innerHTML = `<p class="font-semibold text-white">${cliente.nombres} ${cliente.apellidos}</p><p class="text-xs text-slate-400">${cliente.tipo_documento}: ${cliente.numero_documento}</p>`;
+                        suggestionItem.addEventListener('click', () => seleccionarCliente(cliente));
+                        customerSuggestions.appendChild(suggestionItem);
+                    });
+                } else {
+                    customerSuggestions.classList.add('hidden');
+                    const userChoice = await showConfirm(`El cliente con documento "${query}" no existe.`, '¿Deseas registrarlo ahora?');
+                    if (userChoice) abrirModalNuevoCliente(query);
+                }
+            } catch (error) { console.error('Error buscando cliente:', error); }
+        };
+
+        const abrirModalNuevoCliente = (numeroDocumento) => {
+            newCustomerForm.reset();
+            modalNumeroDocumentoInput.value = numeroDocumento;
+            modalNumeroDocumentoInput.dispatchEvent(new Event('input'));
+            newCustomerModal.classList.remove('hidden');
+            modalNumeroDocumentoInput.focus();
+        };
+
+        const cerrarModalNuevoCliente = () => newCustomerModal.classList.add('hidden');
+
+        const guardarNuevoCliente = async (e) => {
+            e.preventDefault();
+            const saveButton = e.target.querySelector('button[type="submit"]');
+            saveButton.disabled = true; saveButton.textContent = 'Guardando...';
+            const data = { tipo_documento: document.getElementById('modal-tipo-documento').value, numero_documento: modalNumeroDocumentoInput.value, nombres: document.getElementById('modal-nombres').value, apellidos: document.getElementById('modal-apellidos').value, direccion: document.getElementById('modal-direccion').value, telefono: document.getElementById('modal-telefono').value, };
+            try {
+                const response = await fetch('/clientes/api/clientes/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken }, body: JSON.stringify(data), });
+                if (!response.ok) throw await response.json();
+                const nuevoCliente = await response.json();
+                cerrarModalNuevoCliente();
+                showAlert('Cliente creado con éxito.', '¡Éxito!');
+                seleccionarCliente(nuevoCliente);
+            } catch (error) {
+                let errorMessage = "Por favor, corrige los siguientes errores:\n\n";
+                for (const field in error) errorMessage += `• ${field}: ${Array.isArray(error[field]) ? error[field].join(', ') : error[field]}\n`;
+                showAlert(errorMessage, 'Error al crear el cliente');
+            } finally { saveButton.disabled = false; saveButton.textContent = 'Guardar Cliente'; }
+        };
+
+        // --- Event Listeners ---
+        searchInput.addEventListener('keyup', e => { clearTimeout(productSearchTimeout); productSearchTimeout = setTimeout(() => { buscarProductos(e.target.value.trim()); }, 300); });
+        productGrid.addEventListener('click', e => { const card = e.target.closest('.add-to-cart-btn'); if (card) addToCart(parseInt(card.dataset.productoId)); });
+        customerSearchInput.addEventListener('keyup', e => { clearTimeout(customerSearchTimeout); customerSearchTimeout = setTimeout(() => { buscarCliente(e.target.value.trim()); }, 300); });
+        clearCustomerBtn.addEventListener('click', limpiarCliente);
+        document.addEventListener('click', e => { if (!customerSearchInput.contains(e.target) && !customerSuggestions.contains(e.target)) { customerSuggestions.classList.add('hidden'); } });
+        comprobanteSelector.addEventListener('click', e => { if (e.target.classList.contains('comprobante-btn')) { if (selectedCustomer && e.target.dataset.tipo === 'TICKET') { showAlert('No se puede emitir un Ticket a un cliente identificado.', 'Operación no permitida'); return; } tipoComprobante = e.target.dataset.tipo; comprobanteSelector.querySelectorAll('.comprobante-btn').forEach(btn => btn.classList.remove('selected')); e.target.classList.add('selected'); actualizarTotalesFooter(); } });
+        cartItemsContainer.addEventListener('click', e => { const target = e.target; const itemId = parseInt(target.closest('[data-item-id]')?.dataset.itemId); if (!itemId) return; const item = cart.find(i => i.id === itemId); if (!item) return; if (target.classList.contains('discount-checkbox')) { item.hasDiscount = target.checked; if (!item.hasDiscount) item.monto_descuento_linea = 0; renderCart(); } if (target.closest('.remove-item-btn')) { cart = cart.filter(i => i.id !== itemId); renderCart(); } });
+        cartItemsContainer.addEventListener('input', e => { const itemId = parseInt(e.target.dataset.itemId); const item = cart.find(i => i.id === itemId); if (!item) return; if (e.target.classList.contains('quantity-input')) { item.quantity = parseInt(e.target.value) || 1; } if (e.target.classList.contains('discount-input')) { item.monto_descuento_linea = parseFloat(e.target.value) || 0; } renderCart(); });
+        newCustomerForm.addEventListener('submit', guardarNuevoCliente);
+        cancelModalBtn.addEventListener('click', cerrarModalNuevoCliente);
+        modalNumeroDocumentoInput.addEventListener('input', e => {
+            const numero = e.target.value, tipoDocInput = document.getElementById('modal-tipo-documento'), tipoDocDisplayInput = document.getElementById('modal-tipo-documento-display');
+            if (numero.length === 11) {
+                tipoDocInput.value = 'RUC'; tipoDocDisplayInput.value = 'Registro Único de Contribuyentes';
+            } else { tipoDocInput.value = 'DNI'; tipoDocDisplayInput.value = 'Documento Nacional de Identidad'; }
         });
+        alertModal.addEventListener('click', e => { if (e.target.id === 'alert-modal' || e.target.id === 'alert-ok-btn' || e.target.id === 'confirm-cancel-btn') { alertModal.classList.add('hidden'); } });
+
+        buscarProductos('');
     });
 </script>
 {% endblock %}

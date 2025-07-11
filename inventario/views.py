@@ -212,16 +212,26 @@ def producto_create_view(request):
 
 
 def producto_update_view(request, pk):
+    # Obtenemos el producto que se va a editar
     producto = get_object_or_404(Producto, pk=pk)
+
+    # Si la petición es POST, significa que el usuario ha enviado el formulario
     if request.method == 'POST':
+        # Creamos el formulario con los datos enviados Y con la instancia del producto a editar
         form = ProductoForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
+            # Si los datos son válidos, guardamos y redirigimos
             form.save()
             messages.success(request, f"El producto '{producto.nombre}' ha sido actualizado con éxito.")
             return redirect('inventario:producto_list')
+        # Si el formulario NO es válido, la función continúa y renderiza la plantilla de abajo,
+        # mostrando el formulario con los errores.
     else:
+        # Si la petición es GET (la primera vez que se carga la página),
+        # creamos el formulario con los datos iniciales del producto.
         form = ProductoForm(instance=producto)
-    
+
+    # El contexto se prepara aquí, tanto para el GET inicial como para los POST con errores.
     context = {
         'form': form,
         'producto': producto

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from decimal import Decimal, ROUND_UP
 from .models import (
     CategoriaProducto, Laboratorio, PrincipioActivo,
     FormaFarmaceutica, UnidadPresentacion, Producto, 
@@ -53,11 +54,58 @@ class ProductoAutocompleteSerializer(serializers.ModelSerializer):
 
 # --- OTROS SERIALIZERS (sin cambios) ---
 class ProductoSerializer(serializers.ModelSerializer):
+    """
+    Serializador para el modelo Producto.
+    Calcula y añade una estructura de precios para diferentes unidades de venta.
+    """
+    # Campos de solo lectura para mostrar nombres en lugar de IDs
+    laboratorio_nombre = serializers.CharField(source='laboratorio.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
-    # ... (resto de tu serializer de producto)
+
+    # --- CAMPO CLAVE: Se añade un campo personalizado para los precios ---
+    precios = serializers.SerializerMethodField()
+
     class Meta:
         model = Producto
-        fields = '__all__' # Asumiendo que quieres todos los campos
+        # Asegúrate de incluir todos los campos que la interfaz necesita
+        fields = [
+            'id', 'nombre', 'concentracion', 'laboratorio_nombre', 'categoria_nombre',
+            'imagen_producto',
+            'precio_venta', # Precio base (caja)
+            'unidades_por_caja',
+            'unidades_por_blister',
+            'precios' # Nuestro nuevo campo con todos los precios calculados
+        ]
+
+    def get_precios(self, obj):
+        """
+        Este método se ejecuta para cada producto y calcula los precios.
+        'obj' es la instancia del producto que se está serializando.
+        """
+        # El precio de venta guardado se asume que es el de la caja
+        precio_caja = obj.precio_venta or Decimal('0.0')
+        
+        # 1. Calcular el precio por unidad básica (pastilla, cápsula, etc.)
+        precio_unidad = Decimal('0.0')
+        if obj.unidades_por_caja > 0:
+            # Dividimos el precio de la caja entre las unidades que contiene
+            # y redondeamos hacia arriba al céntimo más cercano (práctica comercial común)
+            precio_unidad = (precio_caja / Decimal(obj.unidades_por_caja)).quantize(
+                Decimal('0.01'), rounding=ROUND_UP
+            )
+        
+        # 2. Calcular el precio por blíster
+        precio_blister = Decimal('0.0')
+        if obj.unidades_por_blister > 0:
+            # Multiplicamos el precio unitario por la cantidad de unidades en un blíster
+            precio_blister = precio_unidad * Decimal(obj.unidades_por_blister)
+
+        # 3. Devolvemos un diccionario limpio para que el frontend lo use
+        return {
+            'caja': float(precio_caja),
+            'blister': float(precio_blister),
+            'unidad': float(precio_unidad)
+        }
 
 class StockProductoSerializer(serializers.ModelSerializer):
     # ... (tu serializer de stock)

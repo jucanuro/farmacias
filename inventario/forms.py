@@ -59,7 +59,11 @@ class PrincipioActivoForm(forms.ModelForm):
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
+        # 'exclude' está bien, le dice a Django que use todos los campos del modelo
+        # excepto los que están en esta lista.
         exclude = ['precio_compra_promedio', 'fecha_registro']
+        
+        # --- WIDGETS CORREGIDOS ---
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-input'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
@@ -69,9 +73,16 @@ class ProductoForm(forms.ModelForm):
             'forma_farmaceutica': forms.Select(attrs={'class': 'form-select'}),
             'laboratorio': forms.Select(attrs={'class': 'form-select'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
-            'presentacion_base': forms.Select(attrs={'class': 'form-select'}),
-            'cantidad_por_presentacion_base': forms.NumberInput(attrs={'class': 'form-input'}),
-            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
+            
+            # Ajustado para coincidir con los nombres de tu modelo más reciente
+            'unidad_compra': forms.Select(attrs={'class': 'form-select'}),
+            'unidad_venta': forms.Select(attrs={'class': 'form-select'}),
+
+            # --- CAMPOS NUEVOS CON SUS WIDGETS ASIGNADOS ---
+            'precio_venta': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
+            'unidades_por_caja': forms.NumberInput(attrs={'class': 'form-input'}),
+            'unidades_por_blister': forms.NumberInput(attrs={'class': 'form-input'}),
+            
             'margen_ganancia_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
             'aplica_receta': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'es_controlado': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),

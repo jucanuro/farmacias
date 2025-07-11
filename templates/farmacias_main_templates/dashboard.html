@@ -4,6 +4,7 @@
 {% block title %}VQL - Panel de Control{% endblock %}
 
 {% block app_content %}
+
 <div id="inicio-content">
     <header id="main-header" class="flex justify-between items-center mb-10">
         <div>
@@ -88,6 +89,15 @@
                 desc: 'Gestiona clientes, registra transacciones y revisa historiales.',
                 glow: '#16a34a', // Un color verde para diferenciarlo
                 children: [
+                    {
+                        id: 'pos',
+                        url: "{% url 'ventas:pos' %}",
+                        icon: '🖥️',
+                        title: 'Punto de Venta (POS)',
+                        desc: 'Inicia el terminal para registrar nuevas ventas.',
+                        category: 'Ventas'
+                    },
+
                     {
                         id: 'clientes',
                         url: "{% url 'clientes:lista' %}",

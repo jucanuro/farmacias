@@ -72,9 +72,20 @@ class Producto(models.Model):
     # Campos de unidades actualizados y que permiten nulos para la migración
     unidad_compra = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_comprados', verbose_name="Unidad de Compra Principal", help_text="La unidad en la que normalmente se compra este producto (ej. Caja).", null=True, blank=True)
     unidad_venta = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_vendidos', verbose_name="Unidad de Venta Mínima", help_text="La unidad mínima en la que se vende el producto (ej. Tableta, Unidad).", null=True, blank=True)
-    
     precio_compra_promedio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio de Compra Promedio", help_text="Costo promedio de la unidad de VENTA MÍNIMA.")
     margen_ganancia_sugerido = models.DecimalField(max_digits=5, decimal_places=2, default=0.20, verbose_name="Margen de Ganancia Sugerido (%)", help_text="Ej: 0.20 para 20% de margen.")
+    precio_venta = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        verbose_name="Precio de Venta (Caja/Presentación Principal)"
+    )
+    unidades_por_caja = models.PositiveIntegerField(
+        default=1, verbose_name="Unidades por Caja",
+        help_text="Total de unidades básicas (pastillas, cápsulas) que contiene la caja."
+    )
+    unidades_por_blister = models.PositiveIntegerField(
+        default=1, verbose_name="Unidades por Blíster",
+        help_text="Número de unidades básicas que contiene un blíster."
+    )
     aplica_receta = models.BooleanField(default=False, verbose_name="Requiere Receta Médica")
     es_controlado = models.BooleanField(default=False, verbose_name="Es Producto Controlado")
     imagen_producto = models.ImageField(upload_to='productos/', blank=True, null=True, verbose_name="Imagen del Producto")

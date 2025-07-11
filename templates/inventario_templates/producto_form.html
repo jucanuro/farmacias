@@ -26,34 +26,43 @@
 <div class="glass-card rounded-2xl p-8 max-w-6xl mx-auto">
     <form method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="bg-rose-500/20 text-rose-300 p-4 rounded-lg mb-6 text-sm">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
         <div class="space-y-8">
             <div>
                 <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Información General</h3>
                 <div class="grid grid-cols-1 md:grid-cols-6 gap-6 pt-4">
                     <div class="col-span-6 md:col-span-4">
-                        <label for="{{ form.nombre.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Nombre del Producto</label>
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del Producto</label>
                         {{ form.nombre }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.nombre.errors }}</div>
                     </div>
                     <div class="col-span-6 md:col-span-2">
-                        <label for="{{ form.codigo_barras.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Código de Barras (EAN)</label>
+                        <label for="{{ form.codigo_barras.id_for_label }}" class="form-label">Código de Barras
+                            (EAN)</label>
                         {{ form.codigo_barras }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.codigo_barras.errors }}</div>
                     </div>
                     <div class="col-span-6">
-                        <label for="{{ form.descripcion.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Descripción Detallada</label>
+                        <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción
+                            Detallada</label>
                         {{ form.descripcion }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.descripcion.errors }}</div>
                     </div>
                     <div class="col-span-6 md:col-span-3">
-                        <label for="{{ form.categoria.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Categoría</label>
+                        <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría</label>
                         {{ form.categoria }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.categoria.errors }}</div>
                     </div>
                     <div class="col-span-6 md:col-span-3">
-                        <label for="{{ form.laboratorio.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Laboratorio</label>
+                        <label for="{{ form.laboratorio.id_for_label }}" class="form-label">Laboratorio</label>
                         {{ form.laboratorio }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.laboratorio.errors }}</div>
                     </div>
                 </div>
             </div>
@@ -61,14 +70,16 @@
                 <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Detalles Farmacéuticos</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div>
-                        <label for="{{ form.principio_activo.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Principio Activo</label>
+                        <label for="{{ form.principio_activo.id_for_label }}" class="form-label">Principio
+                            Activo</label>
                         {{ form.principio_activo }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.principio_activo.errors }}</div>
                     </div>
                     <div>
-                        <label for="{{ form.concentracion.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Concentración (ej. 500mg)</label>
+                        <label for="{{ form.concentracion.id_for_label }}" class="form-label">Concentración (ej.
+                            500mg)</label>
                         {{ form.concentracion }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.concentracion.errors }}</div>
                     </div>
                 </div>
             </div>
@@ -76,64 +87,83 @@
                 <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Unidades y Precios</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     <div>
-                        <label for="{{ form.forma_farmaceutica.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Forma Farmacéutica</label>
+                        <label for="{{ form.precio_venta.id_for_label }}" class="form-label">Precio Venta
+                            (Caja/Principal)</label>
+                        {{ form.precio_venta }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.precio_venta.errors }}</div>
+                    </div>
+                    <div>
+                        <label for="{{ form.unidades_por_caja.id_for_label }}" class="form-label">Unidades por
+                            Caja</label>
+                        {{ form.unidades_por_caja }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.unidades_por_caja.errors }}</div>
+                    </div>
+                    <div>
+                        <label for="{{ form.unidades_por_blister.id_for_label }}" class="form-label">Unidades por
+                            Blíster</label>
+                        {{ form.unidades_por_blister }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.unidades_por_blister.errors }}</div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.forma_farmaceutica.id_for_label }}" class="form-label">Forma
+                            Farmacéutica</label>
                         {{ form.forma_farmaceutica }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.forma_farmaceutica.errors }}</div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.unidad_compra.id_for_label }}" class="form-label">Unidad de Compra</label>
+                        {{ form.unidad_compra }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.unidad_compra.errors }}</div>
                     </div>
                     <div>
-                        <label for="{{ form.presentacion_base.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Presentación Base</label>
-                        {{ form.presentacion_base }}
+                        <label for="{{ form.unidad_venta.id_for_label }}" class="form-label">Unidad de Venta
+                            Mínima</label>
+                        {{ form.unidad_venta }}
+                        <div class="text-rose-400 text-xs mt-1">{{ form.unidad_venta.errors }}</div>
                     </div>
                     <div>
-                        <label for="{{ form.unidad_medida.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Unidad de Medida</label>
-                        {{ form.unidad_medida }}
-                    </div>
-                    <div>
-                        <label for="{{ form.cantidad_por_presentacion_base.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Unidades por Presentación</label>
-                        {{ form.cantidad_por_presentacion_base }}
-                    </div>
-                    <div class="md:col-span-2">
-                        <label for="{{ form.margen_ganancia_sugerido.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Margen de Ganancia Sugerido
+                        <label for="{{ form.margen_ganancia_sugerido.id_for_label }}" class="form-label">Margen Sugerido
                             (%)</label>
                         {{ form.margen_ganancia_sugerido }}
-                    </div>
-                </div>
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Regulaciones y Medios</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <div>
-                        <label for="{{ form.imagen_producto.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Imagen del Producto</label>
-                        {{ form.imagen_producto }}
-                    </div>
-                    <div class="space-y-4 pt-8">
-                        <div class="flex items-center gap-3">
-                            {{ form.aplica_receta }}
-                            <label for="{{ form.aplica_receta.id_for_label }}"
-                                class="text-sm font-medium text-slate-300 cursor-pointer">Requiere Receta Médica</label>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            {{ form.es_controlado }}
-                            <label for="{{ form.es_controlado.id_for_label }}"
-                                class="text-sm font-medium text-slate-300 cursor-pointer">Es Producto Controlado</label>
-                        </div>
+                        <div class="text-rose-400 text-xs mt-1">{{ form.margen_ganancia_sugerido.errors }}</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
-            <a href="{% url 'inventario:producto_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
-                {% if producto %}Guardar Cambios{% else %}Guardar Producto{% endif %}
-            </button>
+        <div>
+            <h3 class="text-xl font-bold text-white mb-4 border-b border-slate-700 pb-2">Regulaciones y Medios</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div>
+                    <label for="{{ form.imagen_producto.id_for_label }}" class="form-label">Imagen del
+                        Producto</label>
+                    {{ form.imagen_producto }}
+                    <div class="text-rose-400 text-xs mt-1">{{ form.imagen_producto.errors }}</div>
+                </div>
+                <div class="space-y-4 pt-8">
+                    <div class="flex items-center gap-3">
+                        {{ form.aplica_receta }}
+                        <label for="{{ form.aplica_receta.id_for_label }}" class="form-label cursor-pointer">Requiere
+                            Receta Médica</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        {{ form.es_controlado }}
+                        <label for="{{ form.es_controlado.id_for_label }}" class="form-label cursor-pointer">Es
+                            Producto Controlado</label>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
+</div>
+<div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+    <a href="{% url 'inventario:producto_list' %}"
+        class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
+    <button type="submit"
+        class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
+        {% if producto %}Guardar Cambios{% else %}Guardar Producto{% endif %}
+    </button>
+</div>
+</form>
 </div>
 {% endblock %}
