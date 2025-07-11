@@ -119,6 +119,7 @@
                 title: 'Ventas',
                 children: [
                     { id: 'pos', url: "{% url 'ventas:pos' %}", icon: '🖥️', title: 'Punto de Venta (POS)' },
+                    { id: 'ventas-list', url: '{% url "ventas:venta_list" %}', icon: '📊', title: 'Historial de Ventas' },
 
                     { id: 'clientes', url: "{% url 'clientes:lista' %}", icon: '👥', title: 'Clientes' },
                     // Aquí podrás añadir 'Nueva Venta', etc. en el futuro

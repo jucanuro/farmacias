@@ -199,7 +199,7 @@
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Elementos del DOM ---
+        // === ELEMENTOS DEL DOM ===
         const searchInput = document.getElementById('product-search-input');
         const productGrid = document.getElementById('product-grid');
         const cartItemsContainer = document.getElementById('cart-items');
@@ -216,22 +216,33 @@
         const newCustomerForm = document.getElementById('new-customer-form');
         const cancelModalBtn = document.getElementById('modal-cancel-btn');
         const modalNumeroDocumentoInput = document.getElementById('modal-numero-documento');
-        // --- NUEVOS ELEMENTOS PARA EL MODAL DE ALERTA ---
         const alertModal = document.getElementById('alert-modal');
         const alertTitle = document.getElementById('alert-title');
         const alertMessage = document.getElementById('alert-message');
         const alertButtons = document.getElementById('alert-buttons');
+        const proceedToPaymentBtn = document.getElementById('proceed-to-payment-btn');
+        const paymentModal = document.getElementById('payment-modal');
+        const paymentForm = document.getElementById('payment-form');
+        const paymentModalCloseBtn = document.getElementById('payment-modal-close-btn');
+        const paymentTotalDisplay = document.getElementById('payment-total-display');
+        const paymentMethodSelector = document.getElementById('payment-method-selector');
+        const efectivoDetails = document.getElementById('efectivo-details');
+        const yapeDetails = document.getElementById('yape-details');
+        const montoRecibidoInput = document.getElementById('monto-recibido');
+        const vueltoDisplay = document.getElementById('vuelto-display');
 
-        // --- Estado de la Venta ---
-        let cart = [], tipoComprobante = 'TICKET', selectedCustomer = null;
+        // === ESTADO DE LA VENTA ===
+        let cart = [], tipoComprobante = 'TICKET', selectedCustomer = null, paymentMethod = 'EFECTIVO';
+        let totalVentaFinal = 0;
         const TASA_IGV = 0.18;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         let productSearchTimeout, customerSearchTimeout;
 
-        // --- Funciones para Notificaciones Personalizadas ---
+        // === FUNCIONES DE LÓGICA ===
+
         const showAlert = (message, title = 'Aviso') => {
             alertTitle.textContent = title;
-            alertMessage.textContent = message;
+            alertMessage.innerHTML = message.replace(/\n/g, '<br>'); // Permite saltos de línea
             alertButtons.innerHTML = `<button id="alert-ok-btn" class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold">Aceptar</button>`;
             alertModal.classList.remove('hidden');
             document.getElementById('alert-ok-btn').focus();
@@ -251,14 +262,14 @@
             });
         };
 
-        // --- Funciones de Lógica Principal ---
         const actualizarTotalesFooter = () => {
-            const subtotalVenta = cart.reduce((acc, item) => (acc + (item.quantity * (item.precio_venta || 0)) - (item.monto_descuento_linea || 0)), 0);
+            const subtotalVenta = cart.reduce((acc, item) => (acc + (item.quantity * (item.precio_unitario || 0)) - (item.monto_descuento_linea || 0)), 0);
             let impuestos = (tipoComprobante === 'BOLETA' || tipoComprobante === 'FACTURA') ? subtotalVenta * TASA_IGV : 0;
             const totalFinal = subtotalVenta + impuestos;
             cartSubtotalSpan.textContent = `S/ ${subtotalVenta.toFixed(2)}`;
             cartTaxesSpan.textContent = `S/ ${impuestos.toFixed(2)}`;
             cartTotalSpan.textContent = `S/ ${totalFinal.toFixed(2)}`;
+            totalVentaFinal = totalFinal;
         };
 
         const renderCart = () => {
@@ -272,9 +283,8 @@
             const headerHTML = `<div class="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase pb-2 border-b border-slate-700"><div class="w-6"></div><div class="flex-grow">Producto</div><div class="w-20 text-center">Cant.</div><div class="w-24 text-right">Subtotal</div><div class="w-6"></div></div>`;
             cartItemsContainer.innerHTML = headerHTML;
             cart.forEach(item => {
-                const precioUnitario = item.precio_venta || 0;
-                const subtotal = (item.quantity * precioUnitario) - (item.monto_descuento_linea || 0);
-                const cartItemHTML = `<div class="border-b border-slate-800 py-3"><div class="flex items-center gap-3 text-sm"><div class="w-6 flex justify-center flex-shrink-0"><input type="checkbox" class="form-checkbox h-3.5 w-3.5 discount-checkbox" data-item-id="${item.id}" ${item.hasDiscount ? 'checked' : ''} title="Aplicar Descuento"></div><div class="flex-grow min-w-0"><p class="text-white truncate font-semibold" title="${item.nombre}">${item.nombre}</p><p class="text-xs text-slate-400">P. Unit: S/ ${parseFloat(precioUnitario).toFixed(2)}</p></div><div class="w-20 flex-shrink-0"><input type="number" value="${item.quantity}" min="1" class="w-full text-center form-input !py-1 quantity-input" data-item-id="${item.id}"></div><div class="w-24 text-right text-white font-mono flex-shrink-0">S/ ${subtotal.toFixed(2)}</div><div class="w-6 flex justify-center flex-shrink-0"><button class="text-rose-400 hover:text-rose-300 remove-item-btn" data-item-id="${item.id}" title="Quitar producto"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></div><div class="pl-8 pt-2 flex items-center gap-2 ${item.hasDiscount ? '' : 'hidden'}"><label class="text-xs text-slate-400">Dcto:</label><div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">S/</span><input type="number" value="${item.monto_descuento_linea || '0.00'}" min="0" step="0.10" class="form-input !py-0.5 !pl-5 !text-xs w-20 discount-input" data-item-id="${item.id}"></div></div></div>`;
+                const subtotal = (item.quantity * item.precio_unitario) - (item.monto_descuento_linea || 0);
+                const cartItemHTML = `<div class="border-b border-slate-800 py-3"><div class="flex items-center gap-3 text-sm"><div class="w-6 flex justify-center flex-shrink-0"><input type="checkbox" class="form-checkbox h-3.5 w-3.5 discount-checkbox" data-item-id="${item.id}" ${item.hasDiscount ? 'checked' : ''} title="Aplicar Descuento"></div><div class="flex-grow min-w-0"><p class="text-white truncate font-semibold" title="${item.nombre}">${item.nombre}</p><p class="text-xs text-slate-400">P. Unit: S/ ${parseFloat(item.precio_unitario).toFixed(2)}</p></div><div class="w-20 flex-shrink-0"><input type="number" value="${item.quantity}" min="1" class="w-full text-center form-input !py-1 quantity-input" data-item-id="${item.id}"></div><div class="w-24 text-right text-white font-mono flex-shrink-0">S/ ${subtotal.toFixed(2)}</div><div class="w-6 flex justify-center flex-shrink-0"><button class="text-rose-400 hover:text-rose-300 remove-item-btn" data-item-id="${item.id}" title="Quitar producto"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></div><div class="pl-8 pt-2 flex items-center gap-2 ${item.hasDiscount ? '' : 'hidden'}"><label class="text-xs text-slate-400">Dcto:</label><div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">S/</span><input type="number" value="${item.monto_descuento_linea || '0.00'}" min="0" step="0.10" class="form-input !py-0.5 !pl-5 !text-xs w-20 discount-input" data-item-id="${item.id}"></div></div></div>`;
                 cartItemsContainer.innerHTML += cartItemHTML;
             });
             actualizarTotalesFooter();
@@ -288,18 +298,19 @@
                 const response = await fetch(`/inventario/api/productos/${productoId}/`);
                 if (!response.ok) throw new Error('Producto no encontrado');
                 const productData = await response.json();
-                if (typeof productData.precio_venta === 'undefined' || productData.precio_venta === null) {
-                    showAlert(`El producto "${productData.nombre}" no tiene un precio de venta definido.`, 'Error');
-                    return;
-                }
-                cart.push({ ...productData, quantity: 1, hasDiscount: false, monto_descuento_linea: 0 });
+                if (typeof productData.precio_venta === 'undefined' || productData.precio_venta === null) { showAlert(`El producto "${productData.nombre}" no tiene un precio de venta definido.`, 'Error'); return; }
+
+                // Añadimos el producto al carrito con el precio unitario
+                cart.push({ ...productData, quantity: 1, precio_unitario: productData.precio_venta, hasDiscount: false, monto_descuento_linea: 0 });
                 renderCart();
             } catch (error) { console.error('Error al añadir producto:', error); showAlert('No se pudo añadir el producto al carrito.', 'Error'); }
         };
 
         const buscarProductos = async (query) => {
-            const gridPlaceholder = document.getElementById('grid-placeholder');
-            if (query.length < 2) { productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe al menos 2 letras para buscar...</p>`; return; }
+            if (query.length < 2) {
+                productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe al menos 2 letras para buscar...</p>`;
+                return;
+            }
             productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Buscando...</p>`;
             try {
                 const response = await fetch(`/inventario/api/productos/?search=${query}`);
@@ -307,7 +318,10 @@
                 const data = await response.json();
                 const productos = data.results || data;
                 productGrid.innerHTML = '';
-                if (productos.length === 0) { productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">No se encontraron productos.</p>`; return; }
+                if (productos.length === 0) {
+                    productGrid.innerHTML = `<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">No se encontraron productos.</p>`;
+                    return;
+                }
                 const placeholderSvg = `<svg class="w-full h-full text-slate-700" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>`;
                 productos.forEach(producto => {
                     const row = document.createElement('div');
@@ -326,11 +340,7 @@
             customerDisplay.classList.remove('hidden');
             customerSuggestions.classList.add('hidden');
             customerSearchInput.value = '';
-            if (cliente.tipo_documento === 'RUC') {
-                comprobanteSelector.querySelector(`[data-tipo='FACTURA']`).click();
-            } else {
-                comprobanteSelector.querySelector(`[data-tipo='BOLETA']`).click();
-            }
+            if (cliente.tipo_documento === 'RUC') { comprobanteSelector.querySelector(`[data-tipo='FACTURA']`).click(); } else { comprobanteSelector.querySelector(`[data-tipo='BOLETA']`).click(); }
         };
 
         const limpiarCliente = () => {
@@ -394,7 +404,54 @@
             } finally { saveButton.disabled = false; saveButton.textContent = 'Guardar Cliente'; }
         };
 
-        // --- Event Listeners ---
+        const abrirModalDePago = () => {
+            if (cart.length === 0) { showAlert('El carrito está vacío.', 'Error'); return; }
+            paymentTotalDisplay.textContent = cartTotalSpan.textContent;
+            montoRecibidoInput.value = totalVentaFinal.toFixed(2);
+            montoRecibidoInput.dispatchEvent(new Event('input')); // Para calcular el vuelto inicial
+            paymentModal.classList.remove('hidden');
+            montoRecibidoInput.focus();
+            montoRecibidoInput.select();
+        };
+
+        const cerrarModalDePago = () => paymentModal.classList.add('hidden');
+
+        const resetearPOS = () => {
+            cart = [];
+            limpiarCliente();
+            renderCart();
+            cerrarModalDePago();
+            searchInput.value = '';
+            buscarProductos('');
+        };
+
+        const finalizarVenta = async (e) => {
+            e.preventDefault();
+            const confirmBtn = document.getElementById('confirm-payment-btn');
+            confirmBtn.disabled = true; confirmBtn.textContent = 'Procesando...';
+            const detalles = cart.map(item => ({ producto: item.id, cantidad: item.quantity, precio_unitario: item.precio_unitario, monto_descuento_linea: item.monto_descuento_linea || 0, unidad_venta: 'UNIDAD' }));
+            const ventaData = { cliente: selectedCustomer ? selectedCustomer.id : null, tipo_comprobante: tipoComprobante, metodo_pago: paymentMethod, detalles: detalles, monto_recibido: montoRecibidoInput.value || null, vuelto: parseFloat(vueltoDisplay.textContent.replace('S/ ', '')) || null, };
+            try {
+                const response = await fetch('/ventas/api/ventas/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken }, body: JSON.stringify(ventaData) });
+                if (!response.ok) throw await response.json();
+                const nuevaVenta = await response.json();
+                if (nuevaVenta.id) {
+                    try {
+                        await fetch(`/ventas/api/ventas/${nuevaVenta.id}/procesar/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
+                    } catch (procError) {
+                        console.error("La venta se creó pero no se pudo procesar el stock:", procError);
+                    }
+                }
+                showAlert(`Venta #${nuevaVenta.id} registrada con éxito.`, '¡Venta Completada!');
+                resetearPOS();
+            } catch (error) {
+                let errorMessage = "No se pudo registrar la venta.\n\n";
+                for (const field in error) errorMessage += `• ${field}: ${Array.isArray(error[field]) ? error[field].join(', ') : error[field]}\n`;
+                showAlert(errorMessage, 'Error de Registro');
+            } finally { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirmar Venta'; }
+        };
+
+        // --- EVENT LISTENERS ---
         searchInput.addEventListener('keyup', e => { clearTimeout(productSearchTimeout); productSearchTimeout = setTimeout(() => { buscarProductos(e.target.value.trim()); }, 300); });
         productGrid.addEventListener('click', e => { const card = e.target.closest('.add-to-cart-btn'); if (card) addToCart(parseInt(card.dataset.productoId)); });
         customerSearchInput.addEventListener('keyup', e => { clearTimeout(customerSearchTimeout); customerSearchTimeout = setTimeout(() => { buscarCliente(e.target.value.trim()); }, 300); });
@@ -405,14 +462,27 @@
         cartItemsContainer.addEventListener('input', e => { const itemId = parseInt(e.target.dataset.itemId); const item = cart.find(i => i.id === itemId); if (!item) return; if (e.target.classList.contains('quantity-input')) { item.quantity = parseInt(e.target.value) || 1; } if (e.target.classList.contains('discount-input')) { item.monto_descuento_linea = parseFloat(e.target.value) || 0; } renderCart(); });
         newCustomerForm.addEventListener('submit', guardarNuevoCliente);
         cancelModalBtn.addEventListener('click', cerrarModalNuevoCliente);
-        modalNumeroDocumentoInput.addEventListener('input', e => {
-            const numero = e.target.value, tipoDocInput = document.getElementById('modal-tipo-documento'), tipoDocDisplayInput = document.getElementById('modal-tipo-documento-display');
-            if (numero.length === 11) {
-                tipoDocInput.value = 'RUC'; tipoDocDisplayInput.value = 'Registro Único de Contribuyentes';
-            } else { tipoDocInput.value = 'DNI'; tipoDocDisplayInput.value = 'Documento Nacional de Identidad'; }
-        });
+        modalNumeroDocumentoInput.addEventListener('input', e => { const numero = e.target.value, tipoDocInput = document.getElementById('modal-tipo-documento'), tipoDocDisplayInput = document.getElementById('modal-tipo-documento-display'); if (numero.length === 11) { tipoDocInput.value = 'RUC'; tipoDocDisplayInput.value = 'Registro Único de Contribuyentes'; } else { tipoDocInput.value = 'DNI'; tipoDocDisplayInput.value = 'Documento Nacional de Identidad'; } });
         alertModal.addEventListener('click', e => { if (e.target.id === 'alert-modal' || e.target.id === 'alert-ok-btn' || e.target.id === 'confirm-cancel-btn') { alertModal.classList.add('hidden'); } });
+        proceedToPaymentBtn.addEventListener('click', abrirModalDePago);
+        paymentModalCloseBtn.addEventListener('click', cerrarModalDePago);
+        paymentForm.addEventListener('submit', finalizarVenta);
+        paymentMethodSelector.addEventListener('click', (e) => {
+            if (e.target.classList.contains('payment-method-btn')) {
+                paymentMethod = e.target.dataset.method;
+                paymentMethodSelector.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('selected'));
+                e.target.classList.add('selected');
+                efectivoDetails.classList.toggle('hidden', paymentMethod !== 'EFECTIVO');
+                yapeDetails.classList.toggle('hidden', paymentMethod !== 'YAPE');
+            }
+        });
+        montoRecibidoInput.addEventListener('input', (e) => {
+            const recibido = parseFloat(e.target.value) || 0;
+            const vuelto = recibido - totalVentaFinal;
+            vueltoDisplay.textContent = `S/ ${(vuelto >= 0 ? vuelto : 0).toFixed(2)}`;
+        });
 
+        // Carga inicial
         buscarProductos('');
     });
 </script>

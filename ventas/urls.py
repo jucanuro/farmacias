@@ -17,6 +17,9 @@ urlpatterns = [
     #path('', views.ventas_home_view, name='home'),
 
     path('pos/', views.pos_view, name='pos'),
+    
+    path('listado/', views.venta_list_view, name='venta_list'),
+
 
     path('api/', include(router.urls)),
 ]

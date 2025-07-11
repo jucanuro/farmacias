@@ -7,58 +7,77 @@ from inventario.serializers import ProductoSerializer, StockProductoSerializer #
 
 # Serializador para DetalleVenta
 class DetalleVentaSerializer(serializers.ModelSerializer):
-    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
-    stock_producto_lote = serializers.CharField(source='stock_producto.lote', read_only=True)
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True, default='')
 
     class Meta:
         model = DetalleVenta
         fields = [
             'id', 'venta', 'producto', 'producto_nombre',
-            'stock_producto', 'stock_producto_lote', # Para referenciar el lote específico
+            'stock_producto',
             'cantidad', 'unidad_venta', 'precio_unitario',
-            'descuento_linea', 'subtotal_linea'
+            'monto_descuento_linea', # <-- CORREGIDO de 'descuento_linea'
+            'subtotal_linea'
         ]
         read_only_fields = ['subtotal_linea']
+        # Hacemos que el campo 'venta' no sea requerido al crear un detalle
+        # porque lo asignaremos desde el ViewSet o la lógica de creación anidada.
+        extra_kwargs = {'venta': {'required': False, 'allow_null': True}}
 
 # Serializador para Venta
 class VentaSerializer(serializers.ModelSerializer):
+    # Campos de solo lectura para mostrar nombres en lugar de IDs
     sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
-    cliente_nombre_completo = serializers.CharField(source='cliente.get_full_name', read_only=True)
+    cliente_nombre_completo = serializers.CharField(source='cliente.get_full_name', read_only=True, default='')
     vendedor_username = serializers.CharField(source='vendedor.username', read_only=True)
-    # Anidar los detalles de venta. Se permite escribir los detalles al crear/actualizar una venta.
-    detalles = DetalleVentaSerializer(many=True) # `read_only=False` por defecto, permite la escritura.
+    
+    # Para permitir la creación de la venta con sus detalles en una sola petición
+    detalles = DetalleVentaSerializer(many=True)
 
     class Meta:
         model = Venta
+        # Se incluyen TODOS los campos del modelo Venta, incluyendo los nuevos
         fields = [
             'id', 'sucursal', 'sucursal_nombre',
             'cliente', 'cliente_nombre_completo',
             'vendedor', 'vendedor_username', 'fecha_venta',
-            'tipo_comprobante', 'numero_comprobante', 'metodo_pago',
-            'total_venta', 'subtotal', 'impuestos', 'descuento_total',
-            'estado_facturacion_electronica', 'uuid_comprobante_fe',
-            'detalles' # Incluir los detalles anidados para creación/actualización
+            'tipo_comprobante', 'numero_comprobante', 
+            'subtotal', 'impuestos', 'monto_descuento', # <-- CORREGIDO de 'descuento_total'
+            'total_venta', 
+            'metodo_pago', 'monto_recibido', 'vuelto', # <-- NUEVOS campos de pago
+            'qr_code_data', 'estado', # <-- NUEVOS campos de estado y QR
+            'estado_facturacion_electronica', 'uuid_comprobante_fe', 'observaciones_fe',
+            'detalles' # Detalles para la creación anidada
         ]
         read_only_fields = [
-            'fecha_venta', 'total_venta', 'subtotal', 'impuestos',
-            'descuento_total', 'estado_facturacion_electronica',
-            'uuid_comprobante_fe' # Estos campos se actualizan internamente
+            'fecha_venta', 'vendedor', 'sucursal', 
+            'total_venta', 'subtotal', 'impuestos',
+            'monto_descuento', # <-- CORREGIDO de 'descuento_total'
+            'vuelto',
+            'estado_facturacion_electronica',
+            'uuid_comprobante_fe'
         ]
 
     def create(self, validated_data):
-        # Extraer los detalles de la venta del validated_data
+        # Extraemos los datos de los detalles
         detalles_data = validated_data.pop('detalles')
-        # Crear la instancia de la Venta principal
+        
+        # Creamos la instancia de la Venta principal
         venta = Venta.objects.create(**validated_data)
-        # Crear cada DetalleVenta y asociarlo a la Venta recién creada
+        
+        # Creamos cada DetalleVenta y lo asociamos a la Venta
         for detalle_data in detalles_data:
             DetalleVenta.objects.create(venta=venta, **detalle_data)
-        venta.calcular_totales() # Recalcular los totales de la venta después de crear los detalles
+        
+        # El método save() de DetalleVenta ya llama a calcular_totales(),
+        # por lo que no es estrictamente necesario llamarlo aquí de nuevo, pero no hace daño.
+        venta.calcular_totales()
         return venta
 
     def update(self, instance, validated_data):
-        detalles_data = validated_data.pop('detalles', None) # Se ignora si no es read_only
+        # La lógica de actualización de detalles anidados puede ser compleja.
+        # Por ahora, esta actualización se centrará en los campos de la Venta principal.
+        validated_data.pop('detalles', None)
         instance = super().update(instance, validated_data)
-        instance.calcular_totales() # Recalcular los totales después de actualizar la venta
+        instance.calcular_totales()
         return instance
 
