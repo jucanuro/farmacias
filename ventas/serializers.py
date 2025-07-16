@@ -1,6 +1,6 @@
 # ventas/serializers.py
 from rest_framework import serializers
-from .models import Venta, DetalleVenta
+from .models import Venta, DetalleVenta, SesionCaja
 from core.serializers import SucursalSerializer, UsuarioSerializer # Importamos para anidamiento
 from clientes.serializers import ClienteSerializer # Importamos para anidamiento
 from inventario.serializers import ProductoSerializer, StockProductoSerializer # Importamos para anidamiento
@@ -29,6 +29,8 @@ class VentaSerializer(serializers.ModelSerializer):
     sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
     cliente_nombre_completo = serializers.CharField(source='cliente.get_full_name', read_only=True, default='')
     vendedor_username = serializers.CharField(source='vendedor.username', read_only=True)
+    cliente_telefono = serializers.CharField(source='cliente.telefono', read_only=True, allow_null=True)
+
     
     # Para permitir la creación de la venta con sus detalles en una sola petición
     detalles = DetalleVentaSerializer(many=True)
@@ -46,7 +48,8 @@ class VentaSerializer(serializers.ModelSerializer):
             'metodo_pago', 'monto_recibido', 'vuelto', # <-- NUEVOS campos de pago
             'qr_code_data', 'estado', # <-- NUEVOS campos de estado y QR
             'estado_facturacion_electronica', 'uuid_comprobante_fe', 'observaciones_fe',
-            'detalles' # Detalles para la creación anidada
+            'detalles', # Detalles para la creación anidada
+            'cliente_telefono',
         ]
         read_only_fields = [
             'fecha_venta', 'vendedor', 'sucursal', 
@@ -58,21 +61,29 @@ class VentaSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        # Extraemos los datos de los detalles
         detalles_data = validated_data.pop('detalles')
         
-        # Creamos la instancia de la Venta principal
-        venta = Venta.objects.create(**validated_data)
+        # El vendedor y la sucursal se añaden desde perform_create, así que ya están
+        # en validated_data cuando se llama a este método.
         
-        # Creamos cada DetalleVenta y lo asociamos a la Venta
+        try:
+            venta = Venta.objects.create(**validated_data)
+        except TypeError as e:
+            raise serializers.ValidationError(f"Error al crear la venta, campo inesperado: {e}")
+
+        # Iteramos sobre los detalles, creamos cada uno Y calculamos el total
         for detalle_data in detalles_data:
+            # Creamos el objeto DetalleVenta pero NO esperamos que tenga el subtotal aún.
             DetalleVenta.objects.create(venta=venta, **detalle_data)
         
-        # El método save() de DetalleVenta ya llama a calcular_totales(),
-        # por lo que no es estrictamente necesario llamarlo aquí de nuevo, pero no hace daño.
-        venta.calcular_totales()
+        # Después de que TODOS los detalles han sido creados, llamamos a un método
+        # en el modelo Venta para que calcule y guarde los totales finales.
+        # Este método es la fuente única de verdad para los cálculos.
+        venta.actualizar_totales()
+        
+        # Devuelve la instancia de la venta con los totales ya actualizados y guardados.
         return venta
-
+    
     def update(self, instance, validated_data):
         # La lógica de actualización de detalles anidados puede ser compleja.
         # Por ahora, esta actualización se centrará en los campos de la Venta principal.
@@ -81,3 +92,16 @@ class VentaSerializer(serializers.ModelSerializer):
         instance.calcular_totales()
         return instance
 
+class SesionCajaSerializer(serializers.ModelSerializer):
+    """ Serializador para el modelo SesionCaja. """
+    # Mostramos el nombre del usuario para mayor claridad en la respuesta de la API
+    usuario_username = serializers.CharField(source='usuario.username', read_only=True)
+    sucursal_nombre = serializers.CharField(source='sucursal.nombre', read_only=True)
+
+    class Meta:
+        model = SesionCaja
+        fields = '__all__'
+        read_only_fields = (
+            'usuario', 'sucursal', 'monto_final_sistema', 'diferencia', 
+            'fecha_apertura', 'fecha_cierre', 'estado'
+        )

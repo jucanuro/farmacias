@@ -5,19 +5,18 @@
 {% block app_content %}
 <div class="glass-card rounded-2xl p-6 lg:p-8">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Historial de Ventas</h2>
-        <a href="{% url 'ventas:pos' %}"
+                <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Historial de Ventas</h2>
+                <a href="{% url 'ventas:pos' %}"            
             class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
-            + Nueva Venta (POS)
-        </a>
-    </div>
-
+                        + Nueva Venta (POS)
+                    </a>
+            </div>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <input type="text" id="search-input" class="form-input md:col-span-2"
+                <input type="text" id="search-input" class="form-input md:col-span-2"            
             placeholder="Buscar por cliente, vendedor o N° de comprobante...">
-        <input type="date" id="start-date-input" class="form-input" placeholder="Fecha Desde">
-        <input type="date" id="end-date-input" class="form-input" placeholder="Fecha Hasta">
-    </div>
+                <input type="date" id="start-date-input" class="form-input" placeholder="Fecha Desde">
+                <input type="date" id="end-date-input" class="form-input" placeholder="Fecha Hasta">
+            </div>
 
     <div class="overflow-x-auto">
         <table class="w-full text-sm text-left text-slate-400">
@@ -29,7 +28,7 @@
                     <th scope="col" class="px-6 py-3">Comprobante</th>
                     <th scope="col" class="px-6 py-3">Total</th>
                     <th scope="col" class="px-6 py-3">Estado</th>
-                    <th scope="col" class="px-6 py-3">Acciones</th>
+                    <th scope="col" class="px-6 py-3 text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody id="sales-table-body">
@@ -43,22 +42,147 @@
     <div id="pagination-controls" class="flex justify-between items-center mt-6">
     </div>
 </div>
+
+<div id="sale-detail-modal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
+    <div id="modal-content"
+        class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-2xl transform scale-95 transition-transform duration-300">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">Detalle de Venta</h3>
+            <button id="modal-close-btn" class="text-slate-400 hover:text-white" title="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div id="modal-sale-details" class="space-y-6">
+            <div class="text-center text-slate-400 py-8">Cargando detalle...</div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-4">
+            <button id="modal-print-btn"
+                class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">Imprimir</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // === ELEMENTOS DEL DOM ===
         const tableBody = document.getElementById('sales-table-body');
         const paginationControls = document.getElementById('pagination-controls');
         const searchInput = document.getElementById('search-input');
         const startDateInput = document.getElementById('start-date-input');
         const endDateInput = document.getElementById('end-date-input');
 
+        // Elementos del Modal
+        const saleDetailModal = document.getElementById('sale-detail-modal');
+        const modalContent = document.getElementById('modal-content');
+        const closeModalBtn = document.getElementById('modal-close-btn');
+        const modalSaleDetailsContainer = document.getElementById('modal-sale-details');
+        const modalPrintBtn = document.getElementById('modal-print-btn');
+
         let searchTimeout;
+        let currentSaleId = null;
+
+        // === FUNCIONES ===
+
+        /**
+         * @description Abre el modal y busca los detalles de una venta específica por su ID.
+         * @param {string|number} saleId - El ID de la venta a consultar.
+         */
+        const openDetailModal = async (saleId) => {
+            currentSaleId = saleId;
+            // 1. Mostrar el modal con un estado de carga
+            saleDetailModal.classList.remove('hidden');
+            setTimeout(() => { // Pequeño delay para la animación
+                saleDetailModal.classList.add('opacity-100');
+                modalContent.classList.add('scale-100');
+            }, 10);
+
+            modalSaleDetailsContainer.innerHTML = '<div class="text-center text-slate-400 py-8">Cargando detalle...</div>';
+
+            try {
+                // 2. Hacer fetch a la API para obtener el detalle de la venta
+                const response = await fetch(`/ventas/api/ventas/${saleId}/`);
+                if (!response.ok) throw new Error('No se pudo cargar el detalle de la venta.');
+
+                const venta = await response.json();
+
+                // 3. Construir el HTML con los datos recibidos
+                const detailsHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div><strong class="text-slate-400">ID Venta:</strong> <span class="text-white font-mono">#${venta.id}</span></div>
+                    <div><strong class="text-slate-400">Fecha:</strong> <span class="text-white">${new Date(venta.fecha_venta).toLocaleString()}</span></div>
+                    <div><strong class="text-slate-400">Cliente:</strong> <span class="text-white">${venta.cliente_nombre_completo || 'Público General'}</span></div>
+                    <div><strong class="text-slate-400">Comprobante:</strong> <span class="text-white">${venta.tipo_comprobante} ${venta.serie_comprobante || ''}-${venta.numero_comprobante || ''}</span></div>
+                    <div><strong class="text-slate-400">Vendedor:</strong> <span class="text-white">${venta.vendedor_username || 'No especificado'}</span></div>
+                    <div><strong class="text-slate-400">Método de Pago:</strong> <span class="text-white">${venta.metodo_pago}</span></div>
+                </div>
+                
+                <div class="mt-6">
+                    <p class="text-xs text-slate-300 uppercase font-bold mb-2">Productos</p>
+                    <div class="overflow-x-auto border border-slate-700 rounded-lg">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-900/50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Producto</th>
+                                    <th class="px-4 py-2 text-center">Cant.</th>
+                                    <th class="px-4 py-2 text-right">P. Unitario</th>
+                                    <th class="px-4 py-2 text-right">Descuento</th>
+                                    <th class="px-4 py-2 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700">
+                                ${venta.detalles.map(item => `
+                                    <tr>
+                                        <td class="px-4 py-2 text-white">${item.producto_nombre}</td>
+                                        <td class="px-4 py-2 text-center">${item.cantidad}</td>
+                                        <td class="px-4 py-2 text-right font-mono">S/ ${parseFloat(item.precio_unitario).toFixed(2)}</td>
+                                        <td class="px-4 py-2 text-right font-mono text-rose-400">S/ ${parseFloat(item.monto_descuento_linea).toFixed(2)}</td>
+                                        <td class="px-4 py-2 text-right font-mono text-white font-semibold">S/ ${parseFloat(item.subtotal).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <div class="w-full max-w-xs space-y-2 text-sm">
+                         <div class="flex justify-between"><span class="text-slate-300">Subtotal:</span> <span class="text-white font-mono">S/ ${parseFloat(venta.subtotal_venta).toFixed(2)}</span></div>
+                         <div class="flex justify-between"><span class="text-slate-300">IGV (18%):</span> <span class="text-white font-mono">S/ ${parseFloat(venta.monto_igv).toFixed(2)}</span></div>
+                         <div class="flex justify-between pt-2 border-t border-slate-700 text-base"><strong class="text-white">TOTAL:</strong> <strong class="text-emerald-400 font-mono">S/ ${parseFloat(venta.total_venta).toFixed(2)}</strong></div>
+                    </div>
+                </div>
+            `;
+                modalSaleDetailsContainer.innerHTML = detailsHTML;
+
+            } catch (error) {
+                modalSaleDetailsContainer.innerHTML = `<div class="text-center text-red-400 py-8">${error.message}</div>`;
+            }
+        };
+
+        /**
+         * @description Cierra el modal de detalle de venta y resetea su estado.
+         */
+        const closeDetailModal = () => {
+            modalContent.classList.remove('scale-100');
+            saleDetailModal.classList.remove('opacity-100');
+            setTimeout(() => {
+                saleDetailModal.classList.add('hidden');
+                currentSaleId = null;
+            }, 300); // Coincide con la duración de la transición
+        };
 
         const fetchSales = async (url = '/ventas/api/ventas/?ordering=-fecha_venta') => {
             tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-16 text-slate-500">Cargando ventas...</td></tr>';
-
+            // ... (código de fetchSales sin cambios hasta el row.innerHTML)
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Error al cargar los datos.');
@@ -71,6 +195,7 @@
                     data.results.forEach(venta => {
                         const row = document.createElement('tr');
                         row.className = 'bg-slate-800/50 border-b border-slate-700 hover:bg-slate-800';
+                        // --- MODIFICACIÓN AQUÍ ---
                         row.innerHTML = `
                         <td class="px-6 py-4 font-mono text-xs text-slate-300">#${venta.id}</td>
                         <td class="px-6 py-4">${new Date(venta.fecha_venta).toLocaleString()}</td>
@@ -78,66 +203,96 @@
                         <td class="px-6 py-4">${venta.tipo_comprobante}</td>
                         <td class="px-6 py-4 font-bold text-emerald-400">S/ ${parseFloat(venta.total_venta).toFixed(2)}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${venta.estado === 'COMPLETADA' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">${venta.estado}</span></td>
-                        <td class="px-6 py-4">
-                            <a href="#" class="font-medium text-blue-400 hover:underline">Ver</a>
+                        <td class="px-6 py-4 text-center">
+                            <button data-sale-id="${venta.id}" class="view-sale-btn text-sky-400 hover:text-sky-300 transition-colors" title="Ver Detalle">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
                         </td>
                     `;
                         tableBody.appendChild(row);
                     });
                 }
-
                 renderPagination(data);
-
             } catch (error) {
                 tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-16 text-red-400">${error.message}</td></tr>`;
             }
         };
 
+        // ... (resto de funciones renderPagination y applyFilters sin cambios) ...
         const renderPagination = (data) => {
             paginationControls.innerHTML = '';
-            let buttonsHTML = '';
+            let buttonsHTML = `<div class="text-sm text-slate-500">Mostrando ${data.results.length} de ${data.count} resultados</div><div>`;
             if (data.previous) {
-                buttonsHTML += `<button data-url="${data.previous}" class="pagination-btn px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-600">Anterior</button>`;
+                buttonsHTML += `<button data-url="${data.previous}" class="pagination-btn px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-600 mr-2">Anterior</button>`;
             } else {
-                buttonsHTML += `<span class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-800 rounded-lg cursor-not-allowed">Anterior</span>`;
+                buttonsHTML += `<span class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-800 rounded-lg cursor-not-allowed mr-2">Anterior</span>`;
             }
             if (data.next) {
                 buttonsHTML += `<button data-url="${data.next}" class="pagination-btn px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-600">Siguiente</button>`;
             } else {
                 buttonsHTML += `<span class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-800 rounded-lg cursor-not-allowed">Siguiente</span>`;
             }
+            buttonsHTML += '</div>'
             paginationControls.innerHTML = buttonsHTML;
         };
-
         const applyFilters = () => {
             const searchTerm = searchInput.value.trim();
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
-
             let url = '/ventas/api/ventas/?ordering=-fecha_venta';
             if (searchTerm) url += `&search=${searchTerm}`;
             if (startDate) url += `&fecha_venta__date__gte=${startDate}`;
             if (endDate) url += `&fecha_venta__date__lte=${endDate}`;
-
             fetchSales(url);
         };
 
-        // Event Listeners
+
+        // === EVENT LISTENERS ===
+
+        // Listener para los botones de paginación
         paginationControls.addEventListener('click', e => {
             if (e.target.classList.contains('pagination-btn')) {
                 fetchSales(e.target.dataset.url);
             }
         });
 
-        searchInput.addEventListener('keyup', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(applyFilters, 500);
-        });
+        // Listeners para los filtros
+        searchInput.addEventListener('keyup', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(applyFilters, 500); });
         startDateInput.addEventListener('change', applyFilters);
         endDateInput.addEventListener('change', applyFilters);
 
-        // Carga inicial
+        // Listener para los botones de ver detalle (usando delegación de eventos)
+        tableBody.addEventListener('click', e => {
+            const viewButton = e.target.closest('.view-sale-btn');
+            if (viewButton) {
+                const saleId = viewButton.dataset.saleId;
+                openDetailModal(saleId);
+            }
+        });
+
+        // Listeners para cerrar el modal
+        closeModalBtn.addEventListener('click', closeDetailModal);
+        saleDetailModal.addEventListener('click', e => {
+            // Cierra el modal si se hace clic en el fondo oscuro
+            if (e.target === saleDetailModal) {
+                closeDetailModal();
+            }
+        });
+
+        // Listener para el botón de imprimir
+        modalPrintBtn.addEventListener('click', () => {
+            if (currentSaleId) {
+                // Asume que tienes una URL para generar el comprobante en PDF
+                window.open(`/ventas/comprobante/${currentSaleId}/pdf/`, '_blank');
+            }
+        });
+
+        // === CARGA INICIAL ===
         fetchSales();
+
     });
 </script>
 {% endblock %}
