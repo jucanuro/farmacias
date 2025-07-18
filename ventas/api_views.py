@@ -9,6 +9,10 @@ from .serializers import VentaSerializer, DetalleVentaSerializer,SesionCajaSeria
 from core.permissions import IsAdminOrManager
 from rest_framework.decorators import action
 from django.db import transaction
+from decimal import Decimal
+from django.db.models import Sum
+from django.utils import timezone
+
 
 # --- CLASE DE FILTRO PERSONALIZADA ---
 class VentaFilter(django_filters.FilterSet):
@@ -175,14 +179,33 @@ class SesionCajaViewSet(viewsets.ViewSet):
         if sesion_existente:
             return Response({'error': 'Ya tienes una sesión de caja abierta.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if not request.user.sucursal:
+            return Response(
+                {'error': 'Tu usuario no tiene una sucursal asignada. Contacta a un administrador.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         monto_inicial = request.data.get('monto_inicial')
-        if monto_inicial is None:
+
+        # --- LÍNEA DE DEPURACIÓN ---
+        # Esto imprimirá en tu terminal (donde ejecutas runserver) el valor exacto recibido.
+        print(f"Valor recibido para monto_inicial: '{monto_inicial}' (Tipo: {type(monto_inicial)})")
+
+        # --- VALIDACIÓN MEJORADA ---
+        # Verifica si el valor es nulo o una cadena vacía.
+        if monto_inicial is None or str(monto_inicial).strip() == '':
             return Response({'error': 'El monto inicial es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            monto_inicial_decimal = Decimal(monto_inicial)
+        except Exception as e:
+                # Devolvemos un error más específico para entender la causa
+                return Response({'error': f"El monto '{monto_inicial}' no se pudo convertir a número. Error: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
         sesion = SesionCaja.objects.create(
             usuario=request.user,
-            sucursal=request.user.sucursal,
-            monto_inicial=monto_inicial,
+            sucursal=request.user.sucursal, # Ahora sabemos que este valor existe.
+            monto_inicial=monto_inicial_decimal,
             estado='ABIERTA'
         )
         serializer = SesionCajaSerializer(sesion)
@@ -191,7 +214,8 @@ class SesionCajaViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'])
     def cerrar(self, request):
         """
-        Cierra la sesión de caja activa del usuario.
+        Cierra la sesión de caja activa del usuario, calculando los totales
+        y la diferencia.
         URL: /api/caja/cerrar/
         """
         try:
@@ -199,18 +223,38 @@ class SesionCajaViewSet(viewsets.ViewSet):
         except SesionCaja.DoesNotExist:
             return Response({'error': 'No tienes una sesión de caja abierta para cerrar.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        monto_final_real = request.data.get('monto_final_real')
-        if monto_final_real is None:
+        monto_final_real_str = request.data.get('monto_final_real')
+        if monto_final_real_str is None:
             return Response({'error': 'El monto final real (conteo) es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Aquí iría la lógica para calcular el monto que debería haber según el sistema
-        # Por ahora, simplemente cerramos la caja.
+        try:
+            monto_final_real = Decimal(monto_final_real_str)
+        except:
+            return Response({'error': 'El monto final real debe ser un número válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Calcular el total de ventas en efectivo de ESTA sesión
+        total_ventas_efectivo = Venta.objects.filter(
+            sesion_caja=sesion,
+            metodo_pago='EFECTIVO',
+            estado='COMPLETADA'
+        ).aggregate(
+            total=Sum('total_venta')
+        )['total'] or Decimal('0.0')
+
+        # 2. Calcular el monto que debería haber en caja según el sistema
+        monto_final_sistema = sesion.monto_inicial + total_ventas_efectivo
+        
+        # 3. Calcular la diferencia
+        diferencia = monto_final_real - monto_final_sistema
+        
+        # 4. Actualizar la sesión con todos los datos calculados
+        sesion.monto_final_sistema = monto_final_sistema
         sesion.monto_final_real = monto_final_real
+        sesion.diferencia = diferencia
         sesion.estado = 'CERRADA'
         sesion.fecha_cierre = timezone.now()
-        # sesion.diferencia = Decimal(sesion.monto_final_real) - sesion.monto_final_sistema
+        sesion.observaciones = request.data.get('observaciones', '') # Opcional
         sesion.save()
 
         serializer = SesionCajaSerializer(sesion)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    

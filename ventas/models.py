@@ -34,6 +34,13 @@ class Venta(models.Model):
     sucursal = models.ForeignKey(Sucursal, on_delete=models.PROTECT, verbose_name="Sucursal de Venta")
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cliente Asociado")
     vendedor = models.ForeignKey(Usuario, on_delete=models.PROTECT, verbose_name="Vendedor")
+    sesion_caja = models.ForeignKey(
+        'SesionCaja', 
+        on_delete=models.PROTECT,
+        null=True, # Permite nulo por si tienes ventas antiguas sin sesión
+        blank=True,
+        verbose_name="Sesión de Caja"
+    )
     fecha_venta = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora de Venta")
     tipo_comprobante = models.CharField(max_length=20, choices=TIPO_COMPROBANTE_CHOICES, verbose_name="Tipo de Comprobante")
     numero_comprobante = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="Número de Comprobante")

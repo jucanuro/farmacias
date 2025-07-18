@@ -19,7 +19,7 @@
         color: white;
     }
 </style>
-<div class="flex flex-col h-full">
+<div id="pos-main-container" class="flex flex-col h-full">
     <header class="mb-4">
         <div class="relative">
             <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
@@ -87,6 +87,8 @@
                 <button id="proceed-to-payment-btn"
                     class="w-full mt-4 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors">PROCEDER
                     AL PAGO</button>
+                <button id="show-cierre-modal-btn"
+                    class="w-full mt-2 text-xs text-rose-400 hover:text-rose-300 py-1">Cerrar Caja</button>
             </div>
         </div>
     </div>
@@ -194,6 +196,60 @@
         </form>
     </div>
 </div>
+<div id="apertura-caja-modal"
+    class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[70] hidden">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm text-center">
+        <form id="apertura-caja-form">
+            <h3 class="text-xl font-bold text-white mb-2">Abrir Caja</h3>
+            <p class="text-slate-300 mb-6">Debes abrir tu caja para poder registrar ventas.</p>
+            <div>
+                <label for="monto-inicial" class="form-label text-xs">Monto Inicial (S/)</label>
+                <input type="number" id="monto-inicial" class="form-input text-center !text-2xl mt-1" step="0.10"
+                    min="0" required>
+            </div>
+            <div class="mt-6">
+                <button type="submit" id="confirm-apertura-btn"
+                    class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-500 transition-colors">
+                    Confirmar Apertura
+                </button>
+                <div class="mt-4 text-center">
+                    <a href="{% url 'core:logout' %}" class="text-sm text-slate-400 hover:text-white transition-colors">
+                        Salir y Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="cierre-caja-modal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm">
+        <form id="cierre-caja-form">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Cerrar Caja</h3>
+                <button type="button" id="cierre-modal-close-btn"
+                    class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="monto-final-real" class="form-label text-xs">Monto Final Contado (S/)</label>
+                    <input type="number" id="monto-final-real" class="form-input text-center !text-2xl mt-1" step="0.10"
+                        min="0" required>
+                </div>
+                <div>
+                    <label for="observaciones-cierre" class="form-label text-xs">Observaciones (Opcional)</label>
+                    <textarea id="observaciones-cierre" class="form-input mt-1" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button type="submit" id="confirm-cierre-btn"
+                    class="w-full py-3 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-500 transition-colors">
+                    Confirmar y Cerrar Caja
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block app_scripts %}
@@ -232,19 +288,32 @@
         const vueltoDisplay = document.getElementById('vuelto-display');
         const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
 
+        // Elementos de Caja
+        const posContainer = document.getElementById('pos-main-container');
+        const aperturaCajaModal = document.getElementById('apertura-caja-modal');
+        const aperturaCajaForm = document.getElementById('apertura-caja-form');
+        const montoInicialInput = document.getElementById('monto-inicial');
+        const confirmAperturaBtn = document.getElementById('confirm-apertura-btn');
+        const cierreCajaModal = document.getElementById('cierre-caja-modal');
+        const cierreCajaForm = document.getElementById('cierre-caja-form');
+        const cierreModalCloseBtn = document.getElementById('cierre-modal-close-btn');
+        const showCierreModalBtn = document.getElementById('show-cierre-modal-btn');
+        const confirmCierreBtn = document.getElementById('confirm-cierre-btn');
 
-        // === ESTADO DE LA VENTA ===
+        // === ESTADO DE LA APLICACIÓN ===
         let cart = [], tipoComprobante = 'TICKET', selectedCustomer = null, paymentMethod = 'EFECTIVO';
         let totalVentaFinal = 0;
+        let cajaAbierta = false; // Flag para controlar el estado de la caja
         const TASA_IGV = 0.18;
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
         let productSearchTimeout, customerSearchTimeout;
 
-        // === FUNCIONES DE LÓGICA ===
-
+        // ===================================
+        // === FUNCIONES DE LÓGICA DE VENTA ===
+        // ===================================
         const showAlert = (message, title = 'Aviso') => {
             alertTitle.textContent = title;
-            alertMessage.innerHTML = message.replace(/\n/g, '<br>'); // Permite saltos de línea
+            alertMessage.innerHTML = message.replace(/\n/g, '<br>');
             alertButtons.innerHTML = `<button id="alert-ok-btn" class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold">Aceptar</button>`;
             alertModal.classList.remove('hidden');
             document.getElementById('alert-ok-btn').focus();
@@ -262,6 +331,29 @@
                 document.getElementById('confirm-ok-btn').onclick = () => { alertModal.classList.add('hidden'); resolve(true); };
                 document.getElementById('confirm-cancel-btn').onclick = () => { alertModal.classList.add('hidden'); resolve(false); };
             });
+        };
+
+        const showActionDialog = (message, title, venta) => {
+            alertTitle.textContent = title;
+            alertMessage.innerHTML = message.replace(/\n/g, '<br>');
+            const saleId = venta.id;
+            const clienteNumero = venta.cliente_telefono || '';
+            if (!saleId) {
+                showAlert("Error crítico: El ID de la venta es indefinido. No se puede generar el comprobante.");
+                return;
+            }
+            const pdfUrl = `${window.location.origin}/ventas/comprobante/${saleId}/pdf/`;
+            const whatsappText = encodeURIComponent(`Hola, gracias por tu compra. Aquí tienes tu comprobante electrónico: ${pdfUrl}`);
+            const whatsappUrl = `https://wa.me/${clienteNumero}?text=${whatsappText}`;
+            alertButtons.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-center gap-3 w-full">
+                    <button onclick="window.open('${pdfUrl}', '_blank')" class="w-full px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">Imprimir</button>
+                    ${clienteNumero ? `<a href="${whatsappUrl}" target="_blank" class="w-full text-center px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-bold transition-colors">Enviar WhatsApp</a>` : ''}
+                    <button id="alert-ok-btn" class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Nueva Venta</button>
+                </div>
+            `;
+            alertModal.classList.remove('hidden');
+            document.getElementById('alert-ok-btn')?.focus();
         };
 
         const actualizarTotalesFooter = () => {
@@ -301,8 +393,6 @@
                 if (!response.ok) throw new Error('Producto no encontrado');
                 const productData = await response.json();
                 if (typeof productData.precio_venta === 'undefined' || productData.precio_venta === null) { showAlert(`El producto "${productData.nombre}" no tiene un precio de venta definido.`, 'Error'); return; }
-
-                // Añadimos el producto al carrito con el precio unitario
                 cart.push({ ...productData, quantity: 1, precio_unitario: productData.precio_venta, hasDiscount: false, monto_descuento_linea: 0 });
                 renderCart();
             } catch (error) { console.error('Error al añadir producto:', error); showAlert('No se pudo añadir el producto al carrito.', 'Error'); }
@@ -382,7 +472,7 @@
             modalNumeroDocumentoInput.value = numeroDocumento;
             modalNumeroDocumentoInput.dispatchEvent(new Event('input'));
             newCustomerModal.classList.remove('hidden');
-            modalNumeroDocumentoInput.focus();
+            document.getElementById('modal-nombres').focus();
         };
 
         const cerrarModalNuevoCliente = () => newCustomerModal.classList.add('hidden');
@@ -410,7 +500,7 @@
             if (cart.length === 0) { showAlert('El carrito está vacío.', 'Error'); return; }
             paymentTotalDisplay.textContent = cartTotalSpan.textContent;
             montoRecibidoInput.value = totalVentaFinal.toFixed(2);
-            montoRecibidoInput.dispatchEvent(new Event('input')); // Para calcular el vuelto inicial
+            montoRecibidoInput.dispatchEvent(new Event('input'));
             paymentModal.classList.remove('hidden');
             montoRecibidoInput.focus();
             montoRecibidoInput.select();
@@ -424,14 +514,13 @@
             renderCart();
             cerrarModalDePago();
             searchInput.value = '';
-            buscarProductos('');
+            productGrid.innerHTML = '<p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe en la barra para buscar productos...</p>';
         };
 
         const finalizarVenta = async (e) => {
             e.preventDefault();
             confirmPaymentBtn.disabled = true;
             confirmPaymentBtn.textContent = 'Procesando...';
-
             const detalles = cart.map(item => ({
                 producto: item.id,
                 cantidad: item.quantity,
@@ -439,7 +528,6 @@
                 monto_descuento_linea: item.monto_descuento_linea || 0,
                 unidad_venta: 'UNIDAD'
             }));
-
             const ventaData = {
                 cliente: selectedCustomer ? selectedCustomer.id : null,
                 tipo_comprobante: tipoComprobante,
@@ -448,33 +536,19 @@
                 vuelto: paymentMethod === 'EFECTIVO' ? parseFloat(vueltoDisplay.textContent.replace('S/ ', '')) : null,
                 detalles: detalles
             };
-
             try {
-                // --- VERSIÓN FINAL Y SIMPLIFICADA ---
-                // 1. Enviamos la petición POST para crear la venta.
                 const response = await fetch('/ventas/api/ventas/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
                     body: JSON.stringify(ventaData)
                 });
-
-                // Si hay un error de validación (400) o de servidor (500)
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw errorData;
                 }
-
-                // 2. Usamos directamente la respuesta JSON del POST, que ahora es correcta.
                 const nuevaVenta = await response.json();
-
-                // 3. Continuamos con el flujo normal.
                 resetearPOS();
-                showActionDialog(
-                    `Venta #${nuevaVenta.id} registrada`,
-                    '¡Venta Completada!',
-                    nuevaVenta
-                );
-
+                showActionDialog(`Venta #${nuevaVenta.id} registrada`, '¡Venta Completada!', nuevaVenta);
             } catch (error) {
                 let errorMessage = "No se pudo registrar la venta.\n\n";
                 if (error.message) {
@@ -490,50 +564,163 @@
                 confirmPaymentBtn.textContent = 'Confirmar Venta';
             }
         };
+
+        // ===========================
+        // === FUNCIONES PARA LA CAJA ===
+        // ===========================
+        const togglePosLock = (bloquear) => {
+            if (!posContainer) {
+                console.error("No se encontró el 'pos-main-container' para bloquear/desbloquear.");
+                return;
+            }
+            if (bloquear) {
+                posContainer.style.pointerEvents = 'none';
+                posContainer.style.opacity = '0.2';
+            } else {
+                posContainer.style.pointerEvents = 'auto';
+                posContainer.style.opacity = '1';
+            }
+        };
+
+        const verificarEstadoCaja = async () => {
+            try {
+                const response = await fetch('/ventas/api/caja/estado/');
+                if (response.status === 404) {
+                    throw new Error('CERRADA');
+                }
+                if (!response.ok) {
+                    throw new Error('Error de red o servidor');
+                }
+                const data = await response.json();
+                if (data.estado === 'ABIERTA') {
+                    cajaAbierta = true;
+                    aperturaCajaModal.classList.add('hidden');
+                    togglePosLock(false);
+                } else {
+                    throw new Error('CERRADA');
+                }
+            } catch (error) {
+                if (!cajaAbierta) {
+                    aperturaCajaModal.classList.remove('hidden');
+                    togglePosLock(true);
+                }
+            }
+        };
+
+        const handleAbrirCaja = async (e) => {
+            e.preventDefault();
+            const monto = montoInicialInput.value;
+            if (monto === '' || parseFloat(monto) < 0) {
+                showAlert('Por favor, ingresa un monto inicial válido.', 'Error');
+                return;
+            }
+            confirmAperturaBtn.disabled = true;
+            confirmAperturaBtn.textContent = 'Abriendo...';
+            try {
+                const response = await fetch('/ventas/api/caja/abrir/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ monto_inicial: monto }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw data;
+                cajaAbierta = true;
+                showAlert(`Caja abierta con un monto inicial de S/ ${parseFloat(data.monto_inicial).toFixed(2)}`, '¡Éxito!');
+                aperturaCajaModal.classList.add('hidden');
+                togglePosLock(false);
+            } catch (error) {
+                const errorMessage = error.error || 'No se pudo abrir la caja.';
+                showAlert(errorMessage, 'Error de Apertura');
+            } finally {
+                confirmAperturaBtn.disabled = false;
+                confirmAperturaBtn.textContent = 'Confirmar Apertura';
+            }
+        };
+
         /**
-         * @function showActionDialog
-         * @description Muestra un modal con acciones post-venta (imprimir, WhatsApp, etc.)
-         */
-        const showActionDialog = (message, title, venta) => {
-            alertTitle.textContent = title;
-            alertMessage.innerHTML = message.replace(/\n/g, '<br>');
+        * @description Muestra un modal con el resumen detallado del cierre de caja.
+        * @param {object} data - El objeto de la sesión de caja devuelto por la API.
+        */
 
-            // --- Punto clave de la depuración ---
-            // Imprime el objeto 'venta' para ver qué datos contiene.
-            console.log("Datos de la venta recibidos en showActionDialog:", venta);
+        const mostrarResumenCierre = (data) => {
+            const montoInicial = parseFloat(data.monto_inicial).toFixed(2);
+            const montoSistema = parseFloat(data.monto_final_sistema).toFixed(2);
+            const montoReal = parseFloat(data.monto_final_real).toFixed(2);
+            const diferencia = parseFloat(data.diferencia);
 
-            // Si venta.id es undefined, la siguiente línea generará la URL incorrecta.
-            const saleId = venta.id;
-            const clienteNumero = venta.cliente_telefono || '';
+            let diferenciaHtml;
+            if (diferencia === 0) {
+                diferenciaHtml = `<strong style="color: #10b981;">S/ 0.00 (Cuadre perfecto)</strong>`;
+            } else if (diferencia > 0) {
+                diferenciaHtml = `<strong style="color: #10b981;">S/ ${diferencia.toFixed(2)} (Sobrante)</strong>`;
+            } else {
+                diferenciaHtml = `<strong style="color: #f43f5e;">S/ ${diferencia.toFixed(2)} (Faltante)</strong>`;
+            }
 
-            // Comprobación de seguridad
-            if (!saleId) {
-                alert("Error crítico: El ID de la venta es indefinido. No se puede generar el comprobante.");
-                alertButtons.innerHTML = `<button id="alert-ok-btn" class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium">Cerrar</button>`;
-                alertModal.classList.remove('hidden');
+            const resumen = `
+                <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
+                    <strong>Monto Inicial:</strong><span style="float: right;">S/ ${montoInicial}</span><br>
+                    <strong>Total Ventas (Efectivo):</strong><span style="float: right;">S/ ${(montoSistema - montoInicial).toFixed(2)}</span><br>
+                    <hr style="border-color: #4b5563; margin: 4px 0;">
+                    <strong>Total en Sistema:</strong><span style="float: right;">S/ ${montoSistema}</span><br>
+                    <strong>Total Contado (Real):</strong><span style="float: right;">S/ ${montoReal}</span><br>
+                    <hr style="border-color: #4b5563; margin: 4px 0;">
+                    <strong>Diferencia:</strong><span style="float: right;">${diferenciaHtml}</span>
+                </div>
+            `;
+
+            showAlert(resumen, 'Resumen de Cierre de Caja');
+        };
+
+        const handleCerrarCaja = async (e) => {
+            e.preventDefault();
+            const montoFinal = document.getElementById('monto-final-real').value;
+            const observaciones = document.getElementById('observaciones-cierre').value;
+
+            if (montoFinal === '' || parseFloat(montoFinal) < 0) {
+                showAlert('Por favor, ingresa un monto final válido.', 'Error');
                 return;
             }
 
-            const pdfUrl = `${window.location.origin}/ventas/comprobante/${saleId}/pdf/`;
-            const whatsappText = encodeURIComponent(`Hola, gracias por tu compra. Aquí tienes tu comprobante electrónico: ${pdfUrl}`);
-            const whatsappUrl = `https://wa.me/${clienteNumero}?text=${whatsappText}`;
+            confirmCierreBtn.disabled = true;
+            confirmCierreBtn.textContent = 'Calculando...';
 
-            // El resto del código es correcto...
-            alertButtons.innerHTML = `
-                <div class="flex flex-col sm:flex-row justify-center gap-3 w-full">
-                    <button onclick="window.open('${pdfUrl}', '_blank')" class="w-full px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">Imprimir</button>
-                    ${clienteNumero ? `<a href="${whatsappUrl}" target="_blank" class="w-full text-center px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-bold transition-colors">Enviar WhatsApp</a>` : ''}
-                    <button id="alert-ok-btn" class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Nueva Venta</button>
-                </div>
-            `;
-            alertModal.classList.remove('hidden');
-            document.getElementById('alert-ok-btn')?.focus();
+            try {
+                const response = await fetch('/ventas/api/caja/cerrar/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({
+                        monto_final_real: montoFinal,
+                        observaciones: observaciones
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw data;
+
+                cajaAbierta = false;
+                cierreCajaModal.classList.add('hidden');
+
+                // Llamamos a la nueva función para mostrar el resumen detallado
+                mostrarResumenCierre(data);
+
+                // Después de que el usuario vea el resumen y cierre la alerta, bloqueamos el POS.
+                // La alerta se cierra con un evento, así que podemos esperar a que se cierre.
+                alertModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'alert-ok-btn') {
+                        verificarEstadoCaja(); // Esto bloqueará la pantalla y pedirá abrir caja de nuevo
+                    }
+                }, { once: true }); // El listener se ejecuta solo una vez
+
+            } catch (error) {
+                const errorMessage = error.error || 'No se pudo cerrar la caja.';
+                showAlert(errorMessage, 'Error de Cierre');
+            } finally {
+                confirmCierreBtn.disabled = false;
+                confirmCierreBtn.textContent = 'Confirmar y Cerrar Caja';
+            }
         };
-
-
-        // Asigna el evento de submit al formulario
+        // === EVENT LISTENERS ===
         paymentForm.addEventListener('submit', finalizarVenta);
-        // --- EVENT LISTENERS ---
         searchInput.addEventListener('keyup', e => { clearTimeout(productSearchTimeout); productSearchTimeout = setTimeout(() => { buscarProductos(e.target.value.trim()); }, 300); });
         productGrid.addEventListener('click', e => { const card = e.target.closest('.add-to-cart-btn'); if (card) addToCart(parseInt(card.dataset.productoId)); });
         customerSearchInput.addEventListener('keyup', e => { clearTimeout(customerSearchTimeout); customerSearchTimeout = setTimeout(() => { buscarCliente(e.target.value.trim()); }, 300); });
@@ -548,23 +735,18 @@
         alertModal.addEventListener('click', e => { if (e.target.id === 'alert-modal' || e.target.id === 'alert-ok-btn' || e.target.id === 'confirm-cancel-btn') { alertModal.classList.add('hidden'); } });
         proceedToPaymentBtn.addEventListener('click', abrirModalDePago);
         paymentModalCloseBtn.addEventListener('click', cerrarModalDePago);
-        paymentForm.addEventListener('submit', finalizarVenta);
-        paymentMethodSelector.addEventListener('click', (e) => {
-            if (e.target.classList.contains('payment-method-btn')) {
-                paymentMethod = e.target.dataset.method;
-                paymentMethodSelector.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('selected'));
-                e.target.classList.add('selected');
-                efectivoDetails.classList.toggle('hidden', paymentMethod !== 'EFECTIVO');
-                yapeDetails.classList.toggle('hidden', paymentMethod !== 'YAPE');
-            }
-        });
-        montoRecibidoInput.addEventListener('input', (e) => {
-            const recibido = parseFloat(e.target.value) || 0;
-            const vuelto = recibido - totalVentaFinal;
-            vueltoDisplay.textContent = `S/ ${(vuelto >= 0 ? vuelto : 0).toFixed(2)}`;
-        });
+        paymentMethodSelector.addEventListener('click', (e) => { if (e.target.classList.contains('payment-method-btn')) { paymentMethod = e.target.dataset.method; paymentMethodSelector.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('selected')); e.target.classList.add('selected'); efectivoDetails.classList.toggle('hidden', paymentMethod !== 'EFECTIVO'); yapeDetails.classList.toggle('hidden', paymentMethod !== 'YAPE'); } });
+        montoRecibidoInput.addEventListener('input', (e) => { const recibido = parseFloat(e.target.value) || 0; const vuelto = recibido - totalVentaFinal; vueltoDisplay.textContent = `S/ ${(vuelto >= 0 ? vuelto : 0).toFixed(2)}`; });
 
-        // Carga inicial
+        // Listeners para la Caja
+        aperturaCajaForm.addEventListener('submit', handleAbrirCaja);
+        cierreCajaForm.addEventListener('submit', handleCerrarCaja);
+        showCierreModalBtn.addEventListener('click', () => cierreCajaModal.classList.remove('hidden'));
+        cierreModalCloseBtn.addEventListener('click', () => cierreCajaModal.classList.add('hidden'));
+
+
+        // === CARGA INICIAL ===
+        verificarEstadoCaja();
         buscarProductos('');
     });
 </script>

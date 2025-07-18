@@ -61,32 +61,38 @@ class VentaSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        # 1. Extraemos los datos de los detalles PRIMERO.
+        # Esto deja el diccionario 'validated_data' limpio para crear la Venta.
         detalles_data = validated_data.pop('detalles')
         
-        # El vendedor y la sucursal se añaden desde perform_create, así que ya están
-        # en validated_data cuando se llama a este método.
-        
-        try:
-            venta = Venta.objects.create(**validated_data)
-        except TypeError as e:
-            raise serializers.ValidationError(f"Error al crear la venta, campo inesperado: {e}")
+        # 2. Obtenemos el usuario y su sesión de caja activa desde el contexto.
+        usuario_actual = self.context['request'].user
+        sesion_activa = SesionCaja.objects.filter(usuario=usuario_actual, estado='ABIERTA').first()
 
-        # Iteramos sobre los detalles, creamos cada uno Y calculamos el total
+        if not sesion_activa:
+            raise serializers.ValidationError("No hay una sesión de caja abierta para este usuario.")
+
+        # 3. Añadimos los datos del vendedor y la sesión al diccionario principal.
+        validated_data['vendedor'] = usuario_actual
+        validated_data['sesion_caja'] = sesion_activa
+        validated_data['estado'] = 'COMPLETADA'
+        
+        # 4. Creamos la Venta principal con los datos ya limpios (SIN 'detalles').
+        # Eliminamos el try/except y la creación duplicada.
+        venta = Venta.objects.create(**validated_data)
+        
+        # 5. Creamos cada DetalleVenta, asociándolo a la Venta recién creada.
         for detalle_data in detalles_data:
-            # Creamos el objeto DetalleVenta pero NO esperamos que tenga el subtotal aún.
             DetalleVenta.objects.create(venta=venta, **detalle_data)
         
-        # Después de que TODOS los detalles han sido creados, llamamos a un método
-        # en el modelo Venta para que calcule y guarde los totales finales.
-        # Este método es la fuente única de verdad para los cálculos.
-        venta.actualizar_totales()
+        # El método save() de cada DetalleVenta ya llama a venta.actualizar_totales(),
+        # por lo que al final de este bucle, la venta ya tiene sus totales correctos.
+        # No es necesario llamar a venta.actualizar_totales() aquí de nuevo.
         
-        # Devuelve la instancia de la venta con los totales ya actualizados y guardados.
+        # 6. Devolvemos la instancia de la venta creada y actualizada.
         return venta
     
     def update(self, instance, validated_data):
-        # La lógica de actualización de detalles anidados puede ser compleja.
-        # Por ahora, esta actualización se centrará en los campos de la Venta principal.
         validated_data.pop('detalles', None)
         instance = super().update(instance, validated_data)
         instance.calcular_totales()
