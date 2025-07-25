@@ -1,13 +1,19 @@
 # traslados/views.py
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from core.models import Sucursal
 
 def traslados_home_view(request):
-    """
-    Vista de ejemplo para la página de inicio de la aplicación de traslados.
-    Aquí podríamos listar las transferencias pendientes o realizadas.
-    """
-    return HttpResponse("<h1>Gestión de Traslados de Stock</h1><p>Esta es la página de inicio de la aplicación de traslados. Aquí podrás gestionar los movimientos de stock entre sucursales.</p>")
+    # Esta vista ya la tienes
+    return render(request, 'traslados_templates/traslados_home.html')
 
-# Más adelante, aquí irán las vistas para crear una transferencia,
-# listar transferencias, confirmar envíos/recepciones, etc.
+# --- AÑADE ESTA NUEVA VISTA ---
+@login_required
+def traslado_create_view(request):
+    """Renderiza el formulario para crear un nuevo traslado."""
+    # Pasamos las sucursales a la plantilla para los menús desplegables
+    sucursales = Sucursal.objects.all() 
+    context = {
+        'sucursales': sucursales
+    }
+    return render(request, 'traslados_templates/traslado_form.html', context)

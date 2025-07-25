@@ -1,21 +1,24 @@
 # traslados/urls.py
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views # Para las vistas web tradicionales (ej. traslados_home_view)
-from . import api_views # Para las vistas de la API
+from . import views
+from . import api_views
 
-# Crea un router y registra nuestros ViewSets con él.
+# 1. El router solo debe registrar los ViewSets completos
 router = DefaultRouter()
-router.register(r'transferencias', api_views.TransferenciaStockViewSet)
+router.register(r'transferencias', api_views.TransferenciaViewSet, basename='transferencia')
 
-
-app_name = 'traslados' # Define un espacio de nombres para las URLs de esta app
+app_name = 'traslados'
 
 urlpatterns = [
-    # URLs para vistas web tradicionales (si las tienes)
+    # URLs para las vistas web
     path('', views.traslados_home_view, name='home'),
+    path('nuevo/', views.traslado_create_view, name='traslado_create'), 
 
-    # URLs para la API REST de la aplicación 'traslados'
-    # Las URLs generadas por el router se incluyen aquí bajo un prefijo 'api/'
+    # URLs de la API generadas por el router
     path('api/', include(router.urls)),
+    
+    # 2. La vista de autocompletado se añade aquí, como una URL normal
+    path('api/stock-autocomplete/', api_views.StockAutocompleteAPIView.as_view(), name='stock-autocomplete'),
 ]

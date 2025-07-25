@@ -52,6 +52,9 @@ urlpatterns = [
     path('unidades/nueva/', views.unidad_presentacion_create_view, name='unidad_presentacion_create'),
     path('unidades/<int:pk>/editar/', views.unidad_presentacion_update_view, name='unidad_presentacion_update'),
     path('unidades/<int:pk>/eliminar/', views.unidad_presentacion_delete_view, name='unidad_presentacion_delete'),
+    
+    path('api/stock/buscar/', api_views.StockAutocompleteAPIView.as_view(), name='stock_autocomplete_api'),
+
 
 
     # URLs del router de DRF

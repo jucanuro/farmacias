@@ -69,6 +69,32 @@
                 ]
             },
             {
+                id: 'traslados',
+                icon: '↔️', // Ícono simple para representar el movimiento
+                category: 'Logística',
+                title: 'Traslados de Stock',
+                desc: 'Gestiona el movimiento de productos entre tus sucursales.',
+                glow: '#8b5cf6', // Un color violeta para diferenciarlo
+                children: [
+                    { 
+                        id: 'listado-traslados', 
+                        url: "{% url 'traslados:home' %}", 
+                        icon: '🚚', 
+                        title: 'Listado de Traslados', 
+                        desc: 'Revisa el historial de traslados entre sucursales.', 
+                        category: 'Traslados' 
+                    },
+                    { 
+                        id: 'nuevo-traslado', 
+                        url: "{% url 'traslados:traslado_create' %}", 
+                        icon: '➕', 
+                        title: 'Nuevo Traslado', 
+                        desc: 'Inicia un nuevo envío de stock a otra sucursal.', 
+                        category: 'Traslados' 
+                    },
+                ]
+            },
+            {
                 id: 'administracion',
                 icon: '⚙️',
                 category: 'Sistema',

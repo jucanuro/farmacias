@@ -121,6 +121,8 @@ class ProductoSerializer(serializers.ModelSerializer):
         return precios_dict.get('unidad', 0.0)
         
 class StockProductoSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+
     # ... (tu serializer de stock)
     class Meta:
         model = StockProducto

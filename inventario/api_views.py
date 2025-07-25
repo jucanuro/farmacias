@@ -72,3 +72,26 @@ class ProductoAutocompleteAPIView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['nombre', 'codigo_barras', 'principio_activo__nombre']
+
+
+class StockAutocompleteAPIView(ListAPIView):
+    """
+    API para buscar lotes de StockProducto con existencias (> 0)
+    en una sucursal específica.
+    """
+    serializer_class = StockProductoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = StockProducto.objects.select_related('producto').filter(cantidad__gt=0)
+        
+        sucursal_id = self.request.query_params.get('sucursal_id')
+        if not sucursal_id:
+            return StockProducto.objects.none()
+        queryset = queryset.filter(sucursal_id=sucursal_id)
+
+        search_term = self.request.query_params.get('search')
+        if search_term:
+            queryset = queryset.filter(producto__nombre__icontains=search_term)
+            
+        return queryset.order_by('producto__nombre', 'fecha_vencimiento')

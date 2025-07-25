@@ -1,0 +1,44 @@
+{% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
+
+{% block title %}Listado de Traslados{% endblock %}
+
+{% block app_content %}
+<header class="flex justify-between items-center mb-10">
+    <div>
+        <h1 class="text-xl font-extrabold text-white">Gestión de Traslados</h1>
+        <p class="text-slate-400 mt-1">Revisa y administra el movimiento de stock entre sucursales.</p>
+    </div>
+    <a href="{% url 'traslados:traslado_create' %}"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600">
+       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+       Nuevo Traslado
+    </a>
+</header>
+
+<div class="glass-card rounded-2xl p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="border-b border-slate-700">
+                <tr>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">ID</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Sucursal Origen</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Sucursal Destino</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Estado</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Fecha</th>
+                    <th class="p-3 text-xs font-bold uppercase text-slate-400 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="transfers-list-body">
+                <tr>
+                    <td colspan="6" class="text-center p-8 text-slate-400">Cargando traslados...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_scripts %}
+<script type="module" src="{% static 'js/traslados/traslados_home.js' %}"></script>
+{% endblock %}
