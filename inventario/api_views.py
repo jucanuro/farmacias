@@ -33,15 +33,27 @@ class FormaFarmaceuticaViewSet(viewsets.ModelViewSet):
     serializer_class = FormaFarmaceuticaSerializer
     permission_classes = [IsAdminOrManager]
 
-class ProductoViewSet(viewsets.ModelViewSet):
+class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet de SOLO LECTURA para listar y buscar productos.
+    El POS solo necesita leer, no crear o modificar el catálogo maestro.
+    """
     queryset = Producto.objects.all().order_by('nombre')
     serializer_class = ProductoSerializer
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsAdminOrManager]
-        return [permission() for permission in permission_classes]
+    permission_classes = [permissions.IsAuthenticated] # Permiso simple para leer
+    
+    # Aquí puedes añadir tus filtros si los necesitas
+    # filter_backends = [...]
+    # search_fields = [...]
+
+    def get_serializer_context(self):
+        """
+        Esta función crucial pasa el objeto 'request' al serializador.
+        Así, el serializador puede acceder a request.user.sucursal.
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 class StockProductoViewSet(viewsets.ModelViewSet):
     queryset = StockProducto.objects.all().order_by('sucursal__nombre', 'producto__nombre', 'lote')

@@ -55,58 +55,71 @@ class ProductoAutocompleteSerializer(serializers.ModelSerializer):
 # --- OTROS SERIALIZERS (sin cambios) ---
 class ProductoSerializer(serializers.ModelSerializer):
     """
-    Serializador para el modelo Producto.
-    Calcula y añade una estructura de precios para diferentes unidades de venta.
+    Serializador para el modelo Producto adaptado al modelo SaaS.
+    Busca el precio de venta local en el stock de la sucursal actual y, 
+    si no existe, usa el precio sugerido global para calcular los precios.
     """
-    # Campos de solo lectura para mostrar nombres en lugar de IDs
     laboratorio_nombre = serializers.CharField(source='laboratorio.nombre', read_only=True)
     categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
 
-    # --- CAMPO CLAVE: Se añade un campo personalizado para los precios ---
+    # El campo que contendrá el diccionario de precios (caja, blister, unidad)
     precios = serializers.SerializerMethodField()
+    precio_venta = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
-        # Asegúrate de incluir todos los campos que la interfaz necesita
+        # Eliminamos 'precio_venta' porque ahora se maneja en el campo 'precios'
         fields = [
             'id', 'nombre', 'concentracion', 'laboratorio_nombre', 'categoria_nombre',
             'imagen_producto',
-            'precio_venta', # Precio base (caja)
             'unidades_por_caja',
             'unidades_por_blister',
-            'precios' # Nuestro nuevo campo con todos los precios calculados
+            'precios', # Nuestro campo con todos los precios calculados
+            'precio_venta'
         ]
 
-    def get_precios(self, obj):
-        """
-        Este método se ejecuta para cada producto y calcula los precios.
-        'obj' es la instancia del producto que se está serializando.
-        """
-        # El precio de venta guardado se asume que es el de la caja
-        precio_caja = obj.precio_venta or Decimal('0.0')
+    def get_precios(self, producto):
+        request = self.context.get('request')
         
-        # 1. Calcular el precio por unidad básica (pastilla, cápsula, etc.)
-        precio_unidad = Decimal('0.0')
-        if obj.unidades_por_caja > 0:
-            # Dividimos el precio de la caja entre las unidades que contiene
-            # y redondeamos hacia arriba al céntimo más cercano (práctica comercial común)
-            precio_unidad = (precio_caja / Decimal(obj.unidades_por_caja)).quantize(
-                Decimal('0.01'), rounding=ROUND_UP
-            )
-        
-        # 2. Calcular el precio por blíster
-        precio_blister = Decimal('0.0')
-        if obj.unidades_por_blister > 0:
-            # Multiplicamos el precio unitario por la cantidad de unidades en un blíster
-            precio_blister = precio_unidad * Decimal(obj.unidades_por_blister)
+        # 1. El precio base ahora es el PRECIO UNITARIO.
+        #    Lo tomamos del stock local o, si no existe, del precio sugerido.
+        precio_base_unidad = producto.precio_venta_sugerido
 
-        # 3. Devolvemos un diccionario limpio para que el frontend lo use
+        if request and hasattr(request.user, 'sucursal') and request.user.sucursal:
+            stock_local = StockProducto.objects.filter(
+                producto=producto,
+                sucursal=request.user.sucursal
+            ).first()
+            if stock_local and stock_local.precio_venta > 0:
+                # El precio de venta del stock local AHORA es el precio unitario.
+                precio_base_unidad = stock_local.precio_venta
+        
+        # 2. Asignamos el precio por unidad.
+        precio_unidad = Decimal(precio_base_unidad or '0.0')
+
+        # 3. Calculamos HACIA ARRIBA para el blíster y la caja.
+        precio_blister = Decimal('0.0')
+        if producto.unidades_por_blister > 0:
+            precio_blister = precio_unidad * Decimal(producto.unidades_por_blister)
+
+        precio_caja = Decimal('0.0')
+        if producto.unidades_por_caja > 0:
+             # El precio de la caja es el precio unitario por el total de unidades.
+             precio_caja = precio_unidad * Decimal(producto.unidades_por_caja)
+
         return {
             'caja': float(precio_caja),
             'blister': float(precio_blister),
             'unidad': float(precio_unidad)
         }
-
+    
+    def get_precio_venta(self, producto):
+        """
+        Reutiliza la lógica de get_precios para devolver solo el precio unitario.
+        """
+        precios_dict = self.get_precios(producto)
+        return precios_dict.get('unidad', 0.0)
+        
 class StockProductoSerializer(serializers.ModelSerializer):
     # ... (tu serializer de stock)
     class Meta:

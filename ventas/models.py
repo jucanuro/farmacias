@@ -52,7 +52,7 @@ class Venta(models.Model):
     monto_recibido = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Monto Recibido (Efectivo)")
     vuelto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Vuelto Entregado")
     qr_code_data = models.TextField(blank=True, null=True, verbose_name="Datos para QR (Yape/Plin)")
-    estado = models.CharField(max_length=20, choices=ESTADO_VENTA_CHOICES, default='PENDIENTE', verbose_name="Estado de la Venta")
+    estado = models.CharField(max_length=20, choices=ESTADO_VENTA_CHOICES, default='COMPLETADA', verbose_name="Estado de la Venta")
     estado_facturacion_electronica = models.CharField(max_length=20, choices=[('PENDIENTE', 'Pendiente'), ('ENVIADO', 'Enviado'), ('ACEPTADO', 'Aceptado'), ('RECHAZADO', 'Rechazado'), ('ANULADO', 'Anulado'), ('N/A', 'No Aplica')], default='N/A', verbose_name="Estado FE")
     uuid_comprobante_fe = models.CharField(max_length=100, blank=True, null=True, verbose_name="UUID Comprobante FE")
     observaciones_fe = models.TextField(blank=True, null=True, verbose_name="Observaciones de SUNAT", help_text="Aquí se guardan los mensajes de error o reparos de SUNAT.")
@@ -110,18 +110,64 @@ class DetalleVenta(models.Model):
         return f"{self.cantidad} de {self.producto.nombre} en Venta #{self.venta.id}"
     
     def save(self, *args, **kwargs):
-        # La lógica aquí es correcta
         self.subtotal_linea = (self.cantidad * self.precio_unitario) - self.monto_descuento_linea
         super().save(*args, **kwargs)
-        if self.venta:
-            self.venta.actualizar_totales() 
+        if self.venta_id: # Usamos venta_id para evitar una consulta extra
+            self.venta.actualizar_totales()
 
     def delete(self, *args, **kwargs):
         venta_padre = self.venta
         super().delete(*args, **kwargs)
-        # CORRECCIÓN AQUÍ: Usar el nombre de método correcto
         if venta_padre:
-            venta_padre.actualizar_totales()   
+            venta_padre.actualizar_totales()
+            
+    def actualizar_stock_por_venta(self):
+        """
+        Lógica FEFO/FIFO para descontar stock.
+        Busca los lotes del producto más próximos a vencer y descuenta la cantidad vendida.
+        Crea los movimientos de inventario correspondientes.
+        """
+        cantidad_a_descontar = self.cantidad
+        sucursal_venta = self.venta.sucursal
+
+        lotes_disponibles = StockProducto.objects.filter(
+            producto=self.producto,
+            sucursal=sucursal_venta,
+            cantidad__gt=0
+        ).order_by('fecha_vencimiento', 'id')
+
+        stock_total = lotes_disponibles.aggregate(total=Sum('cantidad'))['total'] or 0
+        if stock_total < cantidad_a_descontar:
+            raise ValidationError(f"Stock insuficiente para '{self.producto.nombre}'. "
+                                f"Disponible: {stock_total}, Requerido: {cantidad_a_descontar}")
+
+        lote_principal_asignado = False
+        for lote in lotes_disponibles:
+            if cantidad_a_descontar <= 0:
+                break
+
+            cantidad_descontada = min(lote.cantidad, cantidad_a_descontar)
+            
+            lote.cantidad -= cantidad_descontada
+            lote.save()
+
+            MovimientoInventario.objects.create(
+                producto=self.producto,
+                sucursal=sucursal_venta,
+                stock_afectado=lote,
+                tipo_movimiento='SALIDA',
+                cantidad=-cantidad_descontada,
+                usuario=self.venta.vendedor,
+                referencia_doc=f"Venta ID: {self.venta.id}"
+            )
+
+            cantidad_a_descontar -= cantidad_descontada
+
+            if not lote_principal_asignado:
+                self.stock_producto = lote
+                lote_principal_asignado = True
+        
+        self.save(update_fields=['stock_producto']) 
         
 class SesionCaja(models.Model):
     """

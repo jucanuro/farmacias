@@ -42,7 +42,6 @@ urlpatterns = [
     path('productos/nuevo/', views.producto_create_view, name='producto_create'),
     path('productos/<int:pk>/editar/', views.producto_update_view, name='producto_update'),
     path('productos/<int:pk>/', views.producto_detail_view, name='producto_detail'),
-    path('productos/<int:pk>/anadir-stock/', views.stock_add_view, name='stock_add'),
 
     # --- URLs de la API ---
     

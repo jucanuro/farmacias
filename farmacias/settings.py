@@ -2,21 +2,30 @@
 import os
 from pathlib import Path
 from datetime import timedelta # Necesario si en el futuro usas JWT, no hace daño tenerlo.
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-mp^lw(i0ag12bm*4j+hnn@*mk4628+%3)2wp_ffnm24l%3m6c1"
+SECRET_KEY = env('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -41,7 +50,12 @@ INSTALLED_APPS = [
     'compras',
     'ventas',
     'traslados',
+    'crispy_forms',
+    'crispy_tailwind',
 ]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -79,10 +93,7 @@ WSGI_APPLICATION = "farmacias.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    'default': env.db('DATABASE_URL'),
 }
 
 

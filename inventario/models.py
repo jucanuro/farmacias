@@ -60,6 +60,7 @@ class UnidadPresentacion(models.Model):
 # --- Modelo Principal de Producto (Con las correcciones aplicadas) ---
 
 class Producto(models.Model):
+    # ... (todos tus campos están correctos) ...
     nombre = models.CharField(max_length=200, verbose_name="Nombre del Producto")
     descripcion = models.TextField(blank=True, verbose_name="Descripción Detallada")
     codigo_barras = models.CharField(max_length=100, unique=True, blank=True, null=True, verbose_name="Código de Barras (EAN)")
@@ -68,15 +69,12 @@ class Producto(models.Model):
     forma_farmaceutica = models.ForeignKey(FormaFarmaceutica, on_delete=models.PROTECT, verbose_name="Forma Farmacéutica")
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.PROTECT, verbose_name="Laboratorio")
     categoria = models.ForeignKey(CategoriaProducto, on_delete=models.PROTECT, verbose_name="Categoría")
-    
-    # Campos de unidades actualizados y que permiten nulos para la migración
     unidad_compra = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_comprados', verbose_name="Unidad de Compra Principal", help_text="La unidad en la que normalmente se compra este producto (ej. Caja).", null=True, blank=True)
     unidad_venta = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_vendidos', verbose_name="Unidad de Venta Mínima", help_text="La unidad mínima en la que se vende el producto (ej. Tableta, Unidad).", null=True, blank=True)
-    precio_compra_promedio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio de Compra Promedio", help_text="Costo promedio de la unidad de VENTA MÍNIMA.")
     margen_ganancia_sugerido = models.DecimalField(max_digits=5, decimal_places=2, default=0.20, verbose_name="Margen de Ganancia Sugerido (%)", help_text="Ej: 0.20 para 20% de margen.")
-    precio_venta = models.DecimalField(
+    precio_venta_sugerido = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00,
-        verbose_name="Precio de Venta (Caja/Presentación Principal)"
+        verbose_name="Precio de Venta Sugerido (Global)"
     )
     unidades_por_caja = models.PositiveIntegerField(
         default=1, verbose_name="Unidades por Caja",
@@ -98,42 +96,69 @@ class Producto(models.Model):
         
     def __str__(self):
         return f"{self.nombre} - {self.concentracion}"
-        
-    def get_precio_venta_sugerido(self):
-        if self.precio_compra_promedio and self.margen_ganancia_sugerido is not None:
-            return self.precio_compra_promedio * (1 + self.margen_ganancia_sugerido)
-        return 0
-
+    
     def get_unidades_compra_jerarquia(self):
-        todas_las_unidades = UnidadPresentacion.objects.all().order_by('nombre')
-        resultado = []
-        for unidad in todas_las_unidades:
-            resultado.append({
-                'id': unidad.id,
-                'nombre': unidad.nombre,
-                'factor_conversion_a_base': 1 
+        """
+        Devuelve una lista de diccionarios con todas las unidades de presentación
+        disponibles para la compra de este producto, incluyendo la unidad de venta
+        mínima y sus contenedores (padres).
+        """
+        if not self.unidad_venta:
+            return []
+
+        unidades = []
+        unidad_actual = self.unidad_venta
+        factor_acumulado = 1
+
+        # Añadimos la unidad base (la mínima)
+        unidades.append({
+            'id': unidad_actual.id,
+            'nombre': unidad_actual.nombre,
+            'factor_conversion_a_base': factor_acumulado
+        })
+
+        # Recorremos hacia arriba en la jerarquía (de blíster a caja, por ejemplo)
+        while unidad_actual.padre:
+            unidad_actual = unidad_actual.padre
+            factor_acumulado *= unidad_actual.factor_conversion
+            unidades.append({
+                'id': unidad_actual.id,
+                'nombre': unidad_actual.nombre,
+                'factor_conversion_a_base': factor_acumulado
             })
-        return resultado
-
-
-# --- Modelos de Stock y Movimientos ---
+        
+        return sorted(unidades, key=lambda x: x['factor_conversion_a_base'], reverse=True)
+    
+   
 
 class StockProducto(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, verbose_name="Producto")
+    # Añadimos related_name='stocks'
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='stocks', verbose_name="Producto")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, verbose_name="Sucursal")
     lote = models.CharField(max_length=50, verbose_name="Número de Lote")
     fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento")
     cantidad = models.PositiveIntegerField(default=0, verbose_name="Cantidad Disponible", help_text="Cantidad del producto en su 'unidad de venta mínima' (ej. número de tabletas).")
+    precio_compra = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        verbose_name="Precio de Compra del Lote"
+    )
+    precio_venta = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        verbose_name="Precio de Venta en esta Sucursal"
+    )
     ubicacion_almacen = models.CharField(max_length=100, blank=True, verbose_name="Ubicación en Almacén")
     ultima_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+    
     class Meta:
         verbose_name = "Stock de Producto"
         verbose_name_plural = "Stocks de Productos"
         unique_together = ('producto', 'sucursal', 'lote')
         ordering = ['sucursal__nombre', 'producto__nombre', 'fecha_vencimiento']
+        
     def __str__(self):
         return f"{self.producto.nombre} ({self.lote}) - Suc: {self.sucursal.nombre} - Cant: {self.cantidad}"
-
+    
+    
 class MovimientoInventario(models.Model):
     TIPO_MOVIMIENTO_CHOICES = [('ENTRADA', 'Entrada'), ('SALIDA', 'Salida'), ('AJUSTE_POSITIVO', 'Ajuste Positivo'), ('AJUSTE_NEGATIVO', 'Ajuste Negativo')]
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT, verbose_name="Producto Afectado")

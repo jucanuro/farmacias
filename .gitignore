@@ -1,0 +1,45 @@
+# Archivo de secretos con contraseñas y claves
+.env
+
+# Entornos virtuales de Python
+venv/
+.venv/
+env/
+.env/
+bin/
+include/
+lib/
+lib64/
+Scripts/
+
+# Base de datos local de desarrollo
+db.sqlite3
+*.sqlite3
+
+# Archivos de caché y compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de configuración de IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos generados por el sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos estáticos y de medios generados
+# Carpeta donde `collectstatic` pone los archivos para producción
+staticfiles/
+static_root/
+# Carpeta donde se guardan los archivos subidos por los usuarios (imágenes de productos, etc.)
+media/
+
+# Archivos de logs y reportes
+*.log
+.coverage
+htmlcov/

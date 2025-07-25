@@ -31,10 +31,7 @@ class VentaViewSet(viewsets.ModelViewSet):
     queryset = Venta.objects.all().order_by('-fecha_venta')
     serializer_class = VentaSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    
-    # --- CONFIGURACIÓN DE FILTROS CORREGIDA ---
     filterset_class = VentaFilter
-    
     search_fields = [
         'numero_comprobante', 'cliente__nombres', 'cliente__apellidos',
         'vendedor__username', 'sucursal__nombre', 'observaciones_fe'
@@ -42,9 +39,7 @@ class VentaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha_venta', 'total_venta']
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated]
-        elif self.action in ['create']:
+        if self.action in ['list', 'retrieve', 'create']:
             permission_classes = [permissions.IsAuthenticated]
         elif self.action in ['update', 'partial_update']:
             permission_classes = [IsAdminOrManager]
@@ -69,7 +64,7 @@ class VentaViewSet(viewsets.ModelViewSet):
         return queryset.none()
 
     def perform_create(self, serializer):
-        if not self.request.user.sucursal:
+        if not hasattr(self.request.user, 'sucursal') or not self.request.user.sucursal:
             raise serializers.ValidationError({"detail": "El usuario vendedor no tiene una sucursal asignada."})
         serializer.save(
             vendedor=self.request.user,
@@ -77,50 +72,42 @@ class VentaViewSet(viewsets.ModelViewSet):
         )
     
     def create(self, request, *args, **kwargs):
-        """
-        Sobrescribe el método de creación para garantizar que se devuelva
-        un solo objeto de venta y no una lista.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        # El perform_create guarda el objeto en la base de datos y la instancia
-        # queda guardada en 'serializer.instance'.
         self.perform_create(serializer)
-        
-        # ¡AQUÍ ESTÁ LA LÓGICA CLAVE!
-        # En lugar de confiar en el `serializer.data` original, creamos un nuevo
-        # serializador a partir de la instancia recién guardada. Esto nos da
-        # la garantía de que estamos serializando un único objeto Venta.
         respuesta_serializer = self.get_serializer(serializer.instance)
-        
         headers = self.get_success_headers(respuesta_serializer.data)
-        
-        # Devolvemos los datos del NUEVO serializador, que contiene el objeto único.
         return Response(respuesta_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrManager])
+    @action(detail=True, methods=['post'])
     def procesar(self, request, pk=None):
         venta = self.get_object()
-        if venta.estado == 'PENDIENTE':
+        
+        if venta.estado == 'COMPLETADA':
             try:
                 with transaction.atomic():
                     for detalle in venta.detalles.all():
-                        if not hasattr(detalle, 'actualizar_stock_por_venta'):
-                            raise ValueError(f"El modelo DetalleVenta no tiene el método 'actualizar_stock_por_venta'.")
-                        detalle.actualizar_stock_por_venta(request.user)
-                    venta.estado = 'COMPLETADA'
+                        detalle.actualizar_stock_por_venta()
+                    
+                    venta.estado = 'PROCESADA'
+                    
                     if venta.tipo_comprobante in ['BOLETA', 'FACTURA']:
                         venta.estado_facturacion_electronica = 'PENDIENTE'
                     else:
                         venta.estado_facturacion_electronica = 'N/A'
+                    
                     venta.save()
                     return Response({'status': 'Venta procesada y stock actualizado.'}, status=status.HTTP_200_OK)
-            except ValueError as ve:
-                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+            except ValidationError as ve:
+                return Response({'error': str(ve.message)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                return Response({'error': f"Error inesperado al procesar la venta: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({'status': f"La venta ya está en estado '{venta.estado}' y no puede ser procesada de nuevo."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': f"Error inesperado: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(
+            {'status': f"La venta ya está en estado '{venta.estado}' y no se puede procesar."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class DetalleVentaViewSet(viewsets.ModelViewSet):
     queryset = DetalleVenta.objects.all().order_by('venta', 'producto__nombre')

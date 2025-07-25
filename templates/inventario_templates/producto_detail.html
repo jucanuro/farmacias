@@ -1,78 +1,73 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
-{% load static %}
-{% block title %}VQL - Detalle de {{ producto.nombre }}{% endblock %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Detalle de: {{ producto.nombre }}{% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'inventario:producto_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a la lista de Productos
-    </a>
-    <div class="mt-6 flex flex-col sm:flex-row items-start gap-6">
-        {% if producto.imagen_producto %}
-        <img src="{{ producto.imagen_producto.url }}" alt="{{ producto.nombre }}"
-            class="w-28 h-28 object-cover rounded-lg border-2 border-slate-700">
-        {% else %}
-        <div
-            class="w-28 h-28 bg-slate-800 rounded-lg flex items-center justify-center text-4xl text-slate-500 flex-shrink-0">
-            💊</div>
-        {% endif %}
-        <div class="flex-1">
-            <h1 class="text-4xl font-extrabold text-white">{{ producto.nombre }}</h1>
-            <p class="text-lg text-slate-300 mt-1">{{ producto.laboratorio }} - {{ producto.concentracion|default:"" }}
-            </p>
-            <p class="text-slate-400 mt-2">
-                <span class="font-semibold">Categoría:</span> {{ producto.categoria|default:"N/A" }} |
-                <span class="font-semibold">Forma:</span> {{ producto.forma_farmaceutica|default:"N/A" }} |
-                <span class="font-semibold">Principio Activo:</span> {{ producto.principio_activo|default:"N/A" }}
-            </p>
-        </div>
-    </div>
+<header class="mb-8">
+  <a href="{% url 'inventario:producto_list' %}" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+    Volver a Productos
+  </a>
+  <h1 class="text-3xl font-bold text-white mt-4">
+    {{ producto.nombre }} <span class="text-xl text-cyan-400 font-normal">{{ producto.concentracion }}</span>
+  </h1>
+  <p class="text-base text-slate-400 mt-1">{{ producto.laboratorio.nombre }}</p>
 </header>
 
-<div class="flex justify-between items-center mb-6">
-    <h3 class="text-2xl font-bold text-white">Stock por Sucursal y Lote</h3>
-    <a href="{% url 'inventario:stock_add' pk=producto.pk %}"
-        class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors text-sm">
-        Añadir Stock (Compra)
-    </a>
-</div>
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
-<div class="glass-card rounded-2xl overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left">
-            <thead class="bg-slate-800">
-                <tr>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Sucursal</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nº Lote</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Fecha de Vencimiento</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Ubicación</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-right">Cantidad</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-700">
-                {% for stock in stock_items %}
-                <tr class="hover:bg-slate-800/50 transition-colors">
-                    <td class="p-4 font-medium text-white">{{ stock.sucursal.nombre }}</td>
-                    <td class="p-4">{{ stock.lote }}</td>
-                    <td class="p-4">{{ stock.fecha_vencimiento|date:"d/m/Y" }}</td>
-                    <td class="p-4">{{ stock.ubicacion_almacen|default:"-" }}</td>
-                    <td class="p-4 font-mono text-right font-bold text-lg">{{ stock.cantidad }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="p-8 text-center text-slate-400">
-                        Aún no hay stock registrado para este producto.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <div class="lg:col-span-2">
+    <div class="glass-card rounded-2xl p-6">
+      <h3 class="text-xl font-bold text-white mb-4">Añadir Stock a Sucursal</h3>
+      <form method="post">
+        {% csrf_token %}
+        {% crispy stock_form %}
+        <button type="submit" class="w-full mt-6 px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
+          Guardar Entrada de Stock
+        </button>
+      </form>
     </div>
+  </div>
+
+  <div class="lg:col-span-3">
+    <div class="glass-card rounded-2xl p-6">
+      <h3 class="text-xl font-bold text-white mb-4">Inventario Actual por Sucursal</h3>
+      
+      {% if stock_items %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-slate-300">
+          <thead class="text-xs text-white uppercase bg-slate-700/50">
+            <tr>
+              <th scope="col" class="px-6 py-3">Sucursal</th>
+              <th scope="col" class="px-6 py-3">Lote</th>
+              <th scope="col" class="px-6 py-3">Cantidad</th>
+              <th scope="col" class="px-6 py-3">P. Venta</th>
+              <th scope="col" class="px-6 py-3">Vencimiento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in stock_items %}
+            <tr class="border-b border-slate-700 hover:bg-slate-800/50">
+              <td class="px-6 py-4">{{ item.sucursal.nombre }}</td>
+              <td class="px-6 py-4">{{ item.lote }}</td>
+              <td class="px-6 py-4">{{ item.cantidad }}</td>
+              <td class="px-6 py-4">${{ item.precio_venta|floatformat:2 }}</td>
+              <td class="px-6 py-4">{{ item.fecha_vencimiento|date:"d/m/Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-12 border-2 border-dashed border-slate-700 rounded-lg">
+        <svg class="mx-auto h-12 w-12 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+        <h3 class="mt-2 text-base font-semibold text-white">No hay stock</h3>
+        <p class="mt-1 text-sm text-slate-400">Usa el formulario de la izquierda para añadir el primer lote.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

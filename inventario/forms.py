@@ -1,5 +1,7 @@
 from django import forms
-from .models import CategoriaProducto, Laboratorio, FormaFarmaceutica, PrincipioActivo, Producto, Sucursal, MovimientoInventario, UnidadPresentacion
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Row, Column
+from .models import CategoriaProducto, Laboratorio, FormaFarmaceutica, PrincipioActivo, Producto, Sucursal, MovimientoInventario, UnidadPresentacion,StockProducto
 
 class CategoriaProductoForm(forms.ModelForm):
     class Meta:
@@ -57,13 +59,75 @@ class PrincipioActivoForm(forms.ModelForm):
         labels = {'nombre': 'Nombre del Principio Activo', 'descripcion': 'Descripción'}
         
 class ProductoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        print(">>> ¡El código nuevo de ProductoForm se está ejecutando! <<<")
+        super().__init__(*args, **kwargs)
+        
+        # --- 2. Crea y configura el FormHelper ---
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        # Quita el <form> tag de crispy, ya que lo tenemos en el HTML
+        self.helper.form_tag = False 
+        
+        # --- 3. Define la estructura de 3 columnas ---
+        self.helper.layout = Layout(
+            # Añadimos clases de grid y gap a cada Fila (Row)
+            Row(
+                Column('nombre'),
+                Column('categoria'),
+                Column('laboratorio'),
+                # grid-cols-3: Crea 3 columnas
+                # gap-6: Añade un espacio generoso entre ellas
+                # mb-4: Añade un margen inferior para separar las filas
+                css_class='grid md:grid-cols-3 gap-6 mb-4'
+            ),
+            Row(
+                Column('principio_activo'),
+                Column('concentracion'),
+                Column('forma_farmaceutica'),
+                css_class='grid md:grid-cols-3 gap-6 mb-4'
+            ),
+            Row(
+                Column('unidad_compra'),
+                Column('unidad_venta'),
+                Column('unidades_por_caja'),
+                css_class='grid md:grid-cols-3 gap-6 mb-4'
+            ),
+            Row(
+                Column('unidades_por_blister'),
+                Column('margen_ganancia_sugerido'),
+                Column('precio_venta_sugerido'),
+                css_class='grid md:grid-cols-3 gap-6 mb-4'
+            ),
+            Row(
+                 Column('codigo_barras'),
+                 # Dejamos las otras 2 columnas vacías para que ocupe 1/3 del espacio
+                 Column(),
+                 Column(),
+                 css_class='grid md:grid-cols-3 gap-6 mb-4'
+            ),
+            'descripcion',
+            Row(
+                Column('aplica_receta'),
+                Column('es_controlado'),
+                css_class='flex gap-x-8 mb-4' # Usamos flexbox para los checkboxes
+            ),
+            'imagen_producto'
+        )
+        
+        if not self.instance.pk:
+            self.fields['margen_ganancia_sugerido'].initial = 0.20
+            self.fields['unidades_por_caja'].initial = 1
+            self.fields['unidades_por_blister'].initial = 1
+            
+            # Opcional pero recomendado: poner un valor inicial para el precio sugerido
+            self.fields['precio_venta_sugerido'].initial = 0.00
     class Meta:
         model = Producto
-        # 'exclude' está bien, le dice a Django que use todos los campos del modelo
-        # excepto los que están en esta lista.
-        exclude = ['precio_compra_promedio', 'fecha_registro']
+        # Usamos 'fields' para listar explícitamente los campos que queremos.
+        # Quitamos los precios específicos y dejamos solo el sugerido.
+        fields = '__all__'
         
-        # --- WIDGETS CORREGIDOS ---
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-input'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
@@ -73,58 +137,75 @@ class ProductoForm(forms.ModelForm):
             'forma_farmaceutica': forms.Select(attrs={'class': 'form-select'}),
             'laboratorio': forms.Select(attrs={'class': 'form-select'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
-            
-            # Ajustado para coincidir con los nombres de tu modelo más reciente
             'unidad_compra': forms.Select(attrs={'class': 'form-select'}),
             'unidad_venta': forms.Select(attrs={'class': 'form-select'}),
-
-            # --- CAMPOS NUEVOS CON SUS WIDGETS ASIGNADOS ---
-            'precio_venta': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
+            'margen_ganancia_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
+            'precio_venta_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
             'unidades_por_caja': forms.NumberInput(attrs={'class': 'form-input'}),
             'unidades_por_blister': forms.NumberInput(attrs={'class': 'form-input'}),
-            
-            'margen_ganancia_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
             'aplica_receta': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'es_controlado': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'imagen_producto': forms.ClearableFileInput(attrs={'class': 'form-input-file'}),
         }
     
     
-class StockEntradaForm(forms.Form):
-    sucursal = forms.ModelChoiceField(
-        queryset=Sucursal.objects.all().order_by('nombre'),
-        label="Sucursal de Destino",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    lote = forms.CharField(
-        max_length=50,
-        label="Número de Lote",
-        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: XJ500-A1'})
-    )
-    fecha_vencimiento = forms.DateField(
-        label="Fecha de Vencimiento",
-        widget=forms.DateInput(attrs={'class': 'form-input', 'type': 'date'})
-    )
-    cantidad = forms.IntegerField(
-        min_value=1,
-        label="Cantidad Recibida",
-        help_text="Cantidad en la 'presentación base' del producto (ej. número de cajas).",
-        widget=forms.NumberInput(attrs={'class': 'form-input'})
-    )
-    precio_compra_lote = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=0.01,
-        label="Precio de Compra del Lote",
-        help_text="Precio por cada 'presentación base' en esta compra.",
-        widget=forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'})
-    )
-    ubicacion_almacen = forms.CharField(
-        max_length=100,
-        required=False,
-        label="Ubicación en Almacén (Opcional)",
-        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: Estante A-3'})
-    )
+class StockEntradaForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        # Usaremos el <form> de nuestra plantilla, no el de crispy
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            'sucursal',
+            # Usamos una rejilla para organizar los campos
+            Row(
+                Column('lote', css_class='w-full md:w-1/2'),
+                Column('fecha_vencimiento', css_class='w-full md:w-1/2'),
+                css_class='grid md:grid-cols-2 gap-4 mt-4'
+            ),
+            Row(
+                Column('cantidad', css_class='w-full md:w-1/2'),
+                Column('precio_compra', css_class='w-full md:w-1/2'),
+                css_class='grid md:grid-cols-2 gap-4 mt-4'
+            ),
+            Row(
+                # El precio de venta ocupa todo el ancho de su fila
+                Column('precio_venta', css_class='w-full'),
+                css_class='mt-4'
+            ),
+             Row(
+                Column('ubicacion_almacen', css_class='w-full'),
+                css_class='mt-4'
+            )
+        )
+
+    class Meta:
+        model = StockProducto
+        fields = [
+            'sucursal', 
+            'lote', 
+            'fecha_vencimiento', 
+            'cantidad', 
+            'precio_compra', 
+            'precio_venta',
+            'ubicacion_almacen'
+        ]
+        
+        widgets = {
+            'sucursal': forms.Select(attrs={'class': 'form-select'}),
+            'lote': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: XJ500-A1'}),
+            'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-input', 'type': 'date'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-input'}),
+            'precio_compra': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
+            'ubicacion_almacen': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Ej: Estante A-3'}),
+        }
+        
+        labels = {
+            'cantidad': 'Cantidad Recibida (en unidades mínimas)',
+            'precio_compra': 'Precio de Compra (por unidad mínima)',
+            'precio_venta': 'Precio de Venta para este Lote',
+        }
     
 class UnidadPresentacionForm(forms.ModelForm):
     class Meta:

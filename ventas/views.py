@@ -5,6 +5,7 @@ from django.http import HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from weasyprint import HTML
+import inspect
 from .models import Venta
 
 @login_required
@@ -30,8 +31,6 @@ def generar_comprobante_pdf(request, venta_id):
     y devuelve un archivo PDF como respuesta.
     """
     try:
-        # --- CORRECCIÓN FINAL EN LA CONSULTA ---
-        # El error nos dijo que el camino es Venta -> Sucursal -> Farmacia
         venta = Venta.objects.select_related(
             'cliente', 
             'vendedor', 
@@ -51,6 +50,8 @@ def generar_comprobante_pdf(request, venta_id):
         }
 
         html_string = render_to_string('ventas_templates/comprobante_template.html', context)
+        print("DEBUG: Usando la clase HTML:", HTML)
+        print("DEBUG: Ubicación del archivo:", inspect.getfile(HTML))
         pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
 
         response = HttpResponse(pdf_file, content_type='application/pdf')

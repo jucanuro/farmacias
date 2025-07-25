@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+from django.db.models import Sum, Subquery, OuterRef, IntegerField
+from django.db.models.functions import Coalesce
 from django.db.models import ProtectedError
 from .models import CategoriaProducto, Laboratorio,FormaFarmaceutica, PrincipioActivo, Producto, StockProducto, Sucursal, MovimientoInventario,UnidadPresentacion
 from .forms import CategoriaProductoForm, LaboratorioForm, FormaFarmaceuticaForm, PrincipioActivoForm, ProductoForm,StockEntradaForm, UnidadPresentacionForm
@@ -189,9 +191,27 @@ def principio_activo_delete_view(request, pk):
     return redirect('inventario:principio_activo_list')
 
 def producto_list_view(request):
+
+    # Definimos la subconsulta base que busca por producto
+    stock_subquery = StockProducto.objects.filter(producto=OuterRef('pk'))
+
+    user = request.user
+   
+    if hasattr(user, 'rol') and user.rol and user.rol.nombre == 'Gerente de Sucursal' and hasattr(user, 'sucursal') and user.sucursal:
+        stock_subquery = stock_subquery.filter(sucursal=user.sucursal)
+  
+    stock_total_subquery = stock_subquery.values('producto').annotate(
+        total_stock=Sum('cantidad')
+    ).values('total_stock')
+
     lista_productos = Producto.objects.select_related(
         'categoria', 'laboratorio'
-    ).all().order_by('nombre')
+    ).annotate(
+        stock_sucursal=Coalesce(
+            Subquery(stock_total_subquery, output_field=IntegerField()),
+            0
+        )
+    ).order_by('nombre')
     
     context = {
         'productos': lista_productos
@@ -205,6 +225,9 @@ def producto_create_view(request):
             form.save()
             messages.success(request, 'El producto ha sido creado con éxito.')
             return redirect('inventario:producto_list')
+        else:
+            print(form.errors.as_json()) 
+
     else:
         form = ProductoForm()
     context = {'form': form}
@@ -240,37 +263,47 @@ def producto_update_view(request, pk):
 
 
 def producto_detail_view(request, pk):
-    producto = get_object_or_404(
-        Producto.objects.select_related('categoria', 'laboratorio', 'forma_farmaceutica', 'principio_activo'), 
-        pk=pk
-    )
-    stock_items = StockProducto.objects.filter(producto=producto).select_related('sucursal').order_by('sucursal__nombre', '-fecha_vencimiento')
-
-    context = {
-        'producto': producto,
-        'stock_items': stock_items
-    }
-    return render(request, 'inventario_templates/producto_detail.html', context)
-        
-    
-def stock_add_view(request, pk):
+    """
+    Muestra los detalles de un producto, su stock actual por sucursal,
+    y procesa el formulario para añadir nuevo stock.
+    """
     producto = get_object_or_404(Producto, pk=pk)
+
+    # Lógica para procesar el formulario de añadir stock
     if request.method == 'POST':
-        form = StockEntradaForm(request.POST)
-        if form.is_valid():
-            datos = form.cleaned_data
+        # Aseguramos que el formulario se procese solo si viene del botón correcto
+        # (en caso de que añadas más formularios a esta página en el futuro)
+        stock_form = StockEntradaForm(request.POST)
+        if stock_form.is_valid():
+            datos = stock_form.cleaned_data
             
+            # Buscamos si ya existe un stock con el mismo lote en la misma sucursal
             stock, created = StockProducto.objects.get_or_create(
                 producto=producto,
                 sucursal=datos['sucursal'],
                 lote=datos['lote'],
-                defaults={'fecha_vencimiento': datos['fecha_vencimiento']}
+                defaults={
+                    'fecha_vencimiento': datos['fecha_vencimiento'],
+                    'precio_compra': datos['precio_compra'],
+                    'precio_venta': datos['precio_venta'] # <-- CORRECCIÓN: Se añade el precio de venta
+                }
             )
             
-            stock.cantidad += datos['cantidad']
+            # Si el lote ya existía, actualizamos sus datos y sumamos la cantidad
+            if not created:
+                stock.cantidad += datos['cantidad']
+                # Opcional: decidir si se actualiza el precio con cada nueva compra del mismo lote
+                stock.precio_compra = datos['precio_compra']
+                stock.precio_venta = datos['precio_venta']
+                stock.fecha_vencimiento = datos['fecha_vencimiento']
+            else:
+                # Si es un lote nuevo, la cantidad es la del formulario
+                stock.cantidad = datos['cantidad']
+
             stock.ubicacion_almacen = datos['ubicacion_almacen']
             stock.save()
 
+            # Creamos el movimiento de inventario para registrar la entrada
             MovimientoInventario.objects.create(
                 producto=producto,
                 sucursal=datos['sucursal'],
@@ -282,15 +315,22 @@ def stock_add_view(request, pk):
             )
             
             messages.success(request, f"Se ha añadido stock para '{producto.nombre}' con éxito.")
+            # Redirigimos a la misma página para ver el resultado
             return redirect('inventario:producto_detail', pk=producto.pk)
     else:
-        form = StockEntradaForm()
+        # Si la petición es GET, mostramos un formulario vacío
+        stock_form = StockEntradaForm()
         
+    # Obtenemos el stock existente para mostrarlo en la tabla
+    stock_items = StockProducto.objects.filter(producto=producto).select_related('sucursal').order_by('sucursal__nombre', 'fecha_vencimiento')
+
     context = {
-        'form': form,
-        'producto': producto
+        'producto': producto,
+        'stock_items': stock_items,
+        'stock_form': stock_form # Pasamos el formulario a la plantilla
     }
-    return render(request, 'inventario_templates/stock_add_form.html', context)
+    return render(request, 'inventario_templates/producto_detail.html', context)     
+    
 
 def unidad_presentacion_list_view(request):
     lista = UnidadPresentacion.objects.select_related('padre').all().order_by('nombre')

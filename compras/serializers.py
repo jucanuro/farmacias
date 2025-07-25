@@ -52,24 +52,6 @@ class CompraSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['registrado_por', 'subtotal', 'impuestos', 'total_compra', 'fecha_recepcion']
     
-    def create(self, validated_data):
-        """
-        Versión corregida y simplificada.
-        'registrado_por' ya viene en validated_data gracias al ViewSet.
-        """
-        detalles_data = validated_data.pop('detalles', [])
-
-        with transaction.atomic():
-            # Simplemente creamos la compra con los datos validados.
-            # El estado 'PENDIENTE' puede ser un valor por defecto en el modelo.
-            compra = Compra.objects.create(estado='PENDIENTE', **validated_data)
-
-            if detalles_data:
-                for detalle_data in detalles_data:
-                    DetalleCompra.objects.create(compra=compra, **detalle_data)
-                compra.calcular_totales()
-        
-        return compra
 
 # --- Serializadores Adicionales (Configurados como solo lectura para simplificar) ---
 
