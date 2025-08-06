@@ -129,23 +129,23 @@ class ProductoForm(forms.ModelForm):
         fields = '__all__'
         
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-input'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-input', 'rows': 3}),
-            'codigo_barras': forms.TextInput(attrs={'class': 'form-input'}),
-            'principio_activo': forms.Select(attrs={'class': 'form-select'}),
-            'concentracion': forms.TextInput(attrs={'class': 'form-input'}),
-            'forma_farmaceutica': forms.Select(attrs={'class': 'form-select'}),
-            'laboratorio': forms.Select(attrs={'class': 'form-select'}),
-            'categoria': forms.Select(attrs={'class': 'form-select'}),
-            'unidad_compra': forms.Select(attrs={'class': 'form-select'}),
-            'unidad_venta': forms.Select(attrs={'class': 'form-select'}),
-            'margen_ganancia_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
-            'precio_venta_sugerido': forms.NumberInput(attrs={'class': 'form-input', 'step': '0.01'}),
-            'unidades_por_caja': forms.NumberInput(attrs={'class': 'form-input'}),
-            'unidades_por_blister': forms.NumberInput(attrs={'class': 'form-input'}),
-            'aplica_receta': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
-            'es_controlado': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
-            'imagen_producto': forms.ClearableFileInput(attrs={'class': 'form-input-file'}),
+            'nombre': forms.TextInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
+            'descripcion': forms.Textarea(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md h-24 placeholder-gray-400'}),
+            'codigo_barras': forms.TextInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
+            'principio_activo': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}), # Eliminamos 'custom-select-arrow-white' si no usas CSS custom
+            'concentracion': forms.TextInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
+            'forma_farmaceutica': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}),
+            'laboratorio': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}),
+            'categoria': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}),
+            'unidad_compra': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}),
+            'unidad_venta': forms.Select(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md appearance-none pr-8'}),
+            'margen_ganancia_sugerido': forms.NumberInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400', 'step': '0.01'}),
+            'precio_venta_sugerido': forms.NumberInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400', 'step': '0.01'}),
+            'unidades_por_caja': forms.NumberInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
+            'unidades_por_blister': forms.NumberInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
+            'aplica_receta': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 bg-slate-800 border-gray-700 rounded focus:ring-blue-500'}),
+            'es_controlado': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-black bg-slate-800 border-gray-700 rounded focus:ring-blue-500'}),
+            'imagen_producto': forms.ClearableFileInput(attrs={'class': 'bg-slate-800 text-black border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 p-2 rounded-md placeholder-gray-400'}),
         }
     
     

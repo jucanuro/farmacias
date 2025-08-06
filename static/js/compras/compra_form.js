@@ -1,203 +1,290 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const comprasTableBody = document.getElementById('compras-list-body');
-    const modal = document.getElementById('details-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalTitle = document.getElementById('modal-title');
-    const modalProveedor = document.getElementById('modal-proveedor');
-    const modalFactura = document.getElementById('modal-factura');
-    const modalSucursal = document.getElementById('modal-sucursal');
-    const modalFecha = document.getElementById('modal-fecha');
-    const modalDetailsBody = document.getElementById('modal-details-body');
-    const modalGrandTotal = document.getElementById('modal-grand-total');
-    const modalTaxes = document.getElementById('modal-taxes');
-    const modalPaginationControls = document.getElementById('modal-pagination-controls');
-    const modalPrevBtn = document.getElementById('modal-prev-btn');
-    const modalNextBtn = document.getElementById('modal-next-btn');
-    const modalPageInfo = document.getElementById('modal-page-info');
-    const mainPaginationControls = document.getElementById('main-pagination-controls');
-    const mainPageInfo = document.getElementById('main-page-info');
-    const mainPrevBtn = document.getElementById('main-prev-btn');
-    const mainNextBtn = document.getElementById('main-next-btn');
+    // ESTADO
+    const compraPkElement = document.getElementById('compra-pk-data');
+    // Usamos el valor del elemento HTML, si no existe o está vacío, será null.
+    const compraPk = compraPkElement ? JSON.parse(compraPkElement.textContent) : null;
+    
+    let compraId = null;
+    let lineItems = [];
 
-    let nextUrl = null;
-    let prevUrl = null;
-    let allDetails = [];
-    let currentPage = 1;
-    const itemsPerPage = 5;
+    // ELEMENTOS DEL DOM
+    const proveedorSelect = document.getElementById('proveedor');
+    const sucursalSelect = document.getElementById('sucursal');
+    const numeroFacturaInput = document.getElementById('numero_factura');
+    const purchaseDetailsBody = document.getElementById('purchase-details-body');
+    const productSearchInput = document.getElementById('product-search');
+    const suggestionsContainer = document.getElementById('product-suggestions');
+    const processButton = document.getElementById('process-button');
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    const impuestosDisplay = document.getElementById('impuestos-display');
+    const totalDisplay = document.getElementById('total-display');
+    const addProductSection = document.getElementById('add-product-section');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    
+    // Obtener el token CSRF y el PK de la compra de los elementos HTML
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    const estadoStyles = {
-        'PENDIENTE': 'bg-amber-500/20 text-amber-400',
-        'PROCESADA': 'bg-emerald-500/20 text-emerald-400',
-        'ANULADA': 'bg-rose-500/20 text-rose-400'
-    };
-
-    const cargarCompras = async (url = '/compras/api/compras/') => {
-        comprasTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400">Cargando compras...</td></tr>`;
-        if (mainPaginationControls) mainPaginationControls.classList.add('hidden');
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('No se pudieron cargar los datos.');
-
-            const data = await response.json();
-            const compras = data.results;
-
-            comprasTableBody.innerHTML = '';
-
-            if (compras.length === 0) {
-                comprasTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400">No hay compras registradas.</td></tr>`;
-                return;
+    const inicializarFormulario = async () => {
+        // Modo Edición: Cargar datos de una compra existente
+        if (compraPk) {
+            await cargarCompraExistente(compraPk);
+        } else {
+            // Modo Creación: Los datos ya están en el HTML, solo se asigna el evento
+            purchaseDetailsBody.innerHTML = '<tr><td colspan="8" class="text-center p-8 text-slate-400">Complete la información de la factura para empezar.</td></tr>';
+            if(numeroFacturaInput){
+                numeroFacturaInput.addEventListener('blur', crearOActualizarCompraHeader);
             }
-
-            nextUrl = data.next;
-            prevUrl = data.previous;
-
-            compras.forEach(compra => {
-                const fecha = new Date(compra.fecha_recepcion).toLocaleDateString('es-PE', {
-                    year: 'numeric', month: '2-digit', day: '2-digit'
-                });
-                const estilo = estadoStyles[compra.estado] || 'bg-slate-500/20 text-slate-400';
-                const row = `
-                    <tr class="border-b border-slate-800 hover:bg-slate-800/50 text-sm">
-                        <td class="p-3 font-mono text-slate-400">#${compra.id}</td>
-                        <td class="p-3 text-white font-semibold">${compra.numero_factura_proveedor || 'S/N'}</td>
-                        <td class="p-3 text-slate-300">${compra.proveedor_nombre}</td>
-                        <td class="p-3 text-slate-300">${compra.sucursal_destino_nombre}</td>
-                        <td class="p-3 text-right font-mono text-emerald-400 font-bold">S/ ${parseFloat(compra.total_compra).toFixed(2)}</td>
-                        <td class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${estilo}">${compra.estado}</span></td>
-                        <td class="p-3 text-slate-400">${fecha}</td>
-                        <td class="p-3">
-                            <div class="flex items-center justify-center gap-3">
-                                <button type="button" title="Ver Detalles" class="text-slate-400 hover:text-blue-400 transition-colors view-details-btn" data-compra-id="${compra.id}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.27 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                                </button>
-                                <a href="/compras/${compra.id}/editar/" title="Editar Compra" class="text-slate-400 hover:text-amber-400 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                comprasTableBody.innerHTML += row;
-            });
-
-            if (data.count > 10) {
-                const pageNumber = new URL(url, window.location.origin).searchParams.get('page') || '1';
-                const totalPages = Math.ceil(data.count / 10);
-                mainPageInfo.textContent = `Página ${pageNumber} de ${totalPages}`;
-                mainPrevBtn.disabled = !prevUrl;
-                mainNextBtn.disabled = !nextUrl;
-                mainPaginationControls.classList.remove('hidden');
-            }
-
-        } catch (error) {
-            console.error('Error:', error);
-            comprasTableBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-rose-400">Error al cargar los datos.</td></tr>`;
         }
     };
-
-    const renderizarPagina = () => {
-        modalDetailsBody.innerHTML = '';
-        const totalPages = Math.ceil(allDetails.length / itemsPerPage);
-        modalPageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
-        modalPrevBtn.disabled = currentPage === 1;
-        modalNextBtn.disabled = currentPage === totalPages;
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const pageItems = allDetails.slice(startIndex, startIndex + itemsPerPage);
-        pageItems.forEach(detalle => {
-            const subtotal = (detalle.cantidad_recibida * detalle.precio_unitario_compra).toFixed(2);
-            const fechaVenc = detalle.fecha_vencimiento ? new Date(detalle.fecha_vencimiento + 'T00:00:00').toLocaleDateString('es-PE') : 'N/A';
-            const detalleRow = `
-                <tr class="border-b border-slate-800 text-sm">
-                    <td class="p-3 text-white font-medium">${detalle.producto_nombre}</td>
-                    <td class="p-3 text-slate-300">${detalle.lote}</td>
-                    <td class="p-3 text-slate-300">${fechaVenc}</td>
-                    <td class="p-3 text-slate-300 text-right">${detalle.cantidad_recibida}</td>
-                    <td class="p-3 text-slate-300 text-right font-mono">S/ ${parseFloat(detalle.precio_unitario_compra).toFixed(2)}</td>
-                    <td class="p-3 text-white text-right font-mono">S/ ${subtotal}</td>
-                </tr>
-            `;
-            modalDetailsBody.innerHTML += detalleRow;
-        });
-    };
-
-    const mostrarDetalles = async (compraId) => {
-        modal.classList.remove('hidden');
-        modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Cargando detalles...</td></tr>`;
-        modalTaxes.textContent = 'S/ 0.00';
-        modalGrandTotal.textContent = 'S/ 0.00';
-        modalPaginationControls.classList.add('hidden');
-
+    
+    const cargarCompraExistente = async (pk) => {
         try {
-            const response = await fetch(`/compras/api/compras/${compraId}/`);
-            if (!response.ok) throw new Error('No se pudo cargar la información.');
+            const response = await fetch(`/compras/api/compras/${pk}/`);
+            if (!response.ok) throw new Error('Compra no encontrada.');
+            
             const compra = await response.json();
-            modalTaxes.textContent = `S/ ${parseFloat(compra.impuestos || 0).toFixed(2)}`;
-            modalGrandTotal.textContent = `S/ ${parseFloat(compra.total_compra || 0).toFixed(2)}`;
-            modalTitle.textContent = `Detalle de la Compra #${compra.id}`;
-            modalProveedor.textContent = compra.proveedor_nombre;
-            modalFactura.textContent = compra.numero_factura_proveedor;
-            modalSucursal.textContent = compra.sucursal_destino_nombre;
-            modalFecha.textContent = new Date(compra.fecha_recepcion).toLocaleDateString('es-PE', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            });
-            allDetails = compra.detalles || [];
-            currentPage = 1;
-            if (allDetails.length > 0) {
-                if (allDetails.length > itemsPerPage) {
-                    modalPaginationControls.classList.remove('hidden');
+            compraId = compra.id;
+
+            proveedorSelect.innerHTML = `<option value="${compra.proveedor}" selected>${compra.proveedor_nombre}</option>`;
+            sucursalSelect.innerHTML = `<option value="${compra.sucursal_destino}" selected>${compra.sucursal_destino_nombre}</option>`;
+            numeroFacturaInput.value = compra.numero_factura_proveedor;
+            
+            const esEditable = compra.estado === 'PENDIENTE';
+            proveedorSelect.disabled = true;
+            sucursalSelect.disabled = true;
+            numeroFacturaInput.disabled = !esEditable;
+
+            lineItems = compra.detalles.map(d => ({
+                id: d.id,
+                producto: d.producto,
+                producto_nombre: d.producto_nombre,
+                presentacion: d.presentacion,
+                unidad_seleccionada_id: d.presentacion,
+                unidades_disponibles: [{ id: d.presentacion, nombre: d.presentacion_nombre }],
+                cantidad_recibida: d.cantidad_recibida,
+                precio_unitario_compra: d.precio_unitario_compra,
+                lote: d.lote,
+                fecha_vencimiento: d.fecha_vencimiento,
+            }));
+
+            if (!esEditable) {
+                processButton.disabled = true;
+                processButton.textContent = `Compra ${compra.estado}`;
+                processButton.classList.replace('bg-emerald-500', 'bg-slate-600');
+                if (addProductSection) {
+                    addProductSection.style.display = 'none';
                 }
-                renderizarPagina();
+                if (pageSubtitle) {
+                    pageSubtitle.textContent = `Esta compra ya fue ${compra.estado.toLowerCase()} y no puede ser modificada.`;
+                }
             } else {
-                modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Esta compra no tiene productos detallados.</td></tr>`;
+                if (pageSubtitle) {
+                     pageSubtitle.textContent = `Modifica los detalles de la compra registrada.`;
+                }
+                 numeroFacturaInput.addEventListener('blur', crearOActualizarCompraHeader);
             }
+            renderTableRows(!esEditable);
         } catch (error) {
-            modalDetailsBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400">Error al cargar los detalles.</td></tr>`;
             console.error(error);
+            purchaseDetailsBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-rose-400">Error: ${error.message}</td></tr>`;
         }
     };
 
-    comprasTableBody.addEventListener('click', e => {
-        const viewButton = e.target.closest('.view-details-btn');
-        if (viewButton) {
-            mostrarDetalles(viewButton.dataset.compraId);
+    const crearOActualizarCompraHeader = async () => {
+        if (!proveedorSelect.value || !sucursalSelect.value || !numeroFacturaInput.value) { return; }
+        const url = compraId ? `/compras/api/compras/${compraId}/` : `/compras/api/compras/`;
+        const method = compraId ? 'PATCH' : 'POST';
+        const data = {
+            proveedor: proveedorSelect.value,
+            sucursal_destino: sucursalSelect.value,
+            numero_factura_proveedor: numeroFacturaInput.value,
+        };
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw await response.json();
+            const savedCompra = await response.json();
+            if (!compraId) {
+                compraId = savedCompra.id;
+                proveedorSelect.disabled = true;
+                sucursalSelect.disabled = true;
+                numeroFacturaInput.disabled = true;
+                purchaseDetailsBody.innerHTML = '<tr><td colspan="8" class="text-center p-8 text-slate-400">Encabezado guardado. Ya puedes añadir productos.</td></tr>';
+            }
+        } catch (error) {
+            let errorMessage = 'No se pudo crear o actualizar la compra.\n\n';
+            for (const field in error) { if (Array.isArray(error[field])) { errorMessage += `${field}: ${error[field].join(', ')}\n`; } }
+            alert(errorMessage);
         }
+    };
+
+    productSearchInput.addEventListener('input', (e) => {
+        const query = e.target.value;
+        if (query.length < 2) { suggestionsContainer.classList.add('hidden'); return; }
+        fetch(`/inventario/api/productos/autocomplete/?search=${query}`, { credentials: 'include' })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                suggestionsContainer.innerHTML = '';
+                if (data.results && data.results.length > 0) {
+                    suggestionsContainer.classList.remove('hidden');
+                    data.results.forEach(product => {
+                        const div = document.createElement('div');
+                        div.className = 'p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-800';
+                        div.innerHTML = `<p class="font-semibold text-white">${product.nombre} ${product.concentracion || ''}</p><p class="text-xs text-slate-400">${product.laboratorio_nombre}</p>`;
+                        div.dataset.product = JSON.stringify(product);
+                        div.addEventListener('click', handleSuggestionClick);
+                        suggestionsContainer.appendChild(div);
+                    });
+                } else { suggestionsContainer.classList.add('hidden'); }
+            }).catch(err => console.error('Error en autocomplete:', err));
     });
 
-    modalPrevBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderizarPagina();
+    const handleSuggestionClick = (e) => {
+        if (!compraId) { alert('Por favor, primero completa y guarda la información de la factura.'); return; }
+        const productData = JSON.parse(e.currentTarget.dataset.product);
+        lineItems.push({
+            producto: productData.id,
+            producto_nombre: `${productData.nombre} ${productData.concentracion || ''}`,
+            unidades_disponibles: productData.unidades_jerarquia || [],
+            lote: '', fecha_vencimiento: '', cantidad_recibida: '', precio_unitario_compra: '',
+        });
+        productSearchInput.value = '';
+        suggestionsContainer.classList.add('hidden');
+        renderTableRows(processButton.disabled);
+    };
+
+    const guardarDetalle = async (itemIndex) => {
+        const item = lineItems[itemIndex];
+        if (!item || !item.lote || !item.fecha_vencimiento || !(parseFloat(item.cantidad_recibida) > 0) || !(parseFloat(item.precio_unitario_compra) >= 0)) return;
+
+        const esNuevo = !item.id;
+        const url = esNuevo ? `/compras/api/detalles-compra/` : `/compras/api/detalles-compra/${item.id}/`;
+        const method = esNuevo ? 'POST' : 'PATCH';
+        const data = {
+            producto: item.producto, lote: item.lote, fecha_vencimiento: item.fecha_vencimiento,
+            cantidad_recibida: item.cantidad_recibida, precio_unitario_compra: item.precio_unitario_compra,
+            presentacion: item.unidad_seleccionada_id,
+        };
+        if (esNuevo) data.compra = compraId;
+
+        try {
+            const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken }, body: JSON.stringify(data) });
+            if (!response.ok) throw await response.json();
+            const savedDetalle = await response.json();
+            Object.assign(lineItems[itemIndex], savedDetalle);
+            renderTableRows(processButton.disabled);
+        } catch (error) { console.error(`Error guardando detalle:`, error); }
+    };
+
+    const eliminarDetalle = async (itemIndex) => {
+        if (!confirm('¿Estás seguro?')) return;
+        const item = lineItems[itemIndex];
+        if (item && item.id) {
+            try {
+                await fetch(`/compras/api/detalles-compra/${item.id}/`, { method: 'DELETE', headers: { 'X-CSRFToken': csrftoken }});
+            } catch (error) { alert('No se pudo eliminar el item de la base de datos.'); return; }
         }
+        lineItems.splice(itemIndex, 1);
+        renderTableRows(processButton.disabled);
+    };
+
+    async function procesarCompra() {
+        if (!compraId) { alert('No hay una compra activa para procesar.'); return; }
+        if (!confirm('¿Estás seguro de que deseas procesar esta compra? El stock se actualizará y ya no podrás editarla.')) return;
+
+        processButton.disabled = true; processButton.textContent = 'Procesando...';
+        try {
+            const response = await fetch(`/compras/api/compras/${compraId}/procesar/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }});
+            if (!response.ok) throw await response.json();
+            const result = await response.json();
+            alert(result.status || '¡Compra procesada con éxito!');
+            window.location.href = comprasHomeUrl;
+        } catch (error) {
+            alert('Error: ' + (error.error || 'No se pudo procesar la compra.'));
+            processButton.disabled = false;
+            processButton.textContent = 'Finalizar y Procesar'; // Corregí el texto del botón
+        }
+    }
+    
+    function renderTableRows(isReadOnly = false) {
+        purchaseDetailsBody.innerHTML = '';
+        if(lineItems.length === 0) {
+             const message = compraId ? "Añade productos a la compra." : "Complete la información de la factura para empezar.";
+             purchaseDetailsBody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-slate-400">${message}</td></tr>`;
+             updateTotalsUI(); // Limpiar totales si no hay items
+             return;
+        }
+
+        lineItems.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.dataset.index = index;
+            const guardadoIndicator = item.id ? 'border-l-4 border-emerald-500' : 'border-l-4 border-amber-500';
+            row.className = `transition-all duration-300 ${guardadoIndicator}`;
+            const subtotal = (parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0);
+
+            let unitOptionsHTML = '';
+            if (item.unidades_disponibles && item.unidades_disponibles.length > 0) {
+                item.unidades_disponibles.forEach(unit => {
+                    const isSelected = item.unidad_seleccionada_id == unit.id;
+                    unitOptionsHTML += `<option value="${unit.id}" ${isSelected ? 'selected' : ''}>${unit.nombre}</option>`;
+                });
+            } else { unitOptionsHTML = '<option value="">N/A</option>'; }
+            
+            const disabledAttr = isReadOnly ? 'disabled' : '';
+
+            row.innerHTML = `
+                <td class="p-2 align-middle"><p class="text-white font-medium text-sm">${item.producto_nombre}</p></td>
+                <td class="p-2 align-middle"><select name="unidad_seleccionada_id" class="form-select py-1 data-field" ${disabledAttr}>${unitOptionsHTML}</select></td>
+                <td class="p-2 align-middle"><input type="text" name="lote" class="form-input py-1 data-field" value="${item.lote || ''}" placeholder="Lote" ${disabledAttr}></td>
+                <td class="p-2 align-middle"><input type="date" name="fecha_vencimiento" class="form-input py-1 data-field" value="${item.fecha_vencimiento || ''}" ${disabledAttr}></td>
+                <td class="p-2 align-middle"><input type="number" name="cantidad_recibida" class="form-input py-1 text-right data-field" value="${item.cantidad_recibida || ''}" min="0" placeholder="0" ${disabledAttr}></td>
+                <td class="p-2 align-middle"><input type="number" name="precio_unitario_compra" class="form-input py-1 text-right data-field" value="${item.precio_unitario_compra || ''}" step="0.01" min="0" placeholder="0.00" ${disabledAttr}></td>
+                <td class="p-2 align-middle text-right font-mono text-white subtotal-cell">S/ ${subtotal.toFixed(2)}</td>
+                <td class="p-2 align-middle text-center">${!isReadOnly ? `<button type="button" class="text-rose-400 hover:text-rose-300 delete-row-btn" title="Eliminar Fila">❌</button>` : ''}</td>
+            `;
+            purchaseDetailsBody.appendChild(row);
+        });
+        
+        purchaseDetailsBody.querySelectorAll('.data-field').forEach(input => {
+            input.addEventListener('input', e => {
+                const row = e.target.closest('tr');
+                const index = row.dataset.index;
+                lineItems[index][e.target.name] = e.target.value;
+                const cantidad = parseFloat(lineItems[index].cantidad_recibida) || 0;
+                const precio = parseFloat(lineItems[index].precio_unitario_compra) || 0;
+                row.querySelector('.subtotal-cell').textContent = `S/ ${(cantidad * precio).toFixed(2)}`;
+                updateTotalsUI();
+            });
+            input.addEventListener('blur', e => guardarDetalle(e.target.closest('tr').dataset.index));
+        });
+
+        purchaseDetailsBody.querySelectorAll('.delete-row-btn').forEach(button => {
+            button.addEventListener('click', e => eliminarDetalle(e.target.closest('tr').dataset.index));
+        });
+        updateTotalsUI();
+    }
+    
+    function updateTotalsUI() {
+        const subtotal = lineItems.reduce((acc, item) => acc + ((parseFloat(item.cantidad_recibida) || 0) * (parseFloat(item.precio_unitario_compra) || 0)), 0);
+        const impuestos = subtotal * 0.18;
+        const total = subtotal + impuestos;
+        subtotalDisplay.textContent = `S/ ${subtotal.toFixed(2)}`;
+        impuestosDisplay.textContent = `S/ ${impuestos.toFixed(2)}`;
+        totalDisplay.textContent = `S/ ${total.toFixed(2)}`;
+    }
+    
+    document.addEventListener('click', (e) => { 
+        if (productSearchInput && !productSearchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) { 
+            suggestionsContainer.classList.add('hidden'); 
+        } 
     });
 
-    modalNextBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(allDetails.length / itemsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderizarPagina();
-        }
-    });
-
-    const cerrarModal = () => modal.classList.add('hidden');
-    modalCloseBtn.addEventListener('click', cerrarModal);
-    modal.addEventListener('click', e => {
-        if (e.target === modal) {
-            cerrarModal();
-        }
-    });
-
-    mainPrevBtn.addEventListener('click', () => {
-        if (prevUrl) {
-            cargarCompras(prevUrl);
-        }
-    });
-
-    mainNextBtn.addEventListener('click', () => {
-        if (nextUrl) {
-            cargarCompras(nextUrl);
-        }
-    });
-
-    cargarCompras();
+    if (processButton) {
+        processButton.addEventListener('click', procesarCompra);
+    }
+    
+    inicializarFormulario();
 });

@@ -1,5 +1,4 @@
 asgiref==3.8.1
-backports.zoneinfo==0.2.1
 Brotli==1.1.0
 cffi==1.17.1
 crispy-tailwind==1.0.3

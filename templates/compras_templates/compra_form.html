@@ -22,13 +22,14 @@ VQL - Registrar Nueva Compra
         Volver al Listado
     </a>
     <h1 id="form-title" class="text-xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
-    <p class="text-slate-400 text-sm mt-1">Registra los productos recibidos de un proveedor según la factura o guía de
+    <p class="text-slate-400 text-sm mt-1" id="page-subtitle">Registra los productos recibidos de un proveedor según la factura o guía de
         remisión.</p>
 </header>
 
 {# MODIFICACIÓN 2: Insertar datos de la compra si estamos en modo edición #}
 {% if compra %}
-{{ compra_json|json_script:"compra-data" }}
+    {# Usamos un script para pasar el pk de la compra al archivo js externo #}
+    <script id="compra-pk-data" type="application/json">{{ compra.pk|default:'null' }}</script>
 {% endif %}
 
 
@@ -90,7 +91,7 @@ VQL - Registrar Nueva Compra
                     <tbody id="purchase-details-body"></tbody>
                 </table>
             </div>
-            <div class="mt-4 pt-4 border-t border-slate-700">
+            <div id="add-product-section" class="mt-4 pt-4 border-t border-slate-700">
                 <label for="product-search" class="block text-sm font-medium text-slate-300 mb-1">Añadir
                     Producto</label>
                 <div class="relative">
@@ -116,14 +117,17 @@ VQL - Registrar Nueva Compra
                 <p class="text-slate-400">TOTAL:</p>
                 <p id="total-display" class="text-3xl font-extrabold text-emerald-400">S/ 0.00</p>
             </div>
-            <button type="button" id="save-purchase-button"
-                class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Finalizar
-                y Procesar</button>
+            <button type="button" id="process-button"
+    class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Finalizar
+    y Procesar</button>
         </div>
     </div>
 </form>
 {% endblock %}
 
 {% block app_scripts %}
-    <script src="{% static 'js/compras/compras_form.js' %}"></script>
+<script>
+        const comprasHomeUrl = "{% url 'compras:home' %}";
+</script>
+<script src="{% static 'js/compras/compra_form.js' %}"></script>
 {% endblock %}
