@@ -2,70 +2,358 @@
 {% load static %}
 
 {% block title %}
-{% if categoria %}
-VQL - Editando Categoría
-{% else %}
-VQL - Nueva Categoría
-{% endif %}
+    {% if categoria %}VQL - Editando Categoría{% else %}VQL - Nueva Categoría{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'inventario:categoria_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
-              hover:bg-slate-700 hover:text-white transition-all duration-300
-              shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a Categorías
-    </a>
+<style>
+    .inventory-shell {
+        position: relative;
+        overflow: hidden;
+    }
 
-    {% if categoria %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Categoría</h1>
-    <p class="text-slate-400 mt-1">Modifica los detalles de la categoría <strong class="text-white">{{ categoria
-            }}</strong>.</p>
-    {% else %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nueva Categoría</h1>
-    <p class="text-slate-400 mt-1">Define una nueva categoría para tus productos.</p>
-    {% endif %}
-</header>
+    .inventory-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at top left, rgba(16, 185, 129, 0.07), transparent 26%),
+            radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 28%);
+        pointer-events: none;
+    }
 
-<div class="glass-card rounded-2xl p-8 max-w-2xl mx-auto">
-    <form method="post" action="">
-        {% csrf_token %}
-        <div class="space-y-6">
-            <div>
-                <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-1">Nombre
-                    de la Categoría</label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
-                {% endif %}
-            </div>
-            <div>
-                <label for="{{ form.descripcion.id_for_label }}"
-                    class="block text-sm font-medium text-slate-300 mb-1">Descripción</label>
-                {{ form.descripcion }}
-                {% if form.descripcion.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.descripcion.errors.as_text }}</p>
-                {% endif %}
-            </div>
-        </div>
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+    .form-shell {
+        position: relative;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow:
+            0 18px 40px rgba(15, 23, 42, 0.05),
+            0 32px 80px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
+
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+        transition: all 0.25s ease;
+    }
+
+    .section-card:hover {
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #0f172a;
+        outline: none;
+        transition: all 0.25s ease;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: #94a3b8;
+    }
+
+    .form-input:hover,
+    .form-textarea:hover {
+        border-color: #cbd5e1;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        border-color: #10b981;
+        box-shadow:
+            0 0 0 4px rgba(16, 185, 129, 0.11),
+            0 8px 24px rgba(16, 185, 129, 0.08);
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .field-help {
+        margin-top: 0.45rem;
+        font-size: 0.76rem;
+        color: #94a3b8;
+        line-height: 1.35;
+    }
+
+    .section-badge {
+        width: 2.2rem;
+        height: 2.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.95rem;
+        font-weight: 800;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+
+    .mini-stat {
+        border-radius: 1.15rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .mini-stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .mini-stat-value {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .soft-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.48rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+</style>
+
+<div class="">
+    <header class="relative mb-10 mt-6 px-8 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
             <a href="{% url 'inventario:categoria_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">
-                {% if categoria %}
-                Guardar Cambios
-                {% else %}
-                Guardar Categoría
-                {% endif %}
-            </button>
+               class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-600 transition-colors duration-200">
+                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 group-hover:border-emerald-200 group-hover:bg-emerald-50 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver a categorías</span>
+            </a>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 bg-emerald-500 blur-lg opacity-20 rounded-2xl"></div>
+                    <div class="relative w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-emerald-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if categoria %}Editar Categoría{% else %}Nueva Categoría{% endif %}
+                        </h1>
+
+                        {% if categoria %}
+                            <span class="soft-chip bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                                ID: #{{ categoria.id }}
+                            </span>
+                        {% else %}
+                            <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                                BORRADOR
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-slate-500 text-sm leading-relaxed max-w-2xl">
+                        {% if categoria %}
+                            Modifica la categoría <strong class="font-bold text-slate-800">{{ categoria.nombre }}</strong> para mantener ordenado el catálogo maestro.
+                        {% else %}
+                            Crea una nueva categoría para agrupar productos, mejorar búsquedas y organizar mejor el inventario.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full {% if categoria %}bg-emerald-500{% else %}bg-amber-500{% endif %}"></span>
+                        {% if categoria %}Activo{% else %}En creación{% endif %}
+                    </span>
+                </div>
+
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Módulo</span>
+                    <span class="mini-stat-value text-sm">Inventario</span>
+                </div>
+            </div>
         </div>
-    </form>
+    </header>
+
+    {% if messages %}
+    <div class="mb-6 space-y-3">
+        {% for message in messages %}
+        <div class="rounded-2xl border px-4 py-3 text-sm font-bold
+            {% if message.tags == 'success' %}
+                border-emerald-200 bg-emerald-50 text-emerald-700
+            {% else %}
+                border-rose-200 bg-rose-50 text-rose-700
+            {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="relative max-w-full mx-auto">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-emerald-200/60 via-sky-100/50 to-cyan-100/50 blur-2xl"></div>
+
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-7">
+            <form method="post" action="" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <section class="xl:col-span-8">
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-emerald-50 text-emerald-700 border border-emerald-100">01</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información de la categoría</h3>
+                                    <p class="text-sm text-slate-500">
+                                        Define el nombre principal y una descripción interna para identificarla rápidamente.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-5">
+                                <div>
+                                    <label for="nombre" class="form-label">Nombre de la categoría</label>
+                                    <input
+                                        type="text"
+                                        id="nombre"
+                                        name="nombre"
+                                        value="{% if categoria %}{{ categoria.nombre }}{% endif %}"
+                                        placeholder="Ej. Analgésicos, Antibióticos, Cuidado personal..."
+                                        class="form-input rounded-2xl px-4 py-3.5"
+                                        required
+                                        autocomplete="off"
+                                    >
+                                    <p class="field-help">
+                                        Usa un nombre corto, claro y fácil de reconocer en el inventario.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label for="descripcion" class="form-label">Descripción</label>
+                                    <textarea
+                                        id="descripcion"
+                                        name="descripcion"
+                                        rows="5"
+                                        placeholder="Ej. Productos destinados al alivio del dolor, fiebre o malestares generales."
+                                        class="form-textarea rounded-2xl px-4 py-3.5"
+                                    >{% if categoria %}{{ categoria.descripcion }}{% endif %}</textarea>
+                                    <p class="field-help">
+                                        Puedes usar este campo para explicar qué tipo de productos pertenecen a esta categoría.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="xl:col-span-4">
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-5">
+                                <span class="section-badge bg-sky-50 text-sky-700 border border-sky-100">02</span>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Resumen rápido</h3>
+                                    <p class="text-sm text-slate-500">Vista previa del registro.</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Categoría</p>
+                                    <p id="preview-name" class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if categoria and categoria.nombre %}{{ categoria.nombre }}{% else %}Nueva categoría{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Descripción</p>
+                                    <p id="preview-description" class="mt-1 text-sm font-semibold text-slate-800 line-clamp-3">
+                                        {% if categoria and categoria.descripcion %}{{ categoria.descripcion }}{% else %}Pendiente de completar{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-emerald-50 px-3 py-2 border border-emerald-100">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-700">Uso recomendado</p>
+                                    <p class="mt-1 text-sm text-emerald-800">
+                                        Mantén categorías simples para mejorar filtros y reportes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-slate-100 pt-6">
+                    <a href="{% url 'inventario:categoria_list' %}"
+                       class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-slate-50">
+                        Cancelar
+                    </a>
+
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition-all hover:-translate-y-0.5 hover:from-emerald-600 hover:to-emerald-700">
+                        {% if categoria %}Guardar cambios{% else %}Registrar categoría{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nameInput = document.getElementById('nombre');
+    const descriptionInput = document.getElementById('descripcion');
+    const previewName = document.getElementById('preview-name');
+    const previewDescription = document.getElementById('preview-description');
+
+    function refreshPreview() {
+        const nameValue = nameInput?.value.trim();
+        const descriptionValue = descriptionInput?.value.trim();
+
+        if (previewName) {
+            previewName.textContent = nameValue || 'Nueva categoría';
+        }
+
+        if (previewDescription) {
+            previewDescription.textContent = descriptionValue || 'Pendiente de completar';
+        }
+    }
+
+    nameInput?.addEventListener('input', refreshPreview);
+    descriptionInput?.addEventListener('input', refreshPreview);
+});
+</script>
 {% endblock %}

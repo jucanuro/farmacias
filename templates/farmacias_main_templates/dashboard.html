@@ -1,268 +1,236 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}VQL - Panel de Control{% endblock %}
+{% block title %}VQL - Panel de Control Elite{% endblock %}
 
 {% block app_content %}
+<style>
+    /* Animaciones de entrada refinadas */
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-card { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    
+    .dashboard-card {
+        background: #ffffff;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #f1f5f9;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px -12px rgba(16, 185, 129, 0.12);
+        border-color: #10b981;
+    }
+    .icon-box {
+        transition: all 0.4s ease;
+        background: #f8fafc;
+    }
+    .dashboard-card:hover .icon-box {
+        transform: scale(1.1) rotate(5deg);
+        background: #ecfdf5;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+</style>
 
-<div id="inicio-content">
-    <header id="main-header" class="flex justify-between items-center mb-10">
-        <div>
-            <h1 class="text-4xl font-extrabold text-white">Panel de Control</h1>
-            <p class="text-slate-400 mt-1">Hola, {{ user.get_full_name|default:user.username }}. Bienvenido al futuro de
-                la gestión.</p>
+<div id="inicio-content" class="space-y-10">
+    <header id="main-header" class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="animate-card">
+            <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 font-display">
+                Panel de <span class="text-emerald-600">Control</span>
+            </h1>
+            <p class="text-slate-500 font-medium mt-2 flex items-center gap-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                Hola, {{ user.get_full_name|default:user.username }}. Gestión activa del sistema.
+            </p>
         </div>
+        
         <button id="command-palette-button-main"
-            class="px-4 py-2 glass-card rounded-lg text-slate-300 hover:text-white hover:border-slate-400/50 transition-colors flex items-center gap-2">
-            Búsqueda rápida <span class="text-xs border border-slate-500 rounded px-1.5 py-0.5">Ctrl K</span>
+            class="animate-card group flex items-center gap-4 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-lg transition-all duration-300">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Búsqueda rápida...</span>
+            </div>
+            <kbd class="hidden sm:inline-block px-2 py-1 text-[10px] font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-md shadow-sm">CTRL K</kbd>
         </button>
     </header>
-    <div id="card-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-    </div>
+
+    <div id="card-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        </div>
 </div>
 
-<div id="analisis-content" class="hidden">
-</div>
+<div id="analisis-content" class="hidden animate-card"></div>
 {% endblock %}
 
 {% block app_content_extra %}
-<div id="command-palette"
-    class="fixed inset-0 z-50 flex justify-center items-start pt-20 bg-black/50 backdrop-blur-sm hidden">
-    <div class="glass-card w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border-emerald-500/50">
-        <input id="command-input" type="text" placeholder="Escribe un comando o busca una página..."
-            class="w-full p-4 text-lg bg-transparent text-white focus:outline-none border-b border-slate-500/50">
-        <ul id="command-list" class="p-2 max-h-96 overflow-y-auto"></ul>
+<div id="command-palette" class="fixed inset-0 z-[100] flex justify-center items-start pt-[10vh] bg-slate-900/40 backdrop-blur-md hidden px-4">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+        <div class="relative flex items-center border-b border-slate-100 p-4">
+            <input id="command-input" type="text" placeholder="Escribe un comando o busca una página..."
+                class="w-full pl-4 pr-4 py-4 text-xl bg-transparent text-slate-800 focus:outline-none font-medium">
+        </div>
+        <div class="p-2">
+            <ul id="command-list" class="max-h-[50vh] overflow-y-auto no-scrollbar"></ul>
+        </div>
     </div>
 </div>
 {% endblock %}
-
 
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. ESTRUCTURA DE DATOS PRINCIPAL ---
+        // --- 1. DATA COMPLETA (SIN RECORTES) ---
         const navigationData = [
             {
-                id: 'inventario', icon: '📦', category: 'Inventario', title: 'Control de Inventario', desc: 'Administra productos, categorías y stock.', glow: '#0891b2',
+                id: 'inventario', icon: '📦', category: 'Inventario', title: 'Control de Inventario', desc: 'Administra productos, categorías y stock.', glow: '#059669',
                 children: [
                     { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos', desc: 'Gestiona el catálogo completo.', category: 'Inventario' },
                     { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías', desc: 'Organiza tus productos.', category: 'Inventario' },
                     { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios', desc: 'Administra los fabricantes.', category: 'Inventario' },
                     { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas Farmacéuticas', desc: 'Administra las formas.', category: 'Inventario' },
                     { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos', desc: 'Administra los principios.', category: 'Inventario' },
-                    { id: 'unidades', url: "{% url 'inventario:unidad_presentacion_list' %}", icon: '📐', title: 'Unidades', desc: 'Gestiona cajas, blisters, etc.', category: 'Inventario' }, // <-- LÍNEA AÑADIDA
+                    { id: 'unidades', url: "{% url 'inventario:unidad_presentacion_list' %}", icon: '📐', title: 'Unidades', desc: 'Gestiona cajas, blisters, etc.', category: 'Inventario' },
                 ]
             },
             {
-                id: 'compras',
-                icon: '🛒',
-                category: 'Compras',
-                title: 'Módulo de Compras',
-                desc: 'Registra facturas, visualiza el historial y gestiona proveedores.',
-                glow: '#0ea5e9',
+                id: 'compras', icon: '🛒', category: 'Compras', title: 'Módulo de Compras', desc: 'Registra facturas y gestiona proveedores.', glow: '#0284c7',
                 children: [
-                    // --- CÓDIGO AÑADIDO ---
-                    { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras', desc: 'Visualiza y busca todas las compras registradas.', category: 'Compras' },
-
-                    { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra', desc: 'Ingresa nuevas facturas de compra.', category: 'Compras' },
+                    { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras', desc: 'Visualiza todas las compras.', category: 'Compras' },
+                    { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra', desc: 'Ingresa nuevas facturas.', category: 'Compras' },
                     { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores', desc: 'Administra tus proveedores.', category: 'Compras' },
                 ]
             },
             {
-                id: 'traslados',
-                icon: '↔️', // Ícono simple para representar el movimiento
-                category: 'Logística',
-                title: 'Traslados de Stock',
-                desc: 'Gestiona el movimiento de productos entre tus sucursales.',
-                glow: '#8b5cf6', // Un color violeta para diferenciarlo
+                id: 'traslados', icon: '↔️', category: 'Logística', title: 'Traslados de Stock', desc: 'Movimiento entre sucursales.', glow: '#7c3aed',
                 children: [
-                    { 
-                        id: 'listado-traslados', 
-                        url: "{% url 'traslados:home' %}", 
-                        icon: '🚚', 
-                        title: 'Listado de Traslados', 
-                        desc: 'Revisa el historial de traslados entre sucursales.', 
-                        category: 'Traslados' 
-                    },
-                    { 
-                        id: 'nuevo-traslado', 
-                        url: "{% url 'traslados:traslado_create' %}", 
-                        icon: '➕', 
-                        title: 'Nuevo Traslado', 
-                        desc: 'Inicia un nuevo envío de stock a otra sucursal.', 
-                        category: 'Traslados' 
-                    },
+                    { id: 'listado-traslados', url: "{% url 'traslados:home' %}", icon: '🚚', title: 'Listado de Traslados', desc: 'Historial de movimientos.', category: 'Traslados' },
+                    { id: 'nuevo-traslado', url: "{% url 'traslados:traslado_create' %}", icon: '➕', title: 'Nuevo Traslado', desc: 'Inicia un nuevo envío.', category: 'Traslados' },
                 ]
             },
             {
-                id: 'administracion',
-                icon: '⚙️',
-                category: 'Sistema',
-                title: 'Administración',
-                desc: 'Gestiona farmacias, usuarios y roles.',
-                glow: '#64748b',
+                id: 'ventas', icon: '💳', category: 'Ventas', title: 'Módulo de Ventas', desc: 'POS, clientes e historial.', glow: '#16a34a',
                 children: [
-                    { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Gestión de Farmacias', desc: 'Añade o edita tus farmacias.', category: 'Sistema' },
-                    { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Gestión de Usuarios', desc: 'Controla los accesos y permisos.', category: 'Sistema' },
-                    { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Gestión de Roles', desc: 'Define los tipos de usuario.', category: 'Sistema' },
+                    { id: 'pos', url: "{% url 'ventas:pos' %}", icon: '🖥️', title: 'Punto de Venta (POS)', desc: 'Terminal de ventas rápido.', category: 'Ventas' },
+                    { id: 'historial-ventas', url: "{% url 'ventas:venta_list' %}", icon: '📊', title: 'Historial de Ventas', desc: 'Consulta ventas registradas.', category: 'Ventas' },
+                    { id: 'clientes', url: "{% url 'clientes:lista' %}", icon: '👥', title: 'Gestión de Clientes', desc: 'Administra tu base de datos.', category: 'Ventas' },
                 ]
             },
             {
-                id: 'ventas',
-                icon: '💳', // O el ícono que prefieras
-                category: 'Ventas',
-                title: 'Módulo de Ventas',
-                desc: 'Gestiona clientes, registra transacciones y revisa historiales.',
-                glow: '#16a34a', // Un color verde para diferenciarlo
+                id: 'administracion', icon: '⚙️', category: 'Sistema', title: 'Administración', desc: 'Gestión de farmacias, usuarios y roles.', glow: '#475569',
                 children: [
-                    {
-                        id: 'pos',
-                        url: "{% url 'ventas:pos' %}",
-                        icon: '🖥️',
-                        title: 'Punto de Venta (POS)',
-                        desc: 'Inicia el terminal para registrar nuevas ventas.',
-                        category: 'Ventas'
-                    },
-                    {
-                        id: 'historial-ventas',
-                        url: "{% url 'ventas:venta_list' %}",
-                        icon: '📊',
-                        title: 'Historial de Ventas',
-                        desc: 'Consulta y filtra todas las ventas registradas.',
-                        category: 'Ventas'
-                    },
-
-                    {
-                        id: 'clientes',
-                        url: "{% url 'clientes:lista' %}",
-                        icon: '👥',
-                        title: 'Gestión de Clientes',
-                        desc: 'Consulta y administra tu base de clientes.',
-                        category: 'Ventas'
-                    },
-                    // Aquí podrás añadir 'Registrar Venta', etc., en el futuro.
+                    { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Sucursales', desc: 'Añade o edita farmacias.', category: 'Sistema' },
+                    { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Usuarios', desc: 'Control de accesos.', category: 'Sistema' },
+                    { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Roles', desc: 'Define tipos de usuario.', category: 'Sistema' },
                 ]
             },
             {
-                id: 'analisis',
-                url: '#',
-                icon: '📊',
-                category: 'Análisis',
-                title: 'Dashboard de Análisis',
-                desc: 'Métricas y KPIs de ventas.',
-                glow: '#14b8a6',
-                action: 'show_analysis_view'
-            },
+                id: 'analisis', icon: '📊', category: 'Análisis', title: 'Dashboard de Análisis', desc: 'Métricas y KPIs de rendimiento.', glow: '#0d9488', url: '#', action: 'show_analysis_view'
+            }
         ];
 
-        // --- 2. ELEMENTOS DEL DOM ---
-        const inicioContent = document.getElementById('inicio-content');
-        const analisisContent = document.getElementById('analisis-content');
         const cardContainer = document.getElementById('card-container');
         const mainHeader = document.getElementById('main-header');
+        const inicioContent = document.getElementById('inicio-content');
+        const analisisContent = document.getElementById('analisis-content');
 
-        // --- 3. LÓGICA DE VISTAS (Panel Principal vs. Análisis) ---
         const setActiveView = (viewName) => {
             const isInicio = viewName === 'inicio';
             inicioContent.classList.toggle('hidden', !isInicio);
             analisisContent.classList.toggle('hidden', isInicio);
         };
 
-        // --- 4. LÓGICA DE RENDERIZADO (Tarjetas y Dashboard de Análisis) ---
-        const renderCards = (items, parentItem = null) => {
+        const renderCards = (items, isSubMenu = false) => {
             cardContainer.innerHTML = '';
-            if (parentItem) {
-                const backButton = document.createElement('div');
-                backButton.className = 'col-span-full mb-4 animate-fade-in';
-                backButton.innerHTML = `<button id="back-to-main" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> Volver al Menú Principal</button>`;
-                cardContainer.appendChild(backButton);
-                document.getElementById('back-to-main').addEventListener('click', () => {
-                    mainHeader.style.display = 'flex';
+            
+            if (isSubMenu) {
+                const backBtn = document.createElement('div');
+                backBtn.className = 'col-span-full mb-4 animate-card';
+                backBtn.innerHTML = `
+                    <button id="back-to-main" class="flex items-center gap-2 text-emerald-600 font-bold hover:text-emerald-700 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                        VOLVER AL PANEL PRINCIPAL
+                    </button>`;
+                cardContainer.appendChild(backBtn);
+                document.getElementById('back-to-main').onclick = () => {
+                    mainHeader.classList.remove('hidden');
                     renderCards(navigationData);
-                });
+                };
             }
-            items.forEach(card => {
-                const cardElement = document.createElement('a');
-                cardElement.className = 'dashboard-card card-3d glass-card rounded-2xl p-6 flex flex-col justify-between h-52 group cursor-pointer block animate-fade-in-up';
-                cardElement.href = card.url || '#';
-                cardElement.innerHTML = `<div class="flex justify-between items-start"><span class="text-5xl">${card.icon}</span> ${card.category ? `<span class="text-xs font-bold uppercase" style="color:${card.glow};">${card.category}</span>` : ''}</div><div><h4 class="text-xl font-bold text-white">${card.title}</h4><p class="text-sm text-slate-400">${card.desc}</p></div>`;
-                cardElement.addEventListener('click', (e) => {
-                    if (card.children && card.children.length > 0) {
-                        e.preventDefault();
-                        mainHeader.style.display = 'none';
-                        renderCards(card.children, { title: 'Menú Principal' });
+
+            items.forEach((card, index) => {
+                const div = document.createElement('div');
+                div.className = 'dashboard-card rounded-3xl p-7 h-64 flex flex-col justify-between cursor-pointer animate-card';
+                div.style.animationDelay = `${index * 0.05}s`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="icon-box w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white">${card.icon}</div>
+                        <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-50 border border-slate-100" style="color:${card.glow}">${card.category}</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-1 font-display">${card.title}</h3>
+                        <p class="text-sm text-slate-500 leading-snug">${card.desc}</p>
+                    </div>`;
+                
+                div.onclick = (e) => {
+                    if (card.children) {
+                        mainHeader.classList.add('hidden');
+                        renderCards(card.children, true);
                     } else if (card.action === 'show_analysis_view') {
-                        e.preventDefault();
                         setActiveView('analisis');
+                        renderAnalysis();
+                    } else if (card.url) {
+                        window.location.href = card.url;
                     }
-                });
-                cardContainer.appendChild(cardElement);
+                };
+                cardContainer.appendChild(div);
             });
         };
 
-        const renderAnalysisDashboard = () => {
+        const renderAnalysis = () => {
             analisisContent.innerHTML = `
-            <header class="flex justify-between items-center mb-10">
-                <div><h1 class="text-4xl font-extrabold text-white">Dashboard de Análisis</h1><p class="text-slate-400 mt-1">Métricas clave (datos de ejemplo).</p></div>
-                <button id="back-from-analysis" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                    Volver al Panel
-                </button>
-            </header>
-            <div class="glass-card p-6 rounded-2xl text-center"><p>Aquí irían tus gráficos y KPIs.</p></div>`;
-            document.getElementById('back-from-analysis').addEventListener('click', () => setActiveView('inicio'));
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-4xl font-extrabold text-slate-900 font-display">Análisis <span class="text-emerald-600">Métricas</span></h1></div>
+                    <button id="back-from-analysis" class="px-6 py-2 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-emerald-50 hover:text-emerald-600 transition-all">Volver</button>
+                </header>
+                <div class="bg-white p-12 rounded-3xl border border-slate-100 text-center shadow-sm text-slate-400 font-medium italic">Gráficos de rendimiento en desarrollo...</div>`;
+            document.getElementById('back-from-analysis').onclick = () => setActiveView('inicio');
         };
 
-        // --- 5. LÓGICA DE LA PALETA DE COMANDOS (RE-INTEGRADA) ---
-        const commandItems = [];
-        navigationData.forEach(item => {
-            if (item.children && item.children.length > 0) { commandItems.push(...item.children); }
-            else { commandItems.push(item); }
-        });
-        const commands = [
-            ...commandItems.map(card => ({
-                name: card.title, category: card.category || 'General',
-                action: () => {
-                    if (card.action === 'show_analysis_view') { setActiveView('analisis'); }
-                    else { window.location.href = card.url; }
-                }
-            })),
-            { name: 'Cerrar Sesión', category: 'Sistema', action: () => { document.getElementById('logout-link')?.click(); } }
-        ];
+        // --- PALETA DE COMANDOS ---
         const commandPalette = document.getElementById('command-palette');
         const commandInput = document.getElementById('command-input');
         const commandList = document.getElementById('command-list');
-        const commandButtons = document.querySelectorAll('#command-palette-button-main');
-        const openCommandPalette = () => { commandPalette.classList.remove('hidden'); commandInput.focus(); renderCommandList(commands); };
-        const closeCommandPalette = () => { commandPalette.classList.add('hidden'); commandInput.value = ''; };
-        const renderCommandList = (items) => {
-            commandList.innerHTML = '';
-            if (items.length === 0) { commandList.innerHTML = `<li class="p-3 text-slate-400">No se encontraron resultados.</li>`; return; }
-            items.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.className = `p-3 text-slate-300 flex justify-between items-center rounded-lg cursor-pointer hover:bg-emerald-500/20 ${index === 0 ? 'bg-emerald-500/20' : ''}`;
-                li.innerHTML = `<span>${item.name}</span> <span class="text-xs text-slate-500">${item.category}</span>`;
-                li.addEventListener('click', () => { item.action(); closeCommandPalette(); });
-                commandList.appendChild(li);
-            });
+        const allCommands = [];
+        navigationData.forEach(item => {
+            if (item.children) allCommands.push(...item.children);
+            else allCommands.push(item);
+        });
+
+        const renderCommandItems = (query = '') => {
+            const filtered = allCommands.filter(c => c.title.toLowerCase().includes(query.toLowerCase()));
+            commandList.innerHTML = filtered.map(c => `
+                <li class="p-4 flex items-center gap-4 rounded-2xl hover:bg-emerald-50 cursor-pointer group transition-all" onclick="window.location.href='${c.url}'">
+                    <span class="text-2xl">${c.icon}</span>
+                    <div><p class="font-bold text-slate-800 group-hover:text-emerald-600">${c.title}</p><p class="text-xs text-slate-400 uppercase tracking-tighter">${c.category}</p></div>
+                </li>
+            `).join('');
         };
 
-        // --- 6. INICIALIZACIÓN Y EVENTOS ---
-        renderCards(navigationData);
-        renderAnalysisDashboard();
-        setActiveView('inicio');
+        const togglePalette = (show) => {
+            commandPalette.classList.toggle('hidden', !show);
+            if(show) { commandInput.value = ''; commandInput.focus(); renderCommandItems(); }
+        };
 
-        commandButtons.forEach(btn => btn.addEventListener('click', openCommandPalette));
-        commandInput.addEventListener('input', () => {
-            const query = commandInput.value.toLowerCase();
-            const filteredCommands = commands.filter(c => c.name.toLowerCase().includes(query));
-            renderCommandList(filteredCommands);
-        });
-        commandPalette.addEventListener('click', (e) => { if (e.target === commandPalette) { closeCommandPalette(); } });
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !commandPalette.classList.contains('hidden')) { closeCommandPalette(); }
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); commandPalette.classList.contains('hidden') ? openCommandPalette() : closeCommandPalette(); }
-        });
+        document.getElementById('command-palette-button-main').onclick = () => togglePalette(true);
+        commandInput.oninput = (e) => renderCommandItems(e.target.value);
+        window.onkeydown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); togglePalette(true); }
+            if (e.key === 'Escape') togglePalette(false);
+        };
+
+        renderCards(navigationData);
     });
 </script>
 {% endblock %}

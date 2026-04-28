@@ -45,4 +45,9 @@ urlpatterns = [
     path('usuarios/<int:pk>/editar/', views.usuario_update_view, name='usuario_update'),
     path('usuarios/<int:pk>/toggle-active/', views.usuario_toggle_active_view, name='usuario_toggle_active'),
     
+    # URLs de Gestión de Factura Electrónica
+    
+    path('configuracion-fe/', views.configuracion_facturacion_view, name='configuracion_facturacion'),
+    path('enviar-factura/', views.enviar_factura_electronica_view, name='enviar_factura_electronica'),
+    
 ]

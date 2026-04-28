@@ -15,12 +15,14 @@ from .models import (
 # --- Serializador para DetalleCompra (para poder escribirlo anidado) ---
 class DetalleCompraSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    presentacion_nombre = serializers.CharField(source='presentacion.nombre', read_only=True)
     
     class Meta:
         model = DetalleCompra
         fields = [
             'id', 'compra', 'producto', 'producto_nombre', 'cantidad_recibida',
-            'precio_unitario_compra', 'lote', 'fecha_vencimiento', 'subtotal_linea','presentacion',
+            'precio_unitario_compra', 'lote', 'fecha_vencimiento', 'subtotal_linea',
+            'presentacion', 'presentacion_nombre',
         ]
 
 

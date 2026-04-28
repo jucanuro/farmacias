@@ -1,114 +1,246 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}VQL - Categorías de Productos{% endblock %}
+{% block title %}VQL - Categorías{% endblock %}
 
 {% block app_content %}
-<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-    <div>
-        <h1 class="text-2xl font-extrabold text-white">Categorías de Productos</h1>
-        <p class="text-slate-400 mt-1">Organiza y gestiona las categorías de tu inventario.</p>
-    </div>
-    <a href="{% url 'inventario:categoria_create' %}"
-        class="w-12 h-12 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full shadow-lg hover:shadow-sky-500/50 transition-all duration-300 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                clip-rule="evenodd" />
-        </svg>
-    </a>
-</header>
+<div class="space-y-5 animate-in">
 
-{% if messages %}
-<div class="mb-6">
-    {% for message in messages %}
-    <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-emerald-500/20 text-emerald-300{% else %}bg-rose-500/20 text-rose-300{% endif %}"
-        role="alert">
-        {{ message }}
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
 
-<div class="glass-card rounded-2xl overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left min-w-[640px]">
-            <thead class="bg-slate-800">
-                <tr>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Nombre</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Descripción</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-700">
-                {% for categoria in categorias %}
-                <tr class="hover:bg-slate-800/50 transition-colors">
-                    <td class="p-4 font-medium text-white">{{ categoria.nombre }}</td>
-                    <td class="p-4">{{ categoria.descripcion|default:"-" }}</td>
-                    <td class="p-4">
-                        <div class="flex justify-center items-center gap-4">
-                            <a href="{% url 'inventario:categoria_update' pk=categoria.pk %}"
-                                class="text-slate-400 hover:text-emerald-400 transition-colors"
-                                title="Editar Categoría">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                                    fill="currentColor">
-                                    <path
-                                        d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                                    <path fill-rule="evenodd"
-                                        d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                            <button type="button"
-                                class="delete-btn text-slate-400 hover:text-rose-500 transition-colors"
-                                title="Eliminar Categoría" data-nombre="{{ categoria.nombre }}"
-                                data-url="{% url 'inventario:categoria_delete' pk=categoria.pk %}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </button>
+        <div class="relative px-5 py-5 md:px-7 md:py-6">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex items-start gap-4">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                    </div>
+
+                    <div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                                Categorías de Productos
+                            </h1>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Catálogo
+                            </span>
                         </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" class="p-8 text-center text-slate-400">No hay categorías registradas todavía.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Organiza tu inventario por familias, líneas comerciales o tipos farmacéuticos.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                                {{ categorias|length }} categorías
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                                Gestión activa
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                    <div class="relative w-full sm:w-80 group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 group-focus-within:text-emerald-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="category-search-input"
+                            placeholder="Buscar categoría o descripción..."
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <a href="{% url 'inventario:categoria_create' %}"
+                       class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.8">
+                            <path d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nueva categoría
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {% if messages %}
+    <div class="space-y-3">
+        {% for message in messages %}
+        <div class="rounded-2xl border px-4 py-3 text-sm font-bold
+            {% if message.tags == 'success' %}
+                border-emerald-200 bg-emerald-50 text-emerald-700
+            {% else %}
+                border-rose-200 bg-rose-50 text-rose-700
+            {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div>
+                <h2 class="text-base font-black tracking-tight text-slate-900">Listado de categorías</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Administra, edita y limpia las categorías del inventario.
+                </p>
+            </div>
+
+            <span class="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                Vista premium
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[760px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Categoría
+                        </th>
+                        <th class="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Descripción
+                        </th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody id="category-table-body" class="divide-y divide-slate-100">
+                    {% for categoria in categorias %}
+                    <tr class="category-row group transition-all duration-200 hover:bg-slate-50/80">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase text-slate-500 shadow-sm transition-all group-hover:border-emerald-200 group-hover:text-emerald-600 group-hover:shadow-md">
+                                    {{ categoria.nombre|slice:":1" }}
+                                </div>
+
+                                <div class="min-w-0">
+                                    <p class="category-name truncate text-sm font-black tracking-tight text-slate-900">
+                                        {{ categoria.nombre }}
+                                    </p>
+                                    <span class="mt-1 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                                        ID #{{ categoria.pk }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="category-description px-4 py-4 text-sm font-medium text-slate-500">
+                            {{ categoria.descripcion|default:"Sin descripción registrada" }}
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                                <a href="{% url 'inventario:categoria_update' pk=categoria.pk %}"
+                                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                                   title="Editar">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+
+                                <button type="button"
+                                        class="delete-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-100 hover:bg-rose-50 hover:text-rose-600"
+                                        title="Eliminar"
+                                        data-nombre="{{ categoria.nombre }}"
+                                        data-url="{% url 'inventario:categoria_delete' pk=categoria.pk %}">
+                                    <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-6 py-20 text-center">
+                            <div class="mx-auto flex max-w-md flex-col items-center">
+                                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path d="M4 6h16M4 12h16M4 18h7" />
+                                    </svg>
+                                </div>
+                                <h3 class="mt-5 text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                                    Sin categorías registradas
+                                </h3>
+                                <p class="mt-2 text-sm text-slate-400">
+                                    Cuando agregues categorías, aparecerán aquí para organizar mejor tus productos.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    @media (max-width: 768px) {
+        .group-hover\:opacity-100 { opacity: 1 !important; }
+    }
+</style>
 {% endblock %}
 
 {% block app_content_extra %}
-<div id="delete-modal" class="fixed inset-0 z-50 flex justify-center items-center bg-black/60 backdrop-blur-sm hidden">
-    <div class="glass-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border-rose-500/50 p-8 m-4">
+<div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md overflow-hidden rounded-[2rem] border border-rose-100 bg-white p-7 shadow-2xl">
         <div class="text-center">
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/20"><svg
-                    class="h-6 w-6 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke-width="1.5" stroke="currentColor">
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg></div>
-            <h3 class="mt-4 text-2xl font-bold leading-6 text-white">Eliminar Categoría</h3>
-            <div class="mt-2">
-                <p class="text-sm text-slate-400">¿Estás seguro de que quieres eliminar la categoría <strong
-                        id="delete-item-name" class="font-bold text-white"></strong>?<br>Esta acción no se puede
-                    deshacer.</p>
+                          d="M12 9v3.75m0 3.75h.007M4.47 19.5h15.06c1.54 0 2.5-1.67 1.73-3L13.73 3.5c-.77-1.33-2.69-1.33-3.46 0L2.74 16.5c-.77 1.33.19 3 1.73 3z" />
+                </svg>
             </div>
+
+            <h3 class="mt-5 text-xl font-black text-slate-900">Eliminar categoría</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+                ¿Seguro que deseas eliminar <strong id="delete-item-name" class="font-black text-slate-900"></strong>?
+                Esta acción no se puede deshacer.
+            </p>
         </div>
-        <form id="delete-form" method="POST" class="mt-8 space-y-4">
+
+        <form id="delete-form" method="POST" class="mt-7">
             {% csrf_token %}
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <button type="button" id="cancel-delete-btn"
-                    class="w-full px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</button>
+                        class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50">
+                    Cancelar
+                </button>
                 <button type="submit"
-                    class="w-full px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors">Sí,
-                    eliminar</button>
+                        class="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-100 transition-all hover:bg-rose-700">
+                    Sí, eliminar
+                </button>
             </div>
         </form>
     </div>
@@ -117,22 +249,54 @@
 
 {% block app_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const deleteModal = document.getElementById('delete-modal');
-        if (!deleteModal) return;
-        const deleteForm = document.getElementById('delete-form');
-        const itemNameModal = document.getElementById('delete-item-name');
-        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-        const openModal = (button) => {
-            itemNameModal.textContent = button.dataset.nombre;
-            deleteForm.action = button.dataset.url;
-            deleteModal.classList.remove('hidden');
-        };
-        const closeModal = () => { deleteModal.classList.add('hidden'); };
-        deleteButtons.forEach(button => { button.addEventListener('click', (e) => { e.preventDefault(); openModal(button); }); });
-        cancelDeleteBtn.addEventListener('click', closeModal);
-        deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) { closeModal(); } });
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('category-search-input');
+    const rows = document.querySelectorAll('.category-row');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const value = searchInput.value.toLowerCase().trim();
+
+            rows.forEach(row => {
+                const name = row.querySelector('.category-name')?.textContent.toLowerCase() || '';
+                const description = row.querySelector('.category-description')?.textContent.toLowerCase() || '';
+
+                row.classList.toggle('hidden', !name.includes(value) && !description.includes(value));
+            });
+        });
+    }
+
+    const deleteModal = document.getElementById('delete-modal');
+    if (!deleteModal) return;
+
+    const deleteForm = document.getElementById('delete-form');
+    const itemNameModal = document.getElementById('delete-item-name');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+    const openModal = (button) => {
+        itemNameModal.textContent = button.dataset.nombre;
+        deleteForm.action = button.dataset.url;
+        deleteModal.classList.remove('hidden');
+        deleteModal.classList.add('flex');
+    };
+
+    const closeModal = () => {
+        deleteModal.classList.add('hidden');
+        deleteModal.classList.remove('flex');
+    };
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(button);
+        });
     });
+
+    cancelDeleteBtn?.addEventListener('click', closeModal);
+
+    deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) closeModal();
+    });
+});
 </script>
 {% endblock %}

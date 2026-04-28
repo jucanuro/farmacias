@@ -1,54 +1,50 @@
+from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
-from django.db.models import Sum, Subquery, OuterRef, IntegerField
+from django.db.models import Sum, Subquery, OuterRef, IntegerField, ProtectedError
 from django.db.models.functions import Coalesce
-from django.db.models import ProtectedError
-from .models import CategoriaProducto, Laboratorio,FormaFarmaceutica, PrincipioActivo, Producto, StockProducto, Sucursal, MovimientoInventario,UnidadPresentacion
-from .forms import CategoriaProductoForm, LaboratorioForm, FormaFarmaceuticaForm, PrincipioActivoForm, ProductoForm,StockEntradaForm, UnidadPresentacionForm
+from django.db import IntegrityError
+from django.core.paginator import Paginator
+
+from .models import (
+    CategoriaProducto, Laboratorio, FormaFarmaceutica,
+    PrincipioActivo, Producto, StockProducto,
+    Sucursal, MovimientoInventario, UnidadPresentacion
+)
+
 
 def inventario_home_view(request):
     return HttpResponse("<h1>Gestión de Inventario</h1><p>Esta es la página de inicio de la aplicación de inventario. Aquí podrás ver y gestionar productos y stock.</p>")
 
+
 def categoria_list_view(request):
     lista_de_categorias = CategoriaProducto.objects.all().order_by('nombre')
-    context = {
-        'categorias': lista_de_categorias,
-    }
-    return render(request, 'inventario_templates/categoria_list.html', context)
+    return render(request, 'inventario_templates/categoria_list.html', {'categorias': lista_de_categorias})
+
 
 def categoria_create_view(request):
     if request.method == 'POST':
-        form = CategoriaProductoForm(request.POST)
-        if form.is_valid():
-            form.save()
+        nombre = request.POST.get('nombre')
+        descripcion = request.POST.get('descripcion', '')
+        if nombre:
+            CategoriaProducto.objects.create(nombre=nombre, descripcion=descripcion)
             messages.success(request, 'La categoría ha sido creada con éxito.')
             return redirect('inventario:categoria_list')
-    else:
-        form = CategoriaProductoForm()
-    
-    context = {
-        'form': form
-    }
-    return render(request, 'inventario_templates/categoria_form.html', context)
+    return render(request, 'inventario_templates/categoria_form.html')
+
 
 def categoria_update_view(request, pk):
     categoria = get_object_or_404(CategoriaProducto, pk=pk)
     if request.method == 'POST':
-        form = CategoriaProductoForm(request.POST, instance=categoria)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"La categoría '{categoria.nombre}' ha sido actualizada con éxito.")
-            return redirect('inventario:categoria_list')
-    else:
-        form = CategoriaProductoForm(instance=categoria)
-    
-    context = {
-        'form': form,
-        'categoria': categoria
-    }
-    return render(request, 'inventario_templates/categoria_form.html', context)
+        categoria.nombre = request.POST.get('nombre')
+        categoria.descripcion = request.POST.get('descripcion', '')
+        categoria.save()
+        messages.success(request, f"La categoría '{categoria.nombre}' ha sido actualizada con éxito.")
+        return redirect('inventario:categoria_list')
+    return render(request, 'inventario_templates/categoria_form.html', {'categoria': categoria})
+
 
 @require_POST
 def categoria_delete_view(request, pk):
@@ -58,46 +54,33 @@ def categoria_delete_view(request, pk):
         messages.success(request, f"La categoría '{categoria.nombre}' ha sido eliminada con éxito.")
     except ProtectedError:
         messages.error(request, f"La categoría '{categoria.nombre}' no se puede eliminar porque tiene productos asociados.")
-    
     return redirect('inventario:categoria_list')
 
 
 def laboratorio_list_view(request):
     lista_de_laboratorios = Laboratorio.objects.all().order_by('nombre')
-    context = {
-        'laboratorios': lista_de_laboratorios
-    }
-    return render(request, 'inventario_templates/laboratorio_list.html', context)
+    return render(request, 'inventario_templates/laboratorio_list.html', {'laboratorios': lista_de_laboratorios})
+
 
 def laboratorio_create_view(request):
     if request.method == 'POST':
-        form = LaboratorioForm(request.POST)
-        if form.is_valid():
-            form.save()
+        nombre = request.POST.get('nombre')
+        if nombre:
+            Laboratorio.objects.create(nombre=nombre)
             messages.success(request, 'El laboratorio ha sido creado con éxito.')
             return redirect('inventario:laboratorio_list')
-    else:
-        form = LaboratorioForm()
-    context = {'form': form}
-    return render(request, 'inventario_templates/laboratorio_form.html', context)
+    return render(request, 'inventario_templates/laboratorio_form.html')
 
 
 def laboratorio_update_view(request, pk):
     laboratorio = get_object_or_404(Laboratorio, pk=pk)
     if request.method == 'POST':
-        form = LaboratorioForm(request.POST, instance=laboratorio)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"El laboratorio '{laboratorio.nombre}' ha sido actualizado con éxito.")
-            return redirect('inventario:laboratorio_list')
-    else:
-        form = LaboratorioForm(instance=laboratorio)
-    
-    context = {
-        'form': form,
-        'laboratorio': laboratorio
-    }
-    return render(request, 'inventario_templates/laboratorio_form.html', context)
+        laboratorio.nombre = request.POST.get('nombre')
+        laboratorio.save()
+        messages.success(request, f"El laboratorio '{laboratorio.nombre}' ha sido actualizado con éxito.")
+        return redirect('inventario:laboratorio_list')
+    return render(request, 'inventario_templates/laboratorio_form.html', {'laboratorio': laboratorio})
+
 
 @require_POST
 def laboratorio_delete_view(request, pk):
@@ -112,33 +95,28 @@ def laboratorio_delete_view(request, pk):
 
 def forma_farmaceutica_list_view(request):
     lista = FormaFarmaceutica.objects.all().order_by('nombre')
-    context = {'formas_farmaceuticas': lista}
-    return render(request, 'inventario_templates/forma_farmaceutica_list.html', context)
+    return render(request, 'inventario_templates/forma_farmaceutica_list.html', {'formas_farmaceuticas': lista})
+
 
 def forma_farmaceutica_create_view(request):
     if request.method == 'POST':
-        form = FormaFarmaceuticaForm(request.POST)
-        if form.is_valid():
-            form.save()
+        nombre = request.POST.get('nombre')
+        if nombre:
+            FormaFarmaceutica.objects.create(nombre=nombre)
             messages.success(request, 'La forma farmacéutica ha sido creada con éxito.')
             return redirect('inventario:forma_farmaceutica_list')
-    else:
-        form = FormaFarmaceuticaForm()
-    context = {'form': form}
-    return render(request, 'inventario_templates/forma_farmaceutica_form.html', context)
+    return render(request, 'inventario_templates/forma_farmaceutica_form.html')
+
 
 def forma_farmaceutica_update_view(request, pk):
     item = get_object_or_404(FormaFarmaceutica, pk=pk)
     if request.method == 'POST':
-        form = FormaFarmaceuticaForm(request.POST, instance=item)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"La forma farmacéutica '{item.nombre}' ha sido actualizada con éxito.")
-            return redirect('inventario:forma_farmaceutica_list')
-    else:
-        form = FormaFarmaceuticaForm(instance=item)
-    context = {'form': form, 'forma_farmaceutica': item}
-    return render(request, 'inventario_templates/forma_farmaceutica_form.html', context)
+        item.nombre = request.POST.get('nombre')
+        item.save()
+        messages.success(request, f"La forma farmacéutica '{item.nombre}' ha sido actualizada con éxito.")
+        return redirect('inventario:forma_farmaceutica_list')
+    return render(request, 'inventario_templates/forma_farmaceutica_form.html', {'forma_farmaceutica': item})
+
 
 @require_POST
 def forma_farmaceutica_delete_view(request, pk):
@@ -150,35 +128,31 @@ def forma_farmaceutica_delete_view(request, pk):
         messages.error(request, f"La forma farmacéutica '{item.nombre}' no se puede eliminar porque tiene productos asociados.")
     return redirect('inventario:forma_farmaceutica_list')
 
+
 def principio_activo_list_view(request):
     lista = PrincipioActivo.objects.all().order_by('nombre')
-    context = {'principios_activos': lista}
-    return render(request, 'inventario_templates/principio_activo_list.html', context)
+    return render(request, 'inventario_templates/principio_activo_list.html', {'principios_activos': lista})
+
 
 def principio_activo_create_view(request):
     if request.method == 'POST':
-        form = PrincipioActivoForm(request.POST)
-        if form.is_valid():
-            form.save()
+        nombre = request.POST.get('nombre')
+        if nombre:
+            PrincipioActivo.objects.create(nombre=nombre)
             messages.success(request, 'El principio activo ha sido creado con éxito.')
             return redirect('inventario:principio_activo_list')
-    else:
-        form = PrincipioActivoForm()
-    context = {'form': form}
-    return render(request, 'inventario_templates/principio_activo_form.html', context)
+    return render(request, 'inventario_templates/principio_activo_form.html')
+
 
 def principio_activo_update_view(request, pk):
     item = get_object_or_404(PrincipioActivo, pk=pk)
     if request.method == 'POST':
-        form = PrincipioActivoForm(request.POST, instance=item)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"El principio activo '{item.nombre}' ha sido actualizado con éxito.")
-            return redirect('inventario:principio_activo_list')
-    else:
-        form = PrincipioActivoForm(instance=item)
-    context = {'form': form, 'principio_activo': item}
-    return render(request, 'inventario_templates/principio_activo_form.html', context)
+        item.nombre = request.POST.get('nombre')
+        item.save()
+        messages.success(request, f"El principio activo '{item.nombre}' ha sido actualizado con éxito.")
+        return redirect('inventario:principio_activo_list')
+    return render(request, 'inventario_templates/principio_activo_form.html', {'principio_activo': item})
+
 
 @require_POST
 def principio_activo_delete_view(request, pk):
@@ -190,177 +164,226 @@ def principio_activo_delete_view(request, pk):
         messages.error(request, f"El principio activo '{item.nombre}' no se puede eliminar porque tiene productos asociados.")
     return redirect('inventario:principio_activo_list')
 
+
 def producto_list_view(request):
-
-    # Definimos la subconsulta base que busca por producto
     stock_subquery = StockProducto.objects.filter(producto=OuterRef('pk'))
-
     user = request.user
-   
+
     if hasattr(user, 'rol') and user.rol and user.rol.nombre == 'Gerente de Sucursal' and hasattr(user, 'sucursal') and user.sucursal:
         stock_subquery = stock_subquery.filter(sucursal=user.sucursal)
-  
+
     stock_total_subquery = stock_subquery.values('producto').annotate(
         total_stock=Sum('cantidad')
     ).values('total_stock')
 
-    lista_productos = Producto.objects.select_related(
-        'categoria', 'laboratorio'
-    ).annotate(
-        stock_sucursal=Coalesce(
-            Subquery(stock_total_subquery, output_field=IntegerField()),
-            0
-        )
+    lista_productos = Producto.objects.select_related('categoria', 'laboratorio').annotate(
+        stock_sucursal=Coalesce(Subquery(stock_total_subquery, output_field=IntegerField()), 0)
     ).order_by('nombre')
-    
-    context = {
-        'productos': lista_productos
-    }
-    return render(request, 'inventario_templates/producto_list.html', context)
 
-def producto_create_view(request):
+    return render(request, 'inventario_templates/producto_list.html', {'productos': lista_productos})
+
+
+def producto_form_view(request, pk=None):
+    producto = get_object_or_404(Producto, pk=pk) if pk else None
+
+    categorias = CategoriaProducto.objects.all().order_by('nombre')
+    laboratorios = Laboratorio.objects.all().order_by('nombre')
+    principios = PrincipioActivo.objects.all().order_by('nombre')
+    formas = FormaFarmaceutica.objects.all().order_by('nombre')
+    unidades = UnidadPresentacion.objects.all().order_by('nombre')
+
     if request.method == 'POST':
-        form = ProductoForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'El producto ha sido creado con éxito.')
-            return redirect('inventario:producto_list')
+        nombre = (request.POST.get('nombre') or '').strip()
+        descripcion = (request.POST.get('descripcion') or '').strip()
+        codigo_barras = (request.POST.get('codigo_barras') or '').strip() or None
+        concentracion = (request.POST.get('concentracion') or '').strip()
+
+        categoria_id = request.POST.get('categoria') or None
+        laboratorio_id = request.POST.get('laboratorio') or None
+        principio_activo_id = request.POST.get('principio_activo') or None
+        forma_farmaceutica_id = request.POST.get('forma_farmaceutica') or None
+        unidad_compra_id = request.POST.get('unidad_compra') or None
+        unidad_venta_id = request.POST.get('unidad_venta') or None
+
+        precio_venta_sugerido = request.POST.get('precio_venta_sugerido') or '0'
+        margen_ganancia_sugerido = request.POST.get('margen_ganancia_sugerido') or '0.20'
+        unidades_por_caja = request.POST.get('unidades_por_caja') or '1'
+        unidades_por_blister = request.POST.get('unidades_por_blister') or '1'
+
+        aplica_receta = request.POST.get('aplica_receta') == 'on'
+        es_controlado = request.POST.get('es_controlado') == 'on'
+
+        errores = []
+
+        if not nombre:
+            errores.append('El nombre del producto es obligatorio.')
+        if not categoria_id:
+            errores.append('La categoría es obligatoria.')
+        if not laboratorio_id:
+            errores.append('El laboratorio es obligatorio.')
+        if not forma_farmaceutica_id:
+            errores.append('La forma farmacéutica es obligatoria.')
+
+        try:
+            precio_venta_sugerido = Decimal(str(precio_venta_sugerido))
+        except (InvalidOperation, TypeError):
+            errores.append('El precio de venta sugerido no es válido.')
+
+        try:
+            margen_ganancia_sugerido = Decimal(str(margen_ganancia_sugerido))
+        except (InvalidOperation, TypeError):
+            errores.append('El margen de ganancia sugerido no es válido.')
+
+        try:
+            unidades_por_caja = int(unidades_por_caja)
+            if unidades_por_caja < 1:
+                errores.append('Las unidades por caja deben ser mayores o iguales a 1.')
+        except (ValueError, TypeError):
+            errores.append('Las unidades por caja no son válidas.')
+
+        try:
+            unidades_por_blister = int(unidades_por_blister)
+            if unidades_por_blister < 1:
+                errores.append('Las unidades por blíster deben ser mayores o iguales a 1.')
+        except (ValueError, TypeError):
+            errores.append('Las unidades por blíster no son válidas.')
+
+        if errores:
+            for error in errores:
+                messages.error(request, error)
         else:
-            print(form.errors.as_json()) 
+            try:
+                if producto is None:
+                    producto = Producto()
 
-    else:
-        form = ProductoForm()
-    context = {'form': form}
-    return render(request, 'inventario_templates/producto_form.html', context)
+                producto.nombre = nombre
+                producto.descripcion = descripcion
+                producto.codigo_barras = codigo_barras
+                producto.concentracion = concentracion
+                producto.categoria_id = categoria_id
+                producto.laboratorio_id = laboratorio_id
+                producto.principio_activo_id = principio_activo_id
+                producto.forma_farmaceutica_id = forma_farmaceutica_id
+                producto.unidad_compra_id = unidad_compra_id
+                producto.unidad_venta_id = unidad_venta_id
+                producto.precio_venta_sugerido = precio_venta_sugerido
+                producto.margen_ganancia_sugerido = margen_ganancia_sugerido
+                producto.unidades_por_caja = unidades_por_caja
+                producto.unidades_por_blister = unidades_por_blister
+                producto.aplica_receta = aplica_receta
+                producto.es_controlado = es_controlado
 
+                if request.FILES.get('imagen_producto'):
+                    producto.imagen_producto = request.FILES.get('imagen_producto')
 
-def producto_update_view(request, pk):
-    # Obtenemos el producto que se va a editar
-    producto = get_object_or_404(Producto, pk=pk)
+                producto.save()
 
-    # Si la petición es POST, significa que el usuario ha enviado el formulario
-    if request.method == 'POST':
-        # Creamos el formulario con los datos enviados Y con la instancia del producto a editar
-        form = ProductoForm(request.POST, request.FILES, instance=producto)
-        if form.is_valid():
-            # Si los datos son válidos, guardamos y redirigimos
-            form.save()
-            messages.success(request, f"El producto '{producto.nombre}' ha sido actualizado con éxito.")
-            return redirect('inventario:producto_list')
-        # Si el formulario NO es válido, la función continúa y renderiza la plantilla de abajo,
-        # mostrando el formulario con los errores.
-    else:
-        # Si la petición es GET (la primera vez que se carga la página),
-        # creamos el formulario con los datos iniciales del producto.
-        form = ProductoForm(instance=producto)
+                if pk:
+                    messages.success(request, f"El producto '{producto.nombre}' ha sido actualizado con éxito.")
+                else:
+                    messages.success(request, f"El producto '{producto.nombre}' ha sido creado con éxito.")
 
-    # El contexto se prepara aquí, tanto para el GET inicial como para los POST con errores.
+                return redirect('inventario:producto_list')
+
+            except IntegrityError:
+                messages.error(request, 'Ya existe un producto con ese código de barras.')
+
     context = {
-        'form': form,
-        'producto': producto
+        'producto': producto,
+        'categorias': categorias,
+        'laboratorios': laboratorios,
+        'principios': principios,
+        'formas': formas,
+        'unidades': unidades,
     }
     return render(request, 'inventario_templates/producto_form.html', context)
 
 
 def producto_detail_view(request, pk):
-    """
-    Muestra los detalles de un producto, su stock actual por sucursal,
-    y procesa el formulario para añadir nuevo stock.
-    """
     producto = get_object_or_404(Producto, pk=pk)
-
-    # Lógica para procesar el formulario de añadir stock
     if request.method == 'POST':
-        # Aseguramos que el formulario se procese solo si viene del botón correcto
-        # (en caso de que añadas más formularios a esta página en el futuro)
-        stock_form = StockEntradaForm(request.POST)
-        if stock_form.is_valid():
-            datos = stock_form.cleaned_data
-            
-            # Buscamos si ya existe un stock con el mismo lote en la misma sucursal
-            stock, created = StockProducto.objects.get_or_create(
-                producto=producto,
-                sucursal=datos['sucursal'],
-                lote=datos['lote'],
-                defaults={
-                    'fecha_vencimiento': datos['fecha_vencimiento'],
-                    'precio_compra': datos['precio_compra'],
-                    'precio_venta': datos['precio_venta'] # <-- CORRECCIÓN: Se añade el precio de venta
-                }
-            )
-            
-            # Si el lote ya existía, actualizamos sus datos y sumamos la cantidad
-            if not created:
-                stock.cantidad += datos['cantidad']
-                # Opcional: decidir si se actualiza el precio con cada nueva compra del mismo lote
-                stock.precio_compra = datos['precio_compra']
-                stock.precio_venta = datos['precio_venta']
-                stock.fecha_vencimiento = datos['fecha_vencimiento']
-            else:
-                # Si es un lote nuevo, la cantidad es la del formulario
-                stock.cantidad = datos['cantidad']
+        sucursal_id = request.POST.get('sucursal')
+        lote = request.POST.get('lote')
+        cantidad = int(request.POST.get('cantidad', 0))
 
-            stock.ubicacion_almacen = datos['ubicacion_almacen']
+        stock, created = StockProducto.objects.get_or_create(
+            producto=producto,
+            sucursal_id=sucursal_id,
+            lote=lote,
+            defaults={
+                'fecha_vencimiento': request.POST.get('fecha_vencimiento'),
+                'precio_compra': request.POST.get('precio_compra') or 0,
+                'precio_venta': request.POST.get('precio_venta') or 0,
+                'ubicacion_almacen': request.POST.get('ubicacion_almacen', '')
+            }
+        )
+
+        if not created:
+            stock.cantidad += cantidad
+            stock.save()
+        else:
+            stock.cantidad = cantidad
             stock.save()
 
-            # Creamos el movimiento de inventario para registrar la entrada
-            MovimientoInventario.objects.create(
-                producto=producto,
-                sucursal=datos['sucursal'],
-                stock_afectado=stock,
-                tipo_movimiento='ENTRADA',
-                cantidad=datos['cantidad'],
-                usuario=request.user,
-                referencia_doc=f"Compra Lote {datos['lote']}"
-            )
-            
-            messages.success(request, f"Se ha añadido stock para '{producto.nombre}' con éxito.")
-            # Redirigimos a la misma página para ver el resultado
-            return redirect('inventario:producto_detail', pk=producto.pk)
-    else:
-        # Si la petición es GET, mostramos un formulario vacío
-        stock_form = StockEntradaForm()
-        
-    # Obtenemos el stock existente para mostrarlo en la tabla
-    stock_items = StockProducto.objects.filter(producto=producto).select_related('sucursal').order_by('sucursal__nombre', 'fecha_vencimiento')
+        MovimientoInventario.objects.create(
+            producto=producto,
+            sucursal_id=sucursal_id,
+            stock_afectado=stock,
+            tipo_movimiento='ENTRADA',
+            cantidad=cantidad,
+            usuario=request.user,
+            referencia_doc=f"Compra Lote {lote}"
+        )
+        messages.success(request, f"Se ha añadido stock para '{producto.nombre}' con éxito.")
+        return redirect('inventario:producto_detail', pk=pk)
 
-    context = {
+    stock_items = StockProducto.objects.filter(
+        producto=producto
+    ).select_related('sucursal').order_by('fecha_vencimiento')
+
+    paginator = Paginator(stock_items, 6)
+    page_number = request.GET.get('page')
+    stock_page = paginator.get_page(page_number)
+
+    return render(request, 'inventario_templates/producto_detail.html', {
         'producto': producto,
-        'stock_items': stock_items,
-        'stock_form': stock_form # Pasamos el formulario a la plantilla
-    }
-    return render(request, 'inventario_templates/producto_detail.html', context)     
-    
+        'stock_items': stock_page,
+        'stock_total': stock_items.count(),
+        'sucursales': Sucursal.objects.all()
+    })
+
 
 def unidad_presentacion_list_view(request):
     lista = UnidadPresentacion.objects.select_related('padre').all().order_by('nombre')
-    context = {'unidades': lista}
-    return render(request, 'inventario_templates/unidad_presentacion_list.html', context)
+    return render(request, 'inventario_templates/unidad_presentacion_list.html', {'unidades': lista})
+
 
 def unidad_presentacion_create_view(request):
     if request.method == 'POST':
-        form = UnidadPresentacionForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'La unidad de presentación ha sido creada.')
-            return redirect('inventario:unidad_presentacion_list')
-    else:
-        form = UnidadPresentacionForm()
-    context = {'form': form}
-    return render(request, 'inventario_templates/unidad_presentacion_form.html', context)
+        UnidadPresentacion.objects.create(
+            nombre=request.POST.get('nombre'),
+            padre_id=request.POST.get('padre') or None
+        )
+        messages.success(request, 'La unidad de presentación ha sido creada.')
+        return redirect('inventario:unidad_presentacion_list')
+    return render(request, 'inventario_templates/unidad_presentacion_form.html', {
+        'unidades_padre': UnidadPresentacion.objects.all()
+    })
+
 
 def unidad_presentacion_update_view(request, pk):
     item = get_object_or_404(UnidadPresentacion, pk=pk)
     if request.method == 'POST':
-        form = UnidadPresentacionForm(request.POST, instance=item)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"La unidad '{item.nombre}' ha sido actualizada.")
-            return redirect('inventario:unidad_presentacion_list')
-    else:
-        form = UnidadPresentacionForm(instance=item)
-    context = {'form': form, 'unidad': item}
-    return render(request, 'inventario_templates/unidad_presentacion_form.html', context)
+        item.nombre = request.POST.get('nombre')
+        item.padre_id = request.POST.get('padre') or None
+        item.save()
+        messages.success(request, f"La unidad '{item.nombre}' ha sido actualizada.")
+        return redirect('inventario:unidad_presentacion_list')
+    return render(request, 'inventario_templates/unidad_presentacion_form.html', {
+        'unidad': item,
+        'unidades_padre': UnidadPresentacion.objects.exclude(pk=pk)
+    })
+
 
 @require_POST
 def unidad_presentacion_delete_view(request, pk):

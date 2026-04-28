@@ -5,15 +5,30 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.decorators import login_required
+
 from .forms import (
-    CustomUserCreationForm, 
-    FarmaciaForm, 
-    SucursalForm, 
-    RolForm, 
-    UsuarioCreateForm, 
-    UsuarioUpdateForm
+    CustomUserCreationForm,
+    FarmaciaForm,
+    SucursalForm,
+    RolForm,
+    UsuarioCreateForm,
+    UsuarioUpdateForm,
+    ConfiguracionFacturacionForm
 )
-from .models import Farmacia, Sucursal, Rol, Usuario
+from .models import Farmacia, Sucursal, Rol, Usuario, ConfiguracionFacturacionElectronica
+
+# Placeholder service function for sending the invoice
+# In a real-world scenario, this would be a more complex service
+# that interacts with an external API.
+def enviar_factura_service(invoice_data, configuracion):
+    # Simulate a successful API call
+    if invoice_data and configuracion:
+        # Aquí iría la lógica para interactuar con el API del proveedor de FE
+        # Por ejemplo, usar el token, certificado, etc.
+        # Por ahora, solo devolvemos un éxito simulado
+        return {'success': True, 'invoice_id': 'INV-12345'}
+    return {'success': False, 'error': 'Datos de factura o configuración faltantes'}
 
 def home_view(request):
     return HttpResponse("<h1>¡Bienvenido al Sistema de Gestión de Farmacias!</h1><p>Esta es la página de inicio de la aplicación core.</p>")
@@ -26,7 +41,7 @@ def registro_api_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            dashboard_url = reverse('dashboard') 
+            dashboard_url = reverse('dashboard')
             return JsonResponse({'status': 'success', 'message': '¡Registro exitoso!', 'redirect_url': dashboard_url})
         else:
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
@@ -200,3 +215,67 @@ def usuario_toggle_active_view(request, pk):
         usuario.save()
         return JsonResponse({'status': 'success', 'is_active': usuario.is_active})
     return JsonResponse({'status': 'error', 'message': 'No se puede cambiar el estado de un superusuario.'}, status=403)
+
+@login_required
+def configuracion_facturacion_view(request):
+    if not request.user.farmacia:
+        return HttpResponse("No tienes una farmacia asociada para configurar.", status=403)
+    
+    farmacia = request.user.farmacia
+
+    try:
+        configuracion_fe = farmacia.configuracion_facturacion_electronica
+    except ConfiguracionFacturacionElectronica.DoesNotExist:
+        configuracion_fe = ConfiguracionFacturacionElectronica.objects.create()
+        farmacia.configuracion_facturacion_electronica = configuracion_fe
+        farmacia.save()
+
+    if request.method == 'POST':
+        form = ConfiguracionFacturacionForm(request.POST, instance=configuracion_fe)
+        if form.is_valid():
+            form.save()
+            return redirect('core:configuracion_facturacion')
+    else:
+        form = ConfiguracionFacturacionForm(instance=configuracion_fe)
+
+    context = {
+        'farmacia': farmacia,
+        'form': form,
+    }
+    return render(request, 'core/configuracion_facturacion.html', context)
+
+@login_required
+@require_POST
+def enviar_factura_electronica_view(request):
+    """
+    Recibe los datos de una factura en formato JSON, busca la configuración
+    de la farmacia del usuario y simula el envío a un servicio de facturación.
+    """
+    if not request.user.farmacia:
+        return JsonResponse({'status': 'error', 'message': 'El usuario no tiene una farmacia asociada.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        invoice_data = data.get('invoice')
+
+        if not invoice_data:
+            return JsonResponse({'status': 'error', 'message': 'Datos de factura no proporcionados.'}, status=400)
+
+        farmacia = request.user.farmacia
+        try:
+            configuracion_fe = farmacia.configuracion_facturacion_electronica
+        except ConfiguracionFacturacionElectronica.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'La configuración de facturación electrónica para la farmacia no existe.'}, status=404)
+
+        # Llama a la función de servicio que se comunicaría con el API externo
+        response = enviar_factura_service(invoice_data, configuracion_fe)
+
+        if response['success']:
+            return JsonResponse({'status': 'success', 'message': 'Factura enviada exitosamente.', 'invoice_id': response['invoice_id']})
+        else:
+            return JsonResponse({'status': 'error', 'message': response['error']}, status=500)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Formato JSON inválido.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error inesperado: {str(e)}'}, status=500)

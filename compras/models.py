@@ -127,6 +127,11 @@ class Compra(models.Model):
         self.impuestos = self.subtotal * IMPUESTO_PORCENTAJE
         self.total_compra = self.subtotal + self.impuestos
 
+    def calcular_totales(self):
+        """Alias compatible para recalcular y guardar totales."""
+        self.recalcular_totales()
+        super().save(update_fields=['subtotal', 'impuestos', 'total_compra'])
+
     def save(self, *args, **kwargs):
         if self.pk:
             self.recalcular_totales()

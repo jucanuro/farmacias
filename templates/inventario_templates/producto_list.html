@@ -1,78 +1,277 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
-{% block title %}VQL - Productos{% endblock %}
+
+{% block title %}VQL - Inventario Maestro{% endblock %}
 
 {% block app_content %}
-<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-    <div>
-        <h1 class="text-2xl font-extrabold text-white">Gestión de Productos</h1>
-        <p class="text-slate-400 mt-1">Administra el catálogo completo de productos de tu inventario.</p>
-    </div>
-    <div class="flex items-center gap-4 w-full md:w-auto">
-        <div class="relative w-full md:w-64">
-            <input type="text" id="product-search-input" class="form-input !py-2 !pl-10" placeholder="Buscar producto...">
-            <svg class="h-5 w-5 text-slate-400 absolute top-1/2 left-3 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-            </svg>
-        </div>
-        <a href="{% url 'inventario:producto_create' %}"
-            class="flex-shrink-0 w-11 h-11 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-full shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-        </a>
-    </div>
-</header>
+<div class="space-y-5 animate-in">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
 
-<div class="glass-card rounded-2xl overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left min-w-[960px]">
-            <thead class="bg-slate-800">
-                <tr>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Producto</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Categoría</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Laboratorio</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Stock Actual</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider">Regulación</th>
-                    <th class="p-4 text-sm font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="product-table-body" class="divide-y divide-slate-700">
-                {% for producto in productos %}
-                <tr class="hover:bg-slate-800/50 transition-colors">
-                    <td class="p-4 font-medium text-white">
-                        <a href="{% url 'inventario:producto_detail' pk=producto.pk %}" class="hover:text-emerald-400 transition-colors product-name">
-                            {{ producto.nombre }}
-                        </a>
-                        <span class="block text-xs text-slate-400">{{ producto.concentracion|default:"" }}</span>
-                    </td>
-                    <td class="p-4">{{ producto.categoria.nombre|default:"-" }}</td>
-                    <td class="p-4">{{ producto.laboratorio.nombre|default:"-" }}</td>
-                    <td class="p-4 text-center">
-                        <span class="text-lg font-bold {% if producto.stock_sucursal <= 5 %}text-rose-400{% else %}text-white{% endif %}">
-                            {{ producto.stock_sucursal }}
+        <div class="relative px-5 py-5 md:px-7 md:py-6">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M20 13V7a2 2 0 00-2-2h-3V3.5A1.5 1.5 0 0013.5 2h-3A1.5 1.5 0 009 3.5V5H6a2 2 0 00-2 2v6m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m5-8h6" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="truncate text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                                Inventario Maestro
+                            </h1>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                SaaS Core
+                            </span>
+                        </div>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Control centralizado de productos, stock y estados operativos para una red farmacéutica moderna.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                                {{ productos|length }} productos
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                                Catálogo en línea
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                    <div class="relative w-full sm:w-80 group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-emerald-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
                         </span>
-                    </td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            {% if producto.aplica_receta %}<span title="Requiere Receta" class="px-2 py-1 text-xs font-bold text-cyan-800 bg-cyan-500/20 rounded-full">R</span>{% endif %}
-                            {% if producto.es_controlado %}<span title="Producto Controlado" class="px-2 py-1 text-xs font-bold text-amber-800 bg-amber-500/20 rounded-full">C</span>{% endif %}
-                        </div>
-                    </td>
-                    <td class="p-4">
-                        <div class="flex justify-center items-center gap-4">
-                            <a href="{% url 'inventario:producto_detail' pk=producto.pk %}" class="text-slate-400 hover:text-cyan-400 transition-colors" title="Ver Stock y Lotes"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg></a>
-                            <a href="{% url 'inventario:producto_update' pk=producto.pk %}" class="text-slate-400 hover:text-emerald-400 transition-colors" title="Editar Producto"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-400">No hay productos registrados todavía.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                        <input
+                            type="text"
+                            id="product-search-input"
+                            placeholder="Buscar producto, código o laboratorio..."
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <a href="{% url 'inventario:producto_create' %}"
+                       class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.8">
+                            <path d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nuevo producto
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div>
+                <h2 class="text-base font-black tracking-tight text-slate-900">Listado de productos</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Explora, edita y supervisa el catálogo con una vista clara y operativa.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Vista premium
+                </span>
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Monitoreo activo
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[1120px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Producto
+                        </th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Categoría
+                        </th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Laboratorio
+                        </th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Stock
+                        </th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Control
+                        </th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody id="product-table-body" class="divide-y divide-slate-100">
+                    {% for producto in productos %}
+                    <tr class="group transition-all duration-200 hover:bg-slate-50/80">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase text-slate-500 shadow-sm transition-all group-hover:border-emerald-200 group-hover:text-emerald-600 group-hover:shadow-md">
+                                    {{ producto.nombre|slice:":1" }}
+                                </div>
+
+                                <div class="min-w-0">
+                                    <a href="{% url 'inventario:producto_detail' pk=producto.pk %}"
+                                       class="product-name block truncate text-sm font-black tracking-tight text-slate-900 transition-colors hover:text-emerald-600">
+                                        {{ producto.nombre }}
+                                    </a>
+
+                                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-mono font-bold text-slate-500">
+                                            {{ producto.codigo_barras|default:"S-SKU" }}
+                                        </span>
+
+                                        {% if producto.concentracion %}
+                                        <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                                            {{ producto.concentracion }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">
+                                {{ producto.categoria.nombre|default:"General" }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                                {{ producto.laboratorio.nombre|default:"-" }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <div class="inline-flex flex-col items-center gap-2">
+                                <span class="text-sm font-black {% if producto.stock_sucursal <= 5 %}text-rose-500{% elif producto.stock_sucursal <= 20 %}text-amber-500{% else %}text-emerald-600{% endif %}">
+                                    {{ producto.stock_sucursal|stringformat:"02d" }}
+                                </span>
+
+                                <div class="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-full rounded-full {% if producto.stock_sucursal <= 5 %}bg-rose-500 w-1/3{% elif producto.stock_sucursal <= 20 %}bg-amber-500 w-2/3{% else %}bg-emerald-500 w-full{% endif %}"></div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <div class="flex justify-center gap-2">
+                                {% if producto.aplica_receta %}
+                                    <span class="inline-flex items-center gap-1 rounded-xl border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-[10px] font-bold text-blue-700" title="Receta médica">
+                                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Receta
+                                    </span>
+                                {% endif %}
+
+                                {% if producto.es_controlado %}
+                                    <span class="inline-flex items-center gap-1 rounded-xl border border-amber-100 bg-amber-50 px-2.5 py-1.5 text-[10px] font-bold text-amber-700" title="Controlado">
+                                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 4.946-2.56 9.12-6.433 11.49a1 1 0 01-1.134 0C6.56 16.12 4 11.946 4 7.001c0-.682.057-1.35.166-2.002zm7.539 1.402a1 1 0 011.588 0l2.5 3.5a1 1 0 01-1.588 1.134L10 8.328l-2.205 3.085a1 1 0 11-1.588-1.134l2.5-3.5z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Control
+                                    </span>
+                                {% endif %}
+
+                                {% if not producto.aplica_receta and not producto.es_controlado %}
+                                    <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[10px] font-bold text-slate-400">
+                                        Libre
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                                <a href="{% url 'inventario:producto_detail' pk=producto.pk %}"
+                                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-600"
+                                   title="Ver detalle">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+
+                                <a href="{% url 'inventario:producto_update' pk=producto.pk %}"
+                                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                                   title="Editar">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+
+                                <a href=""
+                                   class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-100 hover:bg-rose-50 hover:text-rose-600"
+                                   title="Eliminar">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center">
+                            <div class="mx-auto flex max-w-md flex-col items-center">
+                                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path d="M20 13V7a2 2 0 00-2-2h-3V3.5A1.5 1.5 0 0013.5 2h-3A1.5 1.5 0 009 3.5V5H6a2 2 0 00-2 2v6m16 0H4" />
+                                    </svg>
+                                </div>
+                                <h3 class="mt-5 text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                                    Sin registros en la base de datos
+                                </h3>
+                                <p class="mt-2 text-sm text-slate-400">
+                                    Cuando agregues productos, aparecerán aquí con su detalle, control y acciones rápidas.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    @media (max-width: 768px) {
+        .group-hover\:opacity-100 { opacity: 1 !important; }
+    }
+</style>
 {% endblock %}
 
 {% block app_scripts %}

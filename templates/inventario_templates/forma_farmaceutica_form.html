@@ -2,67 +2,318 @@
 {% load static %}
 
 {% block title %}
-{% if forma_farmaceutica %}
-VQL - Editando Forma Farmacéutica
-{% else %}
-VQL - Nueva Forma Farmacéutica
-{% endif %}
+    {% if forma_farmaceutica %}VQL - Editando Forma Farmacéutica{% else %}VQL - Nueva Forma Farmacéutica{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'inventario:forma_farmaceutica_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-purple-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a Formas Farmacéuticas
-    </a>
-    {% if forma_farmaceutica %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Forma Farmacéutica</h1>
-    <p class="text-slate-400 mt-1">Modifica los detalles de <strong class="text-white">{{ forma_farmaceutica.nombre
-            }}</strong>.</p>
-    {% else %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nueva Forma Farmacéutica</h1>
-    <p class="text-slate-400 mt-1">Define una nueva forma de presentación para tus productos.</p>
-    {% endif %}
-</header>
+<style>
+    .inventory-shell { position: relative; overflow: hidden; }
 
-<div class="glass-card rounded-2xl p-8 max-w-2xl mx-auto">
-    <form method="post" action="">
-        {% csrf_token %}
-        <div class="space-y-6">
-            <div>
-                <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-1">Nombre
-                    de la Forma Farmacéutica</label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
-                {% endif %}
-            </div>
-            <div>
-                <label for="{{ form.descripcion.id_for_label }}"
-                    class="block text-sm font-medium text-slate-300 mb-1">Descripción</label>
-                {{ form.descripcion }}
-                {% if form.descripcion.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.descripcion.errors.as_text }}</p>
-                {% endif %}
-            </div>
-        </div>
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+    .inventory-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at top left, rgba(168, 85, 247, 0.08), transparent 26%),
+            radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 28%);
+        pointer-events: none;
+    }
+
+    .form-shell {
+        position: relative;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 18px 40px rgba(15,23,42,.05), 0 32px 80px rgba(15,23,42,.06);
+        backdrop-filter: blur(10px);
+    }
+
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15,23,42,.04);
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #fff;
+        color: #0f172a;
+        outline: none;
+        transition: all .25s ease;
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: #94a3b8;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        border-color: #a855f7;
+        box-shadow: 0 0 0 4px rgba(168,85,247,.12), 0 8px 24px rgba(168,85,247,.08);
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: .55rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-size: .70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .field-help {
+        margin-top: .45rem;
+        font-size: .76rem;
+        color: #94a3b8;
+        line-height: 1.35;
+    }
+
+    .section-badge {
+        width: 2.2rem;
+        height: 2.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: .95rem;
+        font-weight: 800;
+        font-size: .82rem;
+        flex-shrink: 0;
+    }
+
+    .mini-stat {
+        border-radius: 1.15rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 16px rgba(15,23,42,.03);
+    }
+
+    .mini-stat-label {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .mini-stat-value {
+        margin-top: .35rem;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .soft-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .48rem .75rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 800;
+    }
+</style>
+
+<div class="mt-1">
+    <header class="relative mb-10 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
             <a href="{% url 'inventario:forma_farmaceutica_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-bold transition-colors">
-                {% if forma_farmaceutica %}
-                Guardar Cambios
-                {% else %}
-                Guardar Forma
-                {% endif %}
-            </button>
+               class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-purple-600 transition-colors">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm group-hover:border-purple-200 group-hover:bg-purple-50">
+                    <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver a formas farmacéuticas</span>
+            </a>
+        </nav>
+
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 rounded-2xl bg-purple-500 opacity-20 blur-lg"></div>
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white text-purple-600 shadow-sm">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"
+                                  d="M9.75 3.75h4.5M10.5 3.75v5.19l-4.72 7.86A2.25 2.25 0 007.71 20.25h8.58a2.25 2.25 0 001.93-3.45L13.5 8.94V3.75" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-1 flex flex-wrap items-center gap-3">
+                        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if forma_farmaceutica %}Editar Forma Farmacéutica{% else %}Nueva Forma Farmacéutica{% endif %}
+                        </h1>
+
+                        {% if forma_farmaceutica %}
+                        <span class="soft-chip bg-purple-100 text-purple-700 ring-1 ring-inset ring-purple-600/20">
+                            <span class="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse"></span>
+                            ID: #{{ forma_farmaceutica.id }}
+                        </span>
+                        {% else %}
+                        <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            BORRADOR
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="max-w-2xl text-sm leading-relaxed text-slate-500">
+                        {% if forma_farmaceutica %}
+                            Modifica los detalles de <strong class="font-bold text-slate-800">{{ forma_farmaceutica.nombre }}</strong>.
+                        {% else %}
+                            Define una nueva forma de presentación para clasificar correctamente tus productos.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid w-full grid-cols-2 gap-3 lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full {% if forma_farmaceutica %}bg-purple-500{% else %}bg-amber-500{% endif %}"></span>
+                        {% if forma_farmaceutica %}Activo{% else %}En creación{% endif %}
+                    </span>
+                </div>
+
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Módulo</span>
+                    <span class="mini-stat-value text-sm">Presentación</span>
+                </div>
+            </div>
         </div>
-    </form>
+    </header>
+
+    <div class="relative mx-auto max-w-full">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-purple-200/60 via-sky-100/50 to-cyan-100/50 blur-2xl"></div>
+
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-7">
+            <form method="post" action="" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                    <section class="xl:col-span-8">
+                        <div class="section-card">
+                            <div class="mb-6 flex items-center gap-3">
+                                <span class="section-badge border border-purple-100 bg-purple-50 text-purple-700">01</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información de la forma</h3>
+                                    <p class="text-sm text-slate-500">
+                                        Define el nombre y descripción de la presentación farmacéutica.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-5">
+                                <div>
+                                    <label for="nombre" class="form-label">Nombre de la forma farmacéutica</label>
+                                    <input
+                                        type="text"
+                                        id="nombre"
+                                        name="nombre"
+                                        value="{% if forma_farmaceutica %}{{ forma_farmaceutica.nombre }}{% endif %}"
+                                        placeholder="Ej. Tableta, cápsula, jarabe, crema, gotas..."
+                                        class="form-input rounded-2xl px-4 py-3.5"
+                                        required
+                                        autocomplete="off"
+                                    >
+                                    <p class="field-help">
+                                        Usa un nombre corto y claro para que sea fácil seleccionarlo al registrar productos.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label for="descripcion" class="form-label">Descripción</label>
+                                    <textarea
+                                        id="descripcion"
+                                        name="descripcion"
+                                        rows="5"
+                                        placeholder="Ej. Presentación sólida de administración oral en forma comprimida."
+                                        class="form-textarea rounded-2xl px-4 py-3.5"
+                                    >{% if forma_farmaceutica %}{{ forma_farmaceutica.descripcion }}{% endif %}</textarea>
+                                    <p class="field-help">
+                                        Puedes indicar características de uso, administración o referencia interna.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="xl:col-span-4">
+                        <div class="section-card">
+                            <div class="mb-5 flex items-center gap-3">
+                                <span class="section-badge border border-sky-100 bg-sky-50 text-sky-700">02</span>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Resumen rápido</h3>
+                                    <p class="text-sm text-slate-500">Vista previa del registro.</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Forma</p>
+                                    <p id="preview-name" class="mt-1 truncate text-sm font-semibold text-slate-800">
+                                        {% if forma_farmaceutica and forma_farmaceutica.nombre %}{{ forma_farmaceutica.nombre }}{% else %}Nueva forma{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Descripción</p>
+                                    <p id="preview-description" class="mt-1 text-sm font-semibold text-slate-800 line-clamp-3">
+                                        {% if forma_farmaceutica and forma_farmaceutica.descripcion %}{{ forma_farmaceutica.descripcion }}{% else %}Pendiente de completar{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl border border-purple-100 bg-purple-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-purple-700">Recomendación</p>
+                                    <p class="mt-1 text-sm text-purple-800">
+                                        Mantén formas simples y normalizadas para evitar duplicados.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="flex flex-col-reverse justify-end gap-3 border-t border-slate-100 pt-6 sm:flex-row">
+                    <a href="{% url 'inventario:forma_farmaceutica_list' %}"
+                       class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-0.5 hover:bg-slate-50">
+                        Cancelar
+                    </a>
+
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-purple-500 to-purple-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-purple-200 transition-all hover:-translate-y-0.5 hover:from-purple-600 hover:to-purple-700">
+                        {% if forma_farmaceutica %}Guardar cambios{% else %}Registrar forma{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nameInput = document.getElementById('nombre');
+    const descriptionInput = document.getElementById('descripcion');
+
+    const previewName = document.getElementById('preview-name');
+    const previewDescription = document.getElementById('preview-description');
+
+    function refreshPreview() {
+        if (previewName) previewName.textContent = nameInput?.value.trim() || 'Nueva forma';
+        if (previewDescription) previewDescription.textContent = descriptionInput?.value.trim() || 'Pendiente de completar';
+    }
+
+    nameInput?.addEventListener('input', refreshPreview);
+    descriptionInput?.addEventListener('input', refreshPreview);
+});
+</script>
 {% endblock %}

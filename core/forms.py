@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.db.models import Q
-from .models import Usuario, Farmacia, Sucursal, Rol
+from .models import Usuario, Farmacia, Sucursal, Rol, ConfiguracionFacturacionElectronica
 
 
 class FarmaciaForm(forms.ModelForm):
@@ -99,8 +99,7 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = Usuario
         fields = ("username", "email", "farmacia", "rol")
-        
-        
+     
         
 class UsuarioUpdateForm(UserChangeForm):
     # Hacemos que el campo de contraseña no sea requerido, de hecho, lo ocultaremos en la plantilla
@@ -127,3 +126,15 @@ class UsuarioUpdateForm(UserChangeForm):
                 self.fields[field_name].widget.attrs.update({
                     'class': 'w-full px-3 py-2 mt-1 border border-slate-600 bg-slate-800 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
                 })
+                
+
+class ConfiguracionFacturacionForm(forms.ModelForm):
+    class Meta:
+        model = ConfiguracionFacturacionElectronica
+        # Incluir todos los campos necesarios
+        fields = '__all__'
+        widgets = {
+            'api_key': forms.PasswordInput(render_value=True),
+            'api_secret': forms.PasswordInput(render_value=True),
+            'clave_certificado': forms.PasswordInput(render_value=True),
+        }

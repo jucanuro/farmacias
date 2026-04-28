@@ -233,3 +233,19 @@ class DetalleCompraViewSet(viewsets.ModelViewSet):
         # Si no cumple ninguna condición, no ve nada.
         return DetalleCompra.objects.none()
 
+    def perform_create(self, serializer):
+        detalle = serializer.save()
+        if detalle.compra:
+            detalle.compra.calcular_totales()
+
+    def perform_update(self, serializer):
+        detalle = serializer.save()
+        if detalle.compra:
+            detalle.compra.calcular_totales()
+
+    def perform_destroy(self, instance):
+        compra_padre = instance.compra
+        instance.delete()
+        if compra_padre:
+            compra_padre.calcular_totales()
+

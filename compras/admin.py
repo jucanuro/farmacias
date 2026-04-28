@@ -1,5 +1,6 @@
 # compras/admin.py
 
+from decimal import Decimal
 from django.contrib import admin
 from .models import (
     CotizacionProveedor, DetalleCotizacion,
@@ -40,7 +41,7 @@ class CotizacionProveedorAdmin(admin.ModelAdmin):
         if formset.instance:
             # Asegurarse de que la instancia de la cotización no sea None y recalcular
             formset.instance.subtotal = sum(item.subtotal_linea for item in formset.instance.detalles.all())
-            IMPUESTO_PORCENTAJE = models.DecimalField(max_digits=5, decimal_places=2, default=0.18) # 18%
+            IMPUESTO_PORCENTAJE = Decimal('0.18') # 18%
             formset.instance.impuestos = formset.instance.subtotal * IMPUESTO_PORCENTAJE
             formset.instance.total_cotizacion = formset.instance.subtotal + formset.instance.impuestos
             formset.instance.save()

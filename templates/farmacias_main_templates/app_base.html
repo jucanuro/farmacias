@@ -2,198 +2,720 @@
 {% load static %}
 
 {% block content %}
-<div class="relative min-h-screen lg:flex">
-    <aside
-        class="hidden lg:flex group flex-col w-20 hover:w-64 transition-all duration-300 ease-in-out h-screen p-4 sticky top-0 bg-slate-900/50">
-        <a href="{% url 'dashboard' %}"
-            class="flex items-center justify-start h-12 text-3xl font-bold mb-10 text-emerald-400 flex-shrink-0 w-full pl-0.5">
-            <span class="text-3xl">💊</span>
-            <span class="ml-2 text-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">VQL</span>
-        </a>
+<div class="relative min-h-screen bg-white lg:flex font-sans text-slate-900">
 
-        <nav id="main-nav-menu" class="flex flex-col space-y-2 flex-grow">
-        </nav>
+    <!-- Sidebar desktop -->
+    <aside class="hidden lg:flex w-24 flex-col h-screen sticky top-0 bg-white/90 backdrop-blur-xl border-r border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.05)] z-30">
+        <div class="flex flex-col items-center justify-between h-full py-4">
+            <div class="w-full px-3">
+                <a href="{% url 'dashboard' %}"
+                   class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-200 transition hover:scale-[1.04]">
+                    <span class="text-2xl">💊</span>
+                </a>
 
-        <div class="flex flex-col w-full mt-auto">
-            <a id="logout-link" href="{% url 'core:logout' %}"
-                class="flex items-center w-full h-12 rounded-full text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-colors pl-4">
-                <svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
-                </svg>
-                <span
-                    class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Cerrar
-                    Sesión</span>
-            </a>
+                <div class="mt-6 flex flex-col items-center gap-3">
+                    <a href="{% url 'dashboard' %}"
+                       class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
+                       title="Inicio">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 9-9m0 0 9 9m-9-9v11.25A2.25 2.25 0 0 1 11.25 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V12" />
+                        </svg>
+                    </a>
+
+                    <a href="{% url 'inventario:producto_list' %}"
+                       class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
+                       title="Inventario">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 13V7a2 2 0 00-2-2h-3V3.5A1.5 1.5 0 0013.5 2h-3A1.5 1.5 0 009 3.5V5H6a2 2 0 00-2 2v6m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4m5-8h6" />
+                        </svg>
+                    </a>
+
+                    <a href="{% url 'ventas:pos' %}"
+                       class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
+                       title="Ventas">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25" />
+                        </svg>
+                    </a>
+
+                    <a href="{% url 'traslados:home' %}"
+                       class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
+                       title="Traslados">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="w-full px-3">
+                <button id="start-menu-button"
+                        type="button"
+                        class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-[0_8px_25px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-600 hover:shadow-[0_12px_30px_rgba(16,185,129,0.20)]"
+                        title="Menú">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h7v5H4V6zm9 0h7v9h-7V6zM4 13h7v5H4v-5zm9 4h7v1h-7v-1z" />
+                    </svg>
+                </button>
+            </div>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header
-            class="lg:hidden flex items-center justify-between p-4 glass-card border-b border-slate-700/50 sticky top-0 z-20">
-            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 text-xl font-bold text-white">
-                <span class="text-3xl">💊</span>
-                <span>VQL</span>
+    <!-- Start menu desktop -->
+    <div id="start-menu-overlay"
+         class="hidden fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"></div>
+
+    <div id="start-menu-panel"
+         class="hidden fixed bottom-6 left-28 z-50 w-[960px] max-w-[calc(100vw-8rem)] rounded-[2rem] border border-slate-200 bg-white shadow-[0_40px_120px_rgba(15,23,42,0.12)] overflow-hidden">
+
+        <div class="relative">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.08),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.06),transparent_28%)] pointer-events-none"></div>
+
+            <div class="relative p-5">
+                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input id="start-menu-search"
+                               type="text"
+                               placeholder="Buscar módulos, acciones o accesos..."
+                               class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100">
+                    </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-12 gap-5">
+                    <!-- Categorías -->
+                    <div class="col-span-4">
+                        <div class="rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm">
+                            <div class="mb-3 px-2">
+                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                                    Módulos
+                                </p>
+                            </div>
+                            <div id="main-nav-menu" class="space-y-2 max-h-[420px] overflow-y-auto pr-1 no-scrollbar"></div>
+                        </div>
+                    </div>
+
+                    <!-- Subcategorías -->
+                    <div class="col-span-8">
+                        <div class="rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm min-h-[420px]">
+                            <div class="mb-3 px-2 flex items-center justify-between">
+                                <div>
+                                    <p id="submenu-title" class="text-sm font-black tracking-tight text-slate-900">
+                                        Inventario
+                                    </p>
+                                    <p id="submenu-subtitle" class="text-xs text-slate-400">
+                                        Accesos disponibles del módulo
+                                    </p>
+                                </div>
+                                <span id="submenu-badge" class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                                    0 accesos
+                                </span>
+                            </div>
+
+                            <div id="submenu-content" class="grid grid-cols-2 gap-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 bg-white px-5 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 text-sm font-bold text-white shadow-sm">
+                            A
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-900">{{ request.user|default:"Administrador" }}</p>
+                            <p class="text-xs text-slate-400">Sesión activa</p>
+                        </div>
+                    </div>
+
+                    <a id="logout-link"
+                       href="{% url 'core:logout' %}"
+                       class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-emerald-600 rounded-md flex items-center justify-center text-sm">💊</div>
+                <span class="text-lg font-bold tracking-tight text-slate-800">VQL</span>
             </a>
-            <button id="mobile-menu-button" class="p-2 rounded-lg hover:bg-slate-700/50">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
-                    </path>
+            <button id="mobile-menu-button" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
             </button>
         </header>
 
-        <div id="mobile-menu" class="hidden lg:hidden bg-slate-900/80 backdrop-blur-md animate-slide-down">
-            <nav class="flex flex-col p-4 space-y-2">
-                <a href="{% url 'dashboard' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Inicio</a>
-                <a href="{% url 'core:farmacias_list' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Farmacias</a>
-                <a href="{% url 'core:usuario_list' %}" class="px-4 py-3 rounded-lg hover:bg-slate-800">Usuarios</a>
-                <a href="{% url 'inventario:categoria_list' %}"
-                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Categorías</a>
-                <a href="{% url 'inventario:laboratorio_list' %}"
-                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Laboratorios</a>
-                <a href="{% url 'inventario:forma_farmaceutica_list' %}"
-                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Formas Farmacéuticas</a>
-                <a href="{% url 'inventario:principio_activo_list' %}"
-                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Principios Activos</a>
-                <a href="{% url 'proveedores:proveedor_list' %}"
-                    class="px-4 py-3 rounded-lg hover:bg-slate-800">Proveedores</a>
-                <a href="{% url 'core:logout' %}"
-                    class="px-4 py-3 rounded-lg text-rose-500 hover:bg-rose-500/10 mt-4 border-t border-slate-700">Cerrar
-                    Sesión</a>
-            </nav>
+        <div id="mobile-menu"
+            class="hidden lg:hidden absolute top-16 inset-x-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(15,23,42,0.10)]">
+            
+            <div class="px-4 pb-5 pt-4">
+                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-3">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            id="mobile-menu-search"
+                            type="text"
+                            placeholder="Buscar módulos o accesos..."
+                            class="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+                </div>
+
+                <div class="mt-4 rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm">
+                    <div class="mb-3 px-2">
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Navegación
+                        </p>
+                    </div>
+
+                    <nav id="mobile-nav-menu" class="space-y-2">
+                        <!-- Inicio -->
+                        <a href="{% url 'dashboard' %}"
+                        class="flex items-center gap-3 rounded-2xl border border-transparent bg-white px-4 py-3 text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">🏠</span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold">Inicio</p>
+                                <p class="text-xs text-slate-400">Panel principal</p>
+                            </div>
+                        </a>
+
+                        <!-- Inventario -->
+                        <div class="mobile-group rounded-2xl border border-slate-200 bg-white">
+                            <button type="button"
+                                    class="mobile-group-toggle flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">💊</span>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900">Inventario</p>
+                                        <p class="text-xs text-slate-400">Catálogo, laboratorios y unidades</p>
+                                    </div>
+                                </div>
+                                <svg class="mobile-chevron h-4 w-4 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
+                                <div class="grid gap-2">
+                                    <a href="{% url 'inventario:producto_list' %}" class="mobile-subitem">Productos</a>
+                                    <a href="{% url 'inventario:categoria_list' %}" class="mobile-subitem">Categorías</a>
+                                    <a href="{% url 'inventario:laboratorio_list' %}" class="mobile-subitem">Laboratorios</a>
+                                    <a href="{% url 'inventario:forma_farmaceutica_list' %}" class="mobile-subitem">Formas</a>
+                                    <a href="{% url 'inventario:principio_activo_list' %}" class="mobile-subitem">Principios Activos</a>
+                                    <a href="{% url 'inventario:unidad_presentacion_list' %}" class="mobile-subitem">Unidades</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compras -->
+                        <div class="mobile-group rounded-2xl border border-slate-200 bg-white">
+                            <button type="button"
+                                    class="mobile-group-toggle flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">🛒</span>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900">Compras</p>
+                                        <p class="text-xs text-slate-400">Abastecimiento y proveedores</p>
+                                    </div>
+                                </div>
+                                <svg class="mobile-chevron h-4 w-4 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
+                                <div class="grid gap-2">
+                                    <a href="{% url 'compras:home' %}" class="mobile-subitem">Listado de Compras</a>
+                                    <a href="{% url 'compras:compra_create' %}" class="mobile-subitem">Registrar Compra</a>
+                                    <a href="{% url 'proveedores:proveedor_list' %}" class="mobile-subitem">Proveedores</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ventas -->
+                        <div class="mobile-group rounded-2xl border border-slate-200 bg-white">
+                            <button type="button"
+                                    class="mobile-group-toggle flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">💳</span>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900">Ventas</p>
+                                        <p class="text-xs text-slate-400">POS, historial y clientes</p>
+                                    </div>
+                                </div>
+                                <svg class="mobile-chevron h-4 w-4 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
+                                <div class="grid gap-2">
+                                    <a href="{% url 'ventas:pos' %}" class="mobile-subitem">Punto de Venta (POS)</a>
+                                    <a href="{% url 'ventas:venta_list' %}" class="mobile-subitem">Historial de Ventas</a>
+                                    <a href="{% url 'clientes:lista' %}" class="mobile-subitem">Clientes</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Traslados -->
+                        <div class="mobile-group rounded-2xl border border-slate-200 bg-white">
+                            <button type="button"
+                                    class="mobile-group-toggle flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">🚚</span>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900">Traslados</p>
+                                        <p class="text-xs text-slate-400">Transferencias entre sedes</p>
+                                    </div>
+                                </div>
+                                <svg class="mobile-chevron h-4 w-4 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
+                                <div class="grid gap-2">
+                                    <a href="{% url 'traslados:home' %}" class="mobile-subitem">Ver Traslados</a>
+                                    <a href="{% url 'traslados:traslado_create' %}" class="mobile-subitem">Nuevo Traslado</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuración -->
+                        <div class="mobile-group rounded-2xl border border-slate-200 bg-white">
+                            <button type="button"
+                                    class="mobile-group-toggle flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">⚙️</span>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900">Configuración</p>
+                                        <p class="text-xs text-slate-400">Usuarios, farmacias y roles</p>
+                                    </div>
+                                </div>
+                                <svg class="mobile-chevron h-4 w-4 text-slate-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
+                                <div class="grid gap-2">
+                                    <a href="{% url 'core:farmacias_list' %}" class="mobile-subitem">Farmacias</a>
+                                    <a href="{% url 'core:usuario_list' %}" class="mobile-subitem">Usuarios</a>
+                                    <a href="{% url 'core:rol_list' %}" class="mobile-subitem">Roles</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="my-2 border-t border-slate-100"></div>
+
+                        <a href="{% url 'core:logout' %}"
+                        class="flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-600 transition hover:bg-rose-100">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-lg shadow-sm">⎋</span>
+                            <div>
+                                <p class="text-sm font-bold">Cerrar Sesión</p>
+                                <p class="text-xs text-rose-400">Salir del sistema</p>
+                            </div>
+                        </a>
+                    </nav>
+                </div>
+            </div>
         </div>
 
-        <main class="flex-1 p-6 lg:p-10">
-            {% block app_content %}{% endblock %}
-            {% block app_content_extra %}{% endblock %}
+        <main class="flex-1 overflow-y-auto p-4 lg:p-4 bg-white">
+            <div class="max-w-full mx-auto h-full">
+                {% block app_content %}{% endblock %}
+                {% block app_content_extra %}{% endblock %}
+            </div>
         </main>
     </div>
 </div>
-{% endblock %}
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+    .mobile-subitem {
+        display: flex;
+        align-items: center;
+        border-radius: 0.95rem;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #475569;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-subitem:hover {
+        background: #ecfdf5;
+        color: #047857;
+    }
+</style>
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+{% endblock %}
 
 {% block scripts_extra %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    const mobileGroupToggles = document.querySelectorAll('.mobile-group-toggle');
+    mobileGroupToggles.forEach(button => {
+        button.addEventListener('click', () => {
+            const wrapper = button.closest('.mobile-group');
+            const content = wrapper.querySelector('.mobile-group-content');
+            const chevron = wrapper.querySelector('.mobile-chevron');
 
-        const navMenuContainer = document.getElementById('main-nav-menu');
-
-        const navData = [
-            {
-                id: 'inicio',
-                url: "{% url 'dashboard' %}",
-                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 9-9m0 0 9 9m-9-9v11.25A2.25 2.25 0 0 1 11.25 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V12M18.75 12V4.5m0 0-2.25-2.25M18.75 4.5h-1.5m-2.25 18H12M4.5 9.75v8.25c0 .621.504 1.125 1.125 1.125h11.25c.621 0 1.125-.504 1.125-1.125V9.75M3.75 12h.008v.008H3.75V12zm0 3.75h.008v.008H3.75v-.008zm0 3.75h.008v.008H3.75v-.008zm3.75-3.75h.008v.008H7.5v-.008zm0 3.75h.008v.008H7.5v-.008zm3.75-3.75h.008v.008h-.008v-.008zm0 3.75h.008v.008h-.008v-.008zm3.75-3.75h.008v.008h-.008v-.008zm0 3.75h.008v.008h-.008v-.008z" /></svg>`,
-                title: 'Inicio'
-            },
-            {
-                id: 'inventario',
-                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125A2.25 2.25 0 0 1 4.5 4.875h15A2.25 2.25 0 0 1 21.75 7.125v10.5A2.25 2.25 0 0 1 19.5 19.875h-15A2.25 2.25 0 0 1 2.25 17.625V7.125Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m12 15.75-3-3m0 0 3-3m-3 3h7.5" /></svg>`,
-                title: 'Inventario',
-                children: [
-                    { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos' },
-                    { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías' },
-                    { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios' },
-                    { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas' },
-                    { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos' },
-                    { id: 'unidades', url: "{% url 'inventario:unidad_presentacion_list' %}", icon: '📐', title: 'Unidades' }, // <-- LÍNEA AÑADIDA
-                ]
-            },
-            {
-                id: 'compras',
-                icon: '🛒',
-                title: 'Compras',
-                children: [
-                    // --- LÍNEA AÑADIDA ---
-                    { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras' },
-
-                    { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra' },
-                    { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores' },
-                ]
-            },
-            {
-                id: 'ventas',
-                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>`,
-                title: 'Ventas',
-                children: [
-                    { id: 'pos', url: "{% url 'ventas:pos' %}", icon: '🖥️', title: 'Punto de Venta (POS)' },
-                    { id: 'ventas-list', url: '{% url "ventas:venta_list" %}', icon: '📊', title: 'Historial de Ventas' },
-
-                    { id: 'clientes', url: "{% url 'clientes:lista' %}", icon: '👥', title: 'Clientes' },
-                    // Aquí podrás añadir 'Nueva Venta', etc. en el futuro
-                ]
-            },
-            {
-                id: 'traslados',
-                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>`,
-                title: 'Traslados',
-                children: [
-                    { id: 'listado-traslados', url: "{% url 'traslados:home' %}", icon: '🚚', title: 'Ver Traslados' },
-                    { id: 'nuevo-traslado', url: "{% url 'traslados:traslado_create' %}", icon: '➕', title: 'Nuevo Traslado' },
-                ]
-            },
-            {
-                id: 'configuracion',
-                icon: `<svg class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.43.992a6.759 6.759 0 0 1 0 1.905c.008.378.137.75.43.99l1.004.827a1.125 1.125 0 0 1 .26 1.43l-1.296 2.247a1.125 1.125 0 0 1-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.332.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 0 1-1.37-.49l-1.296-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.759 6.759 0 0 1 0-1.905c-.008-.378-.137-.75-.43-.99l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.296-2.247a1.125 1.125 0 0 1 1.37.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183-.582-.495-.644-.869l.213-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>`,
-                title: 'Configuración',
-                children: [
-                    { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Farmacias' },
-                    { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Usuarios' },
-                    { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Roles' },
-                ]
-            }
-        ];
-
-        if (navMenuContainer) {
-            navMenuContainer.innerHTML = '';
-            navData.forEach(item => {
-                if (item.children && item.children.length > 0) {
-                    const menuWrapper = document.createElement('div');
-                    const button = document.createElement('button');
-                    button.className = 'flex items-center justify-between w-full h-12 rounded-full bg-slate-700/50 hover:bg-slate-800/80 transition-colors pl-4 nav-item';
-                    button.innerHTML = `<div class="flex items-center">${item.icon}<span class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${item.title}</span></div><svg class="w-5 h-5 mr-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-transform duration-300 nav-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>`;
-                    const submenu = document.createElement('div');
-                    submenu.className = 'hidden mt-2 pl-4 space-y-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-                    item.children.forEach(child => {
-                        submenu.innerHTML += `<a href="${child.url}" id="${child.id}-link" class="flex items-center w-full h-10 rounded-lg hover:bg-slate-800/80 px-2 text-slate-300 hover:text-white transition-colors nav-sub-item"><span class="w-8 text-center text-lg">${child.icon}</span><span class="ml-2 text-sm font-medium whitespace-nowrap">${child.title}</span></a>`;
-                    });
-                    menuWrapper.appendChild(button);
-                    menuWrapper.appendChild(submenu);
-                    navMenuContainer.appendChild(menuWrapper);
-                    button.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        submenu.classList.toggle('hidden');
-                        button.querySelector('.nav-chevron').classList.toggle('rotate-180');
-                    });
-                } else {
-                    const link = document.createElement('a');
-                    link.href = item.url;
-                    link.id = `${item.id}-link`;
-                    link.className = 'flex items-center w-full h-12 rounded-full bg-slate-700/50 hover:bg-slate-800/80 transition-colors pl-4 nav-item';
-                    link.innerHTML = `${item.icon}<span class="ml-4 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${item.title}</span>`;
-                    navMenuContainer.appendChild(link);
-                }
-            });
-        }
-
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        if (mobileMenuButton) {
-            mobileMenuButton.addEventListener('click', () => {
-                document.getElementById('mobile-menu').classList.toggle('hidden');
-            });
-        }
-
-        const currentPath = window.location.pathname;
-        const allLinks = document.querySelectorAll('aside nav a');
-        allLinks.forEach(link => {
-            if (link.href && new URL(link.href).pathname === currentPath) {
-                link.classList.add('bg-slate-800/80', 'text-emerald-400');
-                link.classList.remove('bg-slate-700/50', 'hover:bg-slate-800/80');
-            }
+            content.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
         });
     });
+
+    const mobileSearchInput = document.getElementById('mobile-menu-search');
+    if (mobileSearchInput) {
+        mobileSearchInput.addEventListener('input', function () {
+            const value = this.value.toLowerCase().trim();
+            const groups = document.querySelectorAll('.mobile-group');
+
+            groups.forEach(group => {
+                const title = group.querySelector('.mobile-group-toggle p').textContent.toLowerCase();
+                const subitems = group.querySelectorAll('.mobile-subitem');
+                let visibleItems = 0;
+
+                subitems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    const match = text.includes(value) || title.includes(value);
+                    item.style.display = match ? 'flex' : 'none';
+                    if (match) visibleItems++;
+                });
+
+                group.style.display = (title.includes(value) || visibleItems > 0 || value === '') ? 'block' : 'none';
+
+                if (value !== '' && visibleItems > 0) {
+                    group.querySelector('.mobile-group-content').classList.remove('hidden');
+                    group.querySelector('.mobile-chevron').classList.add('rotate-180');
+                }
+            });
+        });
+    }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const navMenuContainer = document.getElementById('main-nav-menu');
+    const submenuContent = document.getElementById('submenu-content');
+    const submenuTitle = document.getElementById('submenu-title');
+    const submenuSubtitle = document.getElementById('submenu-subtitle');
+    const submenuBadge = document.getElementById('submenu-badge');
+
+    const startButton = document.getElementById('start-menu-button');
+    const startPanel = document.getElementById('start-menu-panel');
+    const startOverlay = document.getElementById('start-menu-overlay');
+
+    const searchInput = document.getElementById('start-menu-search');
+
+    const navData = [
+        {
+            id: 'inicio',
+            title: 'Inicio',
+            description: 'Panel principal del sistema',
+            icon: '🏠',
+            url: "{% url 'dashboard' %}",
+            children: [
+                { id: 'dashboard-main', url: "{% url 'dashboard' %}", icon: '🏠', title: 'Dashboard', description: 'Vista principal' }
+            ]
+        },
+        {
+            id: 'inventario',
+            title: 'Inventario',
+            description: 'Catálogo, laboratorios y unidades',
+            icon: '💊',
+            children: [
+                { id: 'productos', url: "{% url 'inventario:producto_list' %}", icon: '💊', title: 'Productos', description: 'Listado maestro de productos' },
+                { id: 'categorias', url: "{% url 'inventario:categoria_list' %}", icon: '🏷️', title: 'Categorías', description: 'Clasificación de productos' },
+                { id: 'laboratorios', url: "{% url 'inventario:laboratorio_list' %}", icon: '🏢', title: 'Laboratorios', description: 'Fabricantes y marcas' },
+                { id: 'formas', url: "{% url 'inventario:forma_farmaceutica_list' %}", icon: '🧬', title: 'Formas', description: 'Forma farmacéutica' },
+                { id: 'principios', url: "{% url 'inventario:principio_activo_list' %}", icon: '🔬', title: 'Principios Activos', description: 'Sustancias base' },
+                { id: 'unidades', url: "{% url 'inventario:unidad_presentacion_list' %}", icon: '📐', title: 'Unidades', description: 'Presentaciones y medidas' }
+            ]
+        },
+        {
+            id: 'compras',
+            title: 'Compras',
+            description: 'Abastecimiento y proveedores',
+            icon: '🛒',
+            children: [
+                { id: 'listado-compras', url: "{% url 'compras:home' %}", icon: '📋', title: 'Listado de Compras', description: 'Historial y control' },
+                { id: 'nueva-compra', url: "{% url 'compras:compra_create' %}", icon: '➕', title: 'Registrar Compra', description: 'Nuevo ingreso' },
+                { id: 'proveedores', url: "{% url 'proveedores:proveedor_list' %}", icon: '🚚', title: 'Proveedores', description: 'Gestión de proveedores' }
+            ]
+        },
+        {
+            id: 'ventas',
+            title: 'Ventas',
+            description: 'POS, historial y clientes',
+            icon: '💳',
+            children: [
+                { id: 'pos', url: "{% url 'ventas:pos' %}", icon: '🖥️', title: 'POS', description: 'Venta rápida' },
+                { id: 'ventas-list', url: "{% url 'ventas:venta_list' %}", icon: '📊', title: 'Historial de Ventas', description: 'Movimientos realizados' },
+                { id: 'clientes', url: "{% url 'clientes:lista' %}", icon: '👥', title: 'Clientes', description: 'Base de clientes' }
+            ]
+        },
+        {
+            id: 'traslados',
+            title: 'Traslados',
+            description: 'Transferencias entre sedes',
+            icon: '🚚',
+            children: [
+                { id: 'listado-traslados', url: "{% url 'traslados:home' %}", icon: '🚚', title: 'Ver Traslados', description: 'Seguimiento general' },
+                { id: 'nuevo-traslado', url: "{% url 'traslados:traslado_create' %}", icon: '➕', title: 'Nuevo Traslado', description: 'Registrar movimiento' }
+            ]
+        },
+        {
+            id: 'configuracion',
+            title: 'Configuración',
+            description: 'Usuarios, farmacias y roles',
+            icon: '⚙️',
+            children: [
+                { id: 'farmacias', url: "{% url 'core:farmacias_list' %}", icon: '🏪', title: 'Farmacias', description: 'Gestión de sedes' },
+                { id: 'usuarios', url: "{% url 'core:usuario_list' %}", icon: '👨‍👩‍👧‍👦', title: 'Usuarios', description: 'Accesos y cuentas' },
+                { id: 'roles', url: "{% url 'core:rol_list' %}", icon: '👤', title: 'Roles', description: 'Permisos del sistema' }
+            ]
+        }
+    ];
+
+    let activeModuleId = navData[1] ? navData[1].id : navData[0].id;
+    const currentPath = window.location.pathname;
+
+    function findActiveModuleId() {
+        for (const module of navData) {
+            if ((module.url || '') === currentPath) return module.id;
+            for (const child of (module.children || [])) {
+                try {
+                    const urlPath = new URL(child.url, window.location.origin).pathname;
+                    if (urlPath === currentPath) return module.id;
+                } catch (e) {}
+            }
+        }
+        return activeModuleId;
+    }
+
+    function createSubmenuCard(child) {
+        const link = document.createElement('a');
+        const isCurrent = (() => {
+            try {
+                return new URL(child.url, window.location.origin).pathname === currentPath;
+            } catch (e) {
+                return false;
+            }
+        })();
+
+        link.href = child.url;
+        link.className = [
+            'group flex items-start gap-3 rounded-2xl border px-4 py-4 transition-all duration-200',
+            isCurrent
+                ? 'border-emerald-200 bg-emerald-50 shadow-sm'
+                : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md'
+        ].join(' ');
+
+        link.innerHTML = `
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-lg shadow-sm">
+                ${child.icon}
+            </span>
+            <span class="min-w-0">
+                <span class="block text-sm font-bold ${isCurrent ? 'text-emerald-700' : 'text-slate-900'}">${child.title}</span>
+                <span class="mt-1 block text-xs text-slate-400">${child.description || ''}</span>
+            </span>
+        `;
+        return link;
+    }
+
+    function renderSubmenu(module, filteredChildren = null) {
+        if (!submenuContent || !module) return;
+
+        const children = filteredChildren || module.children || [];
+
+        submenuTitle.textContent = module.title;
+        submenuSubtitle.textContent = module.description || 'Accesos disponibles del módulo';
+        submenuBadge.textContent = `${children.length} accesos`;
+
+        submenuContent.innerHTML = '';
+
+        if (!children.length) {
+            submenuContent.innerHTML = `
+                <div class="col-span-2 flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm font-medium text-slate-400">
+                    No se encontraron accesos
+                </div>
+            `;
+            return;
+        }
+
+        children.forEach(child => {
+            submenuContent.appendChild(createSubmenuCard(child));
+        });
+    }
+
+    function renderModules(filteredModules = null) {
+        const modules = filteredModules || navData;
+        navMenuContainer.innerHTML = '';
+
+        if (!modules.length) {
+            navMenuContainer.innerHTML = `
+                <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-medium text-slate-400">
+                    Sin módulos
+                </div>
+            `;
+            return;
+        }
+
+        modules.forEach(module => {
+            const isActive = module.id === activeModuleId;
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = [
+                'w-full rounded-2xl border px-4 py-3 text-left transition-all duration-200',
+                isActive
+                    ? 'border-emerald-200 bg-emerald-50 shadow-sm'
+                    : 'border-transparent bg-white hover:border-slate-200 hover:bg-slate-50'
+            ].join(' ');
+
+            button.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-xl ${isActive ? 'bg-white shadow-sm' : 'bg-slate-100'} text-lg">
+                        ${module.icon}
+                    </span>
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-bold ${isActive ? 'text-emerald-700' : 'text-slate-900'}">${module.title}</p>
+                        <p class="mt-1 truncate text-xs ${isActive ? 'text-emerald-600/80' : 'text-slate-400'}">
+                            ${module.description || ''}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            button.addEventListener('click', () => {
+                activeModuleId = module.id;
+                renderModules(filteredModules);
+                renderSubmenu(module, module.children || []);
+            });
+
+            navMenuContainer.appendChild(button);
+        });
+    }
+
+    function applySearch(value) {
+        const term = value.toLowerCase().trim();
+
+        if (!term) {
+            const currentModule = navData.find(m => m.id === activeModuleId) || navData[0];
+            renderModules();
+            renderSubmenu(currentModule);
+            return;
+        }
+
+        const filteredModules = navData
+            .map(module => {
+                const moduleMatch =
+                    module.title.toLowerCase().includes(term) ||
+                    (module.description || '').toLowerCase().includes(term);
+
+                const filteredChildren = (module.children || []).filter(child =>
+                    child.title.toLowerCase().includes(term) ||
+                    (child.description || '').toLowerCase().includes(term)
+                );
+
+                if (moduleMatch || filteredChildren.length > 0) {
+                    return {
+                        ...module,
+                        children: filteredChildren.length > 0 ? filteredChildren : (module.children || [])
+                    };
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        if (filteredModules.length > 0) {
+            activeModuleId = filteredModules[0].id;
+            renderModules(filteredModules);
+            renderSubmenu(filteredModules[0], filteredModules[0].children);
+        } else {
+            navMenuContainer.innerHTML = `
+                <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-medium text-slate-400">
+                    No se encontraron resultados
+                </div>
+            `;
+            submenuTitle.textContent = 'Sin resultados';
+            submenuSubtitle.textContent = 'Prueba con otro término de búsqueda';
+            submenuBadge.textContent = '0 accesos';
+            submenuContent.innerHTML = `
+                <div class="col-span-2 flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-sm font-medium text-slate-400">
+                    No se encontraron accesos relacionados
+                </div>
+            `;
+        }
+    }
+
+    function openStartMenu() {
+        startPanel.classList.remove('hidden');
+        startOverlay.classList.remove('hidden');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+
+    function closeStartMenu() {
+        startPanel.classList.add('hidden');
+        startOverlay.classList.add('hidden');
+    }
+
+    startButton?.addEventListener('click', () => {
+        const isHidden = startPanel.classList.contains('hidden');
+        if (isHidden) openStartMenu();
+        else closeStartMenu();
+    });
+
+    startOverlay?.addEventListener('click', closeStartMenu);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeStartMenu();
+    });
+
+    searchInput?.addEventListener('input', function () {
+        applySearch(this.value);
+    });
+
+    const initialModuleId = findActiveModuleId();
+    activeModuleId = initialModuleId;
+    const currentModule = navData.find(item => item.id === activeModuleId) || navData[0];
+    renderModules();
+    renderSubmenu(currentModule);
+
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    }
+});
 </script>
 {% block app_scripts %}{% endblock %}
 {% endblock %}
