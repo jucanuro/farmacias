@@ -2,73 +2,295 @@
 {% load static %}
 
 {% block title %}
-{% if rol %}
-VQL - Editando Rol: {{ rol.nombre }}
-{% else %}
-VQL - Crear Rol
-{% endif %}
+{% if rol %}VQL - Editando Rol: {{ rol.nombre }}{% else %}VQL - Crear Rol{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    {# BOTÓN DE VOLVER ACTUALIZADO #}
-    <a href="{% url 'core:rol_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
-              hover:bg-slate-700 hover:text-white transition-all duration-300
-              shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-indigo-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a la lista de Roles
-    </a>
+<style>
+    .form-shell {
+        position: relative;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05), 0 32px 80px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
 
-    {% if rol %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Rol</h1>
-    <p class="text-slate-400 mt-1">Modifica los detalles del rol <strong class="text-white">{{ rol.nombre }}</strong>.
-    </p>
-    {% else %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Rol</h1>
-    <p class="text-slate-400 mt-1">Define un nuevo rol para los usuarios del sistema.</p>
-    {% endif %}
-</header>
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    }
 
-<div class="glass-card rounded-2xl p-8 max-w-2xl mx-auto">
-    <form method="post" action="">
-        {% csrf_token %}
-        <div class="space-y-6">
-            <div>
-                <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-slate-300 mb-1">Nombre
-                    del Rol</label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.nombre.errors.as_text }}</p>
-                {% endif %}
-            </div>
-            <div>
-                <label for="{{ form.descripcion.id_for_label }}"
-                    class="block text-sm font-medium text-slate-300 mb-1">Descripción</label>
-                {{ form.descripcion }}
-                {% if form.descripcion.errors %}
-                <p class="text-red-400 text-xs mt-1">{{ form.descripcion.errors.as_text }}</p>
-                {% endif %}
-            </div>
-        </div>
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+    .form-label {
+        display: block;
+        margin-bottom: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .section-badge {
+        width: 2.2rem;
+        height: 2.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.95rem;
+        font-weight: 800;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+
+    .mini-stat {
+        border-radius: 1.15rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .mini-stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .mini-stat-value {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .soft-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.48rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+
+    .rol-form input,
+    .rol-form textarea,
+    .rol-form select {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #0f172a;
+        outline: none;
+        border-radius: 1rem;
+        padding: 0.875rem 1rem;
+        transition: all 0.25s ease;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .rol-form textarea {
+        min-height: 130px;
+        resize: vertical;
+    }
+
+    .rol-form input:focus,
+    .rol-form textarea:focus,
+    .rol-form select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12), 0 8px 24px rgba(99, 102, 241, 0.08);
+    }
+
+    .action-primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        box-shadow: 0 14px 30px rgba(99, 102, 241, 0.20);
+        transition: all 0.22s ease;
+    }
+
+    .action-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 36px rgba(99, 102, 241, 0.24);
+    }
+
+    .action-secondary {
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #475569;
+        transition: all 0.22s ease;
+    }
+
+    .action-secondary:hover {
+        transform: translateY(-1px);
+        background: #f8fafc;
+        color: #0f172a;
+    }
+</style>
+
+<div>
+    <header class="relative mb-10 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
             <a href="{% url 'core:rol_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">
-                Cancelar
+               class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors duration-200">
+                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 group-hover:border-indigo-200 group-hover:bg-indigo-50 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver a roles</span>
             </a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition-colors">
-                {% if rol %}
-                Guardar Cambios
-                {% else %}
-                Guardar Rol
-                {% endif %}
-            </button>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 bg-indigo-500 blur-lg opacity-20 rounded-2xl"></div>
+                    <div class="relative w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-indigo-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zM5.5 20a6.5 6.5 0 0113 0M19 8h2m-1-1v2" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if rol %}Editar Rol{% else %}Nuevo Rol{% endif %}
+                        </h1>
+
+                        {% if rol %}
+                        <span class="soft-chip bg-indigo-100 text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                            ID: #{{ rol.id }}
+                        </span>
+                        {% else %}
+                        <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            BORRADOR
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-slate-500 text-sm leading-relaxed max-w-2xl">
+                        {% if rol %}
+                        Modifica el perfil de acceso <strong class="text-slate-700">{{ rol.nombre }}</strong>.
+                        {% else %}
+                        Define un nuevo rol para organizar permisos, responsabilidades y accesos del sistema.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 w-full lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full {% if rol %}bg-indigo-500{% else %}bg-amber-500{% endif %}"></div>
+                        {% if rol %}Activo{% else %}En creación{% endif %}
+                    </span>
+                </div>
+
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Rol</span>
+                    <span class="mini-stat-value text-sm truncate">
+                        {% if rol and rol.nombre %}{{ rol.nombre }}{% else %}---{% endif %}
+                    </span>
+                </div>
+
+                <div class="flex flex-col p-4 rounded-xl bg-slate-900 border border-slate-800 min-w-[140px] col-span-2 md:col-span-1 shadow-sm">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tipo de Registro</span>
+                    <span class="text-sm font-semibold text-white mt-1">Perfil de acceso</span>
+                </div>
+            </div>
         </div>
-    </form>
+    </header>
+
+    <div class="relative">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-indigo-200/60 via-sky-100/50 to-purple-100/50 blur-2xl"></div>
+
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-6">
+            <form method="post" action="" class="rol-form space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <section class="xl:col-span-9">
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-indigo-50 text-indigo-700 border border-indigo-100">01</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información del rol</h3>
+                                    <p class="text-sm text-slate-500">
+                                        Registra el nombre y descripción funcional del perfil de acceso.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <div>
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del rol</label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.nombre.errors.as_text }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.descripcion.errors.as_text }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="xl:col-span-3">
+                        <div class="section-card">
+                            <h3 class="text-base font-bold text-slate-900 mb-4">Resumen</h3>
+
+                            <div class="space-y-2.5">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Rol</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if rol and rol.nombre %}{{ rol.nombre }}{% else %}Nuevo rol{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Descripción</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 line-clamp-3">
+                                        {% if rol and rol.descripcion %}{{ rol.descripcion }}{% else %}Pendiente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-indigo-600">Módulo</p>
+                                    <p class="mt-1 text-sm font-bold text-slate-800">
+                                        Seguridad
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-2">
+                    <a href="{% url 'core:rol_list' %}"
+                       class="action-secondary inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold">
+                        Cancelar
+                    </a>
+
+                    <button type="submit"
+                            class="action-primary inline-flex items-center justify-center rounded-2xl px-7 py-3 text-sm font-bold">
+                        {% if rol %}Guardar cambios{% else %}Guardar rol{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

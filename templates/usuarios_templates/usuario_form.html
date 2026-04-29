@@ -2,136 +2,413 @@
 {% load static %}
 
 {% block title %}
-{% if usuario %}
-VQL - Editando a {{ usuario.username }}
-{% else %}
-VQL - Crear Usuario
-{% endif %}
+{% if usuario %}VQL - Editando a {{ usuario.username }}{% else %}VQL - Crear Usuario{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    {# BOTÓN DE VOLVER ACTUALIZADO #}
-    <a href="{% url 'core:usuario_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full
-              hover:bg-slate-700 hover:text-white transition-all duration-300
-              shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a la lista de Usuarios
-    </a>
+<style>
+    .form-shell {
+        position: relative;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05), 0 32px 80px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
 
-    {% if usuario %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Usuario: <span class="text-cyan-400">{{ usuario.username
-            }}</span></h1>
-    <p class="text-slate-400 mt-1">Modifica los datos del miembro del personal.</p>
-    {% else %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Usuario</h1>
-    <p class="text-slate-400 mt-1">Completa los datos para registrar un nuevo miembro del personal.</p>
-    {% endif %}
-</header>
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    }
 
-<div class="glass-card rounded-2xl p-8 max-w-4xl mx-auto">
-    <form method="post" action="">
-        {% csrf_token %}
+    .form-label {
+        display: block;
+        margin-bottom: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
 
-        {% if form.non_field_errors %}
-        <div class="bg-rose-500/20 border border-rose-500/50 text-rose-300 p-4 rounded-lg mb-6">
-            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-        </div>
-        {% endif %}
+    .section-badge {
+        width: 2.2rem;
+        height: 2.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.95rem;
+        font-weight: 800;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+    .mini-stat {
+        border-radius: 1.15rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+    }
 
-            <div class="space-y-6">
-                {% if not usuario %} {# El username solo se establece al crear #}
-                <div>
-                    <label for="{{ form.username.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Nombre de usuario</label>
-                    {{ form.username }}
-                    {% if form.username.errors %}<p class="text-red-400 text-xs mt-1">{{ form.username.errors|first }}
-                    </p>{% endif %}
-                </div>
-                {% endif %}
-                <div>
-                    <label for="{{ form.first_name.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Nombres</label>
-                    {{ form.first_name }}
-                </div>
-                <div>
-                    <label for="{{ form.last_name.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Apellidos</label>
-                    {{ form.last_name }}
-                </div>
-                <div>
-                    <label for="{{ form.email.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Correo Electrónico</label>
-                    {{ form.email }}
-                </div>
-            </div>
+    .mini-stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        font-weight: 800;
+    }
 
-            <div class="space-y-6">
-                <div>
-                    <label for="{{ form.farmacia.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Farmacia</label>
-                    {{ form.farmacia }}
-                </div>
-                <div>
-                    <label for="{{ form.sucursal.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Sucursal (Opcional)</label>
-                    {{ form.sucursal }}
-                </div>
-                <div>
-                    <label for="{{ form.rol.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Rol</label>
-                    {{ form.rol }}
-                </div>
-                {% if usuario %}
-                <div>
-                    <label for="{{ form.is_active.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Usuario Activo</label>
-                    <label class="relative inline-flex items-center cursor-pointer mt-2">
-                        {{ form.is_active }}
-                        <div
-                            class="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-teal-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500">
-                        </div>
-                    </label>
-                </div>
-                {% endif %}
-            </div>
+    .mini-stat-value {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
 
-            {% if not usuario %}
-            <div class="md:col-span-2 space-y-6 border-t border-slate-700 pt-6 mt-6">
-                <div>
-                    <label for="{{ form.password1.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Contraseña</label>
-                    {{ form.password1 }}
-                    {% if form.password1.errors %}<p class="text-red-400 text-xs mt-1">{{ form.password1.errors|first }}
-                    </p>{% endif %}
-                    <p class="text-xs text-slate-500 mt-1">{{ form.password1.help_text|safe }}</p>
-                </div>
-                <div>
-                    <label for="{{ form.password2.id_for_label }}"
-                        class="block text-sm font-medium text-slate-300 mb-1">Confirmación de contraseña</label>
-                    {{ form.password2 }}
-                    {% if form.password2.errors %}<p class="text-red-400 text-xs mt-1">{{ form.password2.errors|first }}
-                    </p>{% endif %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
+    .soft-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.48rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
 
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
+    .usuario-form input,
+    .usuario-form textarea,
+    .usuario-form select {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #0f172a;
+        outline: none;
+        border-radius: 1rem;
+        padding: 0.875rem 1rem;
+        transition: all 0.25s ease;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .usuario-form input[type="checkbox"] {
+        width: 1.1rem;
+        height: 1.1rem;
+        padding: 0;
+        border-radius: 0.35rem;
+        accent-color: #14b8a6;
+    }
+
+    .usuario-form input:focus,
+    .usuario-form textarea:focus,
+    .usuario-form select:focus {
+        border-color: #14b8a6;
+        box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12), 0 8px 24px rgba(20, 184, 166, 0.08);
+    }
+
+    .action-primary {
+        background: linear-gradient(135deg, #14b8a6, #0d9488);
+        color: white;
+        box-shadow: 0 14px 30px rgba(20, 184, 166, 0.20);
+        transition: all 0.22s ease;
+    }
+
+    .action-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 36px rgba(20, 184, 166, 0.24);
+    }
+
+    .action-secondary {
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #475569;
+        transition: all 0.22s ease;
+    }
+
+    .action-secondary:hover {
+        transform: translateY(-1px);
+        background: #f8fafc;
+        color: #0f172a;
+    }
+</style>
+
+<div>
+    <header class="relative mb-10 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
             <a href="{% url 'core:usuario_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-bold transition-colors">
-                {% if usuario %}Guardar Cambios{% else %}Guardar Usuario{% endif %}
-            </button>
+               class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600 transition-colors duration-200">
+                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 group-hover:border-teal-200 group-hover:bg-teal-50 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver a usuarios</span>
+            </a>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 bg-teal-500 blur-lg opacity-20 rounded-2xl"></div>
+                    <div class="relative w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-teal-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if usuario %}Editar Usuario{% else %}Nuevo Usuario{% endif %}
+                        </h1>
+
+                        {% if usuario %}
+                        <span class="soft-chip bg-teal-100 text-teal-700 ring-1 ring-inset ring-teal-600/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+                            ID: #{{ usuario.id }}
+                        </span>
+                        {% else %}
+                        <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            BORRADOR
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-slate-500 text-sm leading-relaxed max-w-2xl">
+                        {% if usuario %}
+                        Modifica los datos, rol y estado del usuario <strong class="text-slate-700">{{ usuario.username }}</strong>.
+                        {% else %}
+                        Registra un nuevo miembro del personal y asigna su farmacia, sucursal y rol operativo.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 w-full lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full {% if usuario and usuario.is_active %}bg-teal-500{% elif usuario %}bg-rose-500{% else %}bg-amber-500{% endif %}"></div>
+                        {% if usuario %}
+                            {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
+                        {% else %}
+                            En creación
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Usuario</span>
+                    <span class="mini-stat-value text-sm truncate">
+                        {% if usuario and usuario.username %}{{ usuario.username }}{% else %}---{% endif %}
+                    </span>
+                </div>
+
+                <div class="flex flex-col p-4 rounded-xl bg-slate-900 border border-slate-800 min-w-[140px] col-span-2 md:col-span-1 shadow-sm">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tipo de Registro</span>
+                    <span class="text-sm font-semibold text-white mt-1">Cuenta de usuario</span>
+                </div>
+            </div>
         </div>
-    </form>
+    </header>
+
+    <div class="relative">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-teal-200/60 via-sky-100/50 to-emerald-100/50 blur-2xl"></div>
+
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-6">
+            <form method="post" action="" class="usuario-form space-y-6">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <section class="xl:col-span-9 space-y-6">
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-teal-50 text-teal-700 border border-teal-100">01</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información personal</h3>
+                                    <p class="text-sm text-slate-500">Datos básicos de identificación del usuario.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {% if not usuario %}
+                                <div class="md:col-span-2">
+                                    <label for="{{ form.username.id_for_label }}" class="form-label">Nombre de usuario</label>
+                                    {{ form.username }}
+                                    {% if form.username.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.username.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+
+                                <div>
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">Nombres</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.first_name.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Apellidos</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.last_name.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">Correo electrónico</label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.email.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-sky-50 text-sky-700 border border-sky-100">02</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Asignación operativa</h3>
+                                    <p class="text-sm text-slate-500">Relaciona el usuario con farmacia, sucursal y rol.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="{{ form.farmacia.id_for_label }}" class="form-label">Farmacia</label>
+                                    {{ form.farmacia }}
+                                    {% if form.farmacia.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.farmacia.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.sucursal.id_for_label }}" class="form-label">Sucursal</label>
+                                    {{ form.sucursal }}
+                                    {% if form.sucursal.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.sucursal.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label for="{{ form.rol.id_for_label }}" class="form-label">Rol</label>
+                                    {{ form.rol }}
+                                    {% if form.rol.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.rol.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+
+                                {% if usuario %}
+                                <div class="md:col-span-2">
+                                    <label class="form-label">Estado del usuario</label>
+                                    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer">
+                                        {{ form.is_active }}
+                                        <span class="text-sm font-bold text-slate-700">Usuario activo</span>
+                                    </label>
+                                    {% if form.is_active.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.is_active.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if not usuario %}
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-amber-50 text-amber-700 border border-amber-100">03</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Credenciales de acceso</h3>
+                                    <p class="text-sm text-slate-500">Define la contraseña inicial del nuevo usuario.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña</label>
+                                    {{ form.password1 }}
+                                    {% if form.password1.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.password1.errors|first }}</p>
+                                    {% endif %}
+                                    {% if form.password1.help_text %}
+                                    <p class="mt-2 text-xs leading-5 text-slate-400">{{ form.password1.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmación de contraseña</label>
+                                    {{ form.password2 }}
+                                    {% if form.password2.errors %}
+                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.password2.errors|first }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <aside class="xl:col-span-3">
+                        <div class="section-card sticky top-6">
+                            <h3 class="text-base font-bold text-slate-900 mb-4">Resumen</h3>
+
+                            <div class="space-y-2.5">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Usuario</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if usuario and usuario.username %}{{ usuario.username }}{% else %}Nuevo usuario{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Nombre</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if usuario and usuario.get_full_name %}{{ usuario.get_full_name }}{% else %}Pendiente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Rol</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if usuario and usuario.rol %}{{ usuario.rol.nombre }}{% else %}Pendiente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-teal-50 border border-teal-100 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-teal-600">Módulo</p>
+                                    <p class="mt-1 text-sm font-bold text-slate-800">Personal</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-2">
+                    <a href="{% url 'core:usuario_list' %}"
+                       class="action-secondary inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold">
+                        Cancelar
+                    </a>
+
+                    <button type="submit"
+                            class="action-primary inline-flex items-center justify-center rounded-2xl px-7 py-3 text-sm font-bold">
+                        {% if usuario %}Guardar cambios{% else %}Guardar usuario{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -18,20 +18,16 @@ from .forms import (
 )
 from .models import Farmacia, Sucursal, Rol, Usuario, ConfiguracionFacturacionElectronica
 
-# Placeholder service function for sending the invoice
-# In a real-world scenario, this would be a more complex service
-# that interacts with an external API.
+
 def enviar_factura_service(invoice_data, configuracion):
-    # Simulate a successful API call
     if invoice_data and configuracion:
-        # Aquí iría la lógica para interactuar con el API del proveedor de FE
-        # Por ejemplo, usar el token, certificado, etc.
-        # Por ahora, solo devolvemos un éxito simulado
         return {'success': True, 'invoice_id': 'INV-12345'}
     return {'success': False, 'error': 'Datos de factura o configuración faltantes'}
 
+
 def home_view(request):
     return HttpResponse("<h1>¡Bienvenido al Sistema de Gestión de Farmacias!</h1><p>Esta es la página de inicio de la aplicación core.</p>")
+
 
 @require_POST
 def registro_api_view(request):
@@ -47,6 +43,7 @@ def registro_api_view(request):
             return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error inesperado: {str(e)}'}, status=500)
+
 
 @require_POST
 def login_api_view(request):
@@ -65,14 +62,17 @@ def login_api_view(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Error inesperado: {str(e)}'}, status=500)
 
+
 def logout_view(request):
     logout(request)
     return redirect('login')
+
 
 def farmacias_list_view(request):
     lista_de_farmacias = Farmacia.objects.all().order_by('nombre')
     context = {'farmacias': lista_de_farmacias}
     return render(request, 'farmacias_main_templates/farmacias_list.html', context)
+
 
 def farmacia_create_view(request):
     if request.method == 'POST':
@@ -84,6 +84,7 @@ def farmacia_create_view(request):
         form = FarmaciaForm()
     context = {'form': form}
     return render(request, 'farmacias_main_templates/farmacia_form.html', context)
+
 
 def farmacia_update_view(request, pk):
     farmacia_a_editar = get_object_or_404(Farmacia, pk=pk)
@@ -97,17 +98,20 @@ def farmacia_update_view(request, pk):
     context = {'form': form, 'farmacia': farmacia_a_editar}
     return render(request, 'farmacias_main_templates/farmacia_form.html', context)
 
+
 @require_POST
 def farmacia_delete_view(request, pk):
     farmacia_a_eliminar = get_object_or_404(Farmacia, pk=pk)
     farmacia_a_eliminar.delete()
     return redirect('core:farmacias_list')
 
+
 def sucursal_list_view(request, farmacia_id):
     farmacia = get_object_or_404(Farmacia, pk=farmacia_id)
     lista_de_sucursales = farmacia.sucursales.all().order_by('nombre')
     context = {'farmacia': farmacia, 'sucursales': lista_de_sucursales}
     return render(request, 'farmacias_main_templates/sucursal_list.html', context)
+
 
 def sucursal_create_view(request, farmacia_id):
     farmacia = get_object_or_404(Farmacia, pk=farmacia_id)
@@ -123,6 +127,7 @@ def sucursal_create_view(request, farmacia_id):
     context = {'form': form, 'farmacia': farmacia}
     return render(request, 'farmacias_main_templates/sucursal_form.html', context)
 
+
 def sucursal_update_view(request, pk):
     sucursal = get_object_or_404(Sucursal, pk=pk)
     farmacia = sucursal.farmacia
@@ -136,6 +141,7 @@ def sucursal_update_view(request, pk):
     context = {'form': form, 'farmacia': farmacia, 'sucursal': sucursal}
     return render(request, 'farmacias_main_templates/sucursal_form.html', context)
 
+
 @require_POST
 def sucursal_delete_view(request, pk):
     sucursal_a_eliminar = get_object_or_404(Sucursal, pk=pk)
@@ -143,10 +149,12 @@ def sucursal_delete_view(request, pk):
     sucursal_a_eliminar.delete()
     return redirect('core:sucursal_list', farmacia_id=farmacia_id)
 
+
 def rol_list_view(request):
     lista_de_roles = Rol.objects.all().order_by('nombre')
     context = {'roles': lista_de_roles}
     return render(request, 'roles_templates/rol_list.html', context)
+
 
 def rol_create_view(request):
     if request.method == 'POST':
@@ -158,6 +166,7 @@ def rol_create_view(request):
         form = RolForm()
     context = {'form': form}
     return render(request, 'roles_templates/rol_form.html', context)
+
 
 def rol_update_view(request, pk):
     rol = get_object_or_404(Rol, pk=pk)
@@ -171,11 +180,13 @@ def rol_update_view(request, pk):
     context = {'form': form, 'rol': rol}
     return render(request, 'roles_templates/rol_form.html', context)
 
+
 @require_POST
 def rol_delete_view(request, pk):
     rol_a_eliminar = get_object_or_404(Rol, pk=pk)
     rol_a_eliminar.delete()
     return redirect('core:rol_list')
+
 
 def usuario_list_view(request):
     lista_de_usuarios = Usuario.objects.all().select_related(
@@ -183,6 +194,7 @@ def usuario_list_view(request):
     ).order_by('username')
     context = {'usuarios': lista_de_usuarios}
     return render(request, 'usuarios_templates/usuario_list.html', context)
+
 
 def usuario_create_view(request):
     if request.method == 'POST':
@@ -194,6 +206,7 @@ def usuario_create_view(request):
         form = UsuarioCreateForm()
     context = {'form': form}
     return render(request, 'usuarios_templates/usuario_form.html', context)
+
 
 def usuario_update_view(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
@@ -207,6 +220,7 @@ def usuario_update_view(request, pk):
     context = {'form': form, 'usuario': usuario}
     return render(request, 'usuarios_templates/usuario_form.html', context)
 
+
 @require_POST
 def usuario_toggle_active_view(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
@@ -216,11 +230,12 @@ def usuario_toggle_active_view(request, pk):
         return JsonResponse({'status': 'success', 'is_active': usuario.is_active})
     return JsonResponse({'status': 'error', 'message': 'No se puede cambiar el estado de un superusuario.'}, status=403)
 
+
 @login_required
 def configuracion_facturacion_view(request):
     if not request.user.farmacia:
         return HttpResponse("No tienes una farmacia asociada para configurar.", status=403)
-    
+
     farmacia = request.user.farmacia
 
     try:
@@ -244,13 +259,10 @@ def configuracion_facturacion_view(request):
     }
     return render(request, 'core/configuracion_facturacion.html', context)
 
+
 @login_required
 @require_POST
 def enviar_factura_electronica_view(request):
-    """
-    Recibe los datos de una factura en formato JSON, busca la configuración
-    de la farmacia del usuario y simula el envío a un servicio de facturación.
-    """
     if not request.user.farmacia:
         return JsonResponse({'status': 'error', 'message': 'El usuario no tiene una farmacia asociada.'}, status=403)
 
@@ -267,7 +279,6 @@ def enviar_factura_electronica_view(request):
         except ConfiguracionFacturacionElectronica.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'La configuración de facturación electrónica para la farmacia no existe.'}, status=404)
 
-        # Llama a la función de servicio que se comunicaría con el API externo
         response = enviar_factura_service(invoice_data, configuracion_fe)
 
         if response['success']:
