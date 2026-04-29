@@ -2,127 +2,356 @@
 {% load static %}
 
 {% block title %}
-{% if proveedor %}
-VQL - Editando Proveedor
-{% else %}
-VQL - Nuevo Proveedor
-{% endif %}
+    {% if proveedor %}VQL - Editando Proveedor{% else %}VQL - Nuevo Proveedor{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'proveedores:proveedor_list' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver a Proveedores
-    </a>
-    {% if proveedor %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Editar Proveedor</h1>
-    <p class="text-slate-400 mt-1">Modifica los detalles de <strong class="text-white">{{ proveedor }}</strong>.</p>
+<style>
+    .form-shell{background:rgba(255,255,255,.96);border:1px solid #e2e8f0;box-shadow:0 18px 40px rgba(15,23,42,.05),0 32px 80px rgba(15,23,42,.06);backdrop-filter:blur(10px)}
+    .section-card{background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);border:1px solid #e2e8f0;border-radius:1.35rem;padding:1.35rem;box-shadow:0 8px 22px rgba(15,23,42,.04)}
+    .form-input,.form-select,.form-textarea{width:100%;border:1px solid #dbe3ee;background:#fff;color:#0f172a;outline:none;transition:all .25s ease}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.12),0 8px 24px rgba(59,130,246,.08)}
+    .form-label{display:block;margin-bottom:.55rem;text-transform:uppercase;letter-spacing:.08em;font-size:.70rem;font-weight:800;color:#64748b}
+    .field-help{margin-top:.45rem;font-size:.76rem;color:#94a3b8;line-height:1.35}
+    .section-badge{width:2.2rem;height:2.2rem;display:inline-flex;align-items:center;justify-content:center;border-radius:.95rem;font-weight:800;font-size:.82rem;flex-shrink:0}
+    .mini-stat{border-radius:1.15rem;padding:1rem;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);border:1px solid #e2e8f0;box-shadow:0 6px 16px rgba(15,23,42,.03)}
+    .mini-stat-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800}
+    .mini-stat-value{margin-top:.35rem;font-size:1rem;font-weight:800;color:#0f172a}
+    .soft-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.48rem .75rem;border-radius:999px;font-size:.75rem;font-weight:800}
+    .toggle-card{position:relative;border-radius:1.15rem;border:1px solid #e2e8f0;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);padding:1rem 1rem 1rem 3.75rem;min-height:88px;transition:all .25s ease}
+    .toggle-card input[type="checkbox"]{position:absolute;left:1rem;top:1.15rem;width:1.15rem;height:1.15rem;accent-color:#3b82f6;cursor:pointer}
+    .toggle-title{color:#0f172a;font-size:.95rem;font-weight:800;line-height:1.2}
+    .toggle-desc{margin-top:.25rem;color:#64748b;font-size:.78rem;line-height:1.35}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    .tab-btn.active{background:#fff;color:#0f172a;border-color:#dbe3ee;box-shadow:0 15px 34px rgba(15,23,42,.07)}
+</style>
 
-    {% else %}
-    <h1 class="text-2xl font-extrabold text-white mt-6">Crear Nuevo Proveedor</h1>
-    <p class="text-slate-400 mt-1">Añade un nuevo proveedor al sistema.</p>
+<div>
+    <header class="relative mb-10 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
+            <a href="{% url 'proveedores:proveedor_list' %}" class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors">
+                <div class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm group-hover:border-blue-200 group-hover:bg-blue-50">
+                    <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver a proveedores</span>
+            </a>
+        </nav>
+
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 rounded-2xl bg-blue-500 opacity-20 blur-lg"></div>
+                    <div class="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white text-blue-600 shadow-sm">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 7h18M6 7v11a2 2 0 002 2h8a2 2 0 002-2V7M9 7V5a3 3 0 116 0v2" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-1 flex flex-wrap items-center gap-3">
+                        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if proveedor %}Editar Proveedor{% else %}Nuevo Proveedor{% endif %}
+                        </h1>
+                        {% if proveedor %}
+                        <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            <span class="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                            ID: #{{ proveedor.id }}
+                        </span>
+                        {% else %}
+                        <span class="soft-chip bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">BORRADOR</span>
+                        {% endif %}
+                    </div>
+                    <p class="max-w-2xl text-sm leading-relaxed text-slate-500">
+                        {% if proveedor %}Actualiza los datos fiscales, contacto comercial y condiciones del proveedor <strong class="font-bold text-slate-800">{{ proveedor.nombre_comercial }}</strong>.{% else %}Registra un nuevo proveedor para compras, recepción de productos y control comercial.{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid w-full grid-cols-2 gap-3 lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full {% if proveedor and proveedor.activo %}bg-emerald-500{% elif proveedor %}bg-amber-500{% else %}bg-blue-500{% endif %}"></span>
+                        {% if proveedor %}{% if proveedor.activo %}Activo{% else %}Inactivo{% endif %}{% else %}En creación{% endif %}
+                    </span>
+                </div>
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Documento</span>
+                    <span class="mini-stat-value text-sm font-mono">{% if proveedor and proveedor.numero_documento %}{{ proveedor.numero_documento }}{% else %}---{% endif %}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {% if messages %}
+    <div class="mb-6 space-y-3">
+        {% for message in messages %}
+        <div class="rounded-2xl border px-4 py-3 text-sm font-bold {% if message.tags == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-700{% else %}border-rose-200 bg-rose-50 text-rose-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
     {% endif %}
-</header>
 
-<div class="glass-card rounded-2xl p-8 max-w-7xl mx-auto">
-    <form method="post" action="">
-        {% csrf_token %}
-        <div class="space-y-8">
+    <div class="relative">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-blue-200/60 via-sky-100/50 to-emerald-100/50 blur-2xl"></div>
 
-            <div>
-                <h3 class="text-lg font-bold text-white border-b border-slate-700 pb-2 mb-4">Información Fiscal y de
-                    Contacto</h3>
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-7">
+            <form method="post" action="" class="space-y-6">
+                {% csrf_token %}
 
-                    <div class="md:col-span-6">
-                        <label for="{{ form.nombre_comercial.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Nombre Comercial</label>
-                        {{ form.nombre_comercial }}
-                    </div>
-                    <div class="md:col-span-6">
-                        <label for="{{ form.razon_social.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Razón Social</label>
-                        {{ form.razon_social }}
-                    </div>
+                <div class="rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 p-3 md:p-4 shadow-sm">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <button type="button" class="tab-btn active rounded-2xl border border-transparent px-4 py-4 text-left" data-tab="tab-fiscal">
+                            <div class="flex items-center gap-3">
+                                <span class="tab-index inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white font-black text-sm shadow-sm">01</span>
+                                <div>
+                                    <div class="text-sm font-extrabold text-slate-900">Información fiscal</div>
+                                    <div class="mt-1 text-xs text-slate-500">Documento, razón social y datos base.</div>
+                                </div>
+                            </div>
+                        </button>
 
-                    <div class="md:col-span-4">
-                        <label for="{{ form.tipo_documento.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Tipo de Documento</label>
-                        {{ form.tipo_documento }}
-                    </div>
-                    <div class="md:col-span-8">
-                        <label for="{{ form.numero_documento.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Número de Documento</label>
-                        {{ form.numero_documento }}
-                    </div>
+                        <button type="button" class="tab-btn rounded-2xl border border-transparent px-4 py-4 text-left text-slate-500" data-tab="tab-contacto">
+                            <div class="flex items-center gap-3">
+                                <span class="tab-index inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 font-black text-sm">02</span>
+                                <div>
+                                    <div class="text-sm font-extrabold text-slate-900">Contacto comercial</div>
+                                    <div class="mt-1 text-xs text-slate-500">Contacto, estado y condiciones.</div>
+                                </div>
+                            </div>
+                        </button>
 
-                    <div class="md:col-span-12">
-                        <label for="{{ form.direccion.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Dirección</label>
-                        {{ form.direccion }}
-                    </div>
-
-                    <div class="md:col-span-4">
-                        <label for="{{ form.telefono.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Teléfono Principal</label>
-                        {{ form.telefono }}
-                    </div>
-                    <div class="md:col-span-4">
-                        <label for="{{ form.email.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Email Principal</label>
-                        {{ form.email }}
-                    </div>
-                    <div class="md:col-span-4">
-                        <label for="{{ form.sitio_web.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Sitio Web</label>
-                        {{ form.sitio_web }}
+                        <button type="button" class="tab-btn rounded-2xl border border-transparent px-4 py-4 text-left text-slate-500" data-tab="tab-resumen">
+                            <div class="flex items-center gap-3">
+                                <span class="tab-index inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 font-black text-sm">03</span>
+                                <div>
+                                    <div class="text-sm font-extrabold text-slate-900">Resumen y ayuda</div>
+                                    <div class="mt-1 text-xs text-slate-500">Vista rápida y recomendaciones.</div>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <div>
-                <h3 class="text-lg font-bold text-white border-b border-slate-700 pb-2 mb-4">Contacto Comercial y
-                    Condiciones</h3>
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
-                    <div class="md:col-span-5">
-                        <label for="{{ form.persona_contacto.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Persona de Contacto</label>
-                        {{ form.persona_contacto }}
-                    </div>
-                    <div class="md:col-span-4">
-                        <label for="{{ form.telefono_contacto.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Teléfono del Contacto</label>
-                        {{ form.telefono_contacto }}
-                    </div>
-                    <div class="md:col-span-3 flex items-end pb-1">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            {{ form.activo }}
-                            <span class="text-sm font-medium text-slate-300">Proveedor Activo</span>
-                        </label>
-                    </div>
-                    <div class="md:col-span-12">
-                        <label for="{{ form.condiciones_pago.id_for_label }}"
-                            class="block text-sm font-medium text-slate-300 mb-1">Condiciones de Pago</label>
-                        {{ form.condiciones_pago }}
+                <div id="tab-fiscal" class="tab-panel active">
+                    <div class="section-card">
+                        <div class="mb-6 flex items-center gap-3">
+                            <span class="section-badge border border-blue-100 bg-blue-50 text-blue-700">01</span>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900">Información fiscal y comercial</h3>
+                                <p class="text-sm text-slate-500">Datos principales para identificar al proveedor.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                            <div>
+                                <label class="form-label">Nombre comercial</label>
+                                <input type="text" name="nombre_comercial" value="{{ proveedor.nombre_comercial|default:'' }}" placeholder="Ej. Distribuidora Farma SAC" class="form-input rounded-2xl px-4 py-3.5" required>
+                            </div>
+
+                            <div>
+                                <label class="form-label">Razón social</label>
+                                <input type="text" name="razon_social" value="{{ proveedor.razon_social|default:'' }}" placeholder="Ej. Distribuidora Farma SAC" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div>
+                                <label class="form-label">Tipo de documento</label>
+                                <select name="tipo_documento" class="form-select rounded-2xl px-4 py-3.5" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="RUC" {% if proveedor and proveedor.tipo_documento == 'RUC' %}selected{% endif %}>RUC</option>
+                                    <option value="DNI" {% if proveedor and proveedor.tipo_documento == 'DNI' %}selected{% endif %}>DNI</option>
+                                    <option value="CE" {% if proveedor and proveedor.tipo_documento == 'CE' %}selected{% endif %}>CE</option>
+                                    <option value="PASAPORTE" {% if proveedor and proveedor.tipo_documento == 'PASAPORTE' %}selected{% endif %}>Pasaporte</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label">Número de documento</label>
+                                <input type="text" name="numero_documento" value="{{ proveedor.numero_documento|default:'' }}" placeholder="Ej. 20555555555" class="form-input rounded-2xl px-4 py-3.5" required>
+                            </div>
+
+                            <div class="xl:col-span-2">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" name="direccion" value="{{ proveedor.direccion|default:'' }}" placeholder="Dirección fiscal o comercial" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div>
+                                <label class="form-label">Teléfono principal</label>
+                                <input type="text" name="telefono" value="{{ proveedor.telefono|default:'' }}" placeholder="Ej. 987654321" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div>
+                                <label class="form-label">Email principal</label>
+                                <input type="email" name="email" value="{{ proveedor.email|default:'' }}" placeholder="ventas@proveedor.com" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div class="xl:col-span-2">
+                                <label class="form-label">Sitio web</label>
+                                <input type="url" name="sitio_web" value="{{ proveedor.sitio_web|default:'' }}" placeholder="https://..." class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button type="button" class="tab-next inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200">Continuar</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end gap-4">
-            <a href="{% url 'proveedores:proveedor_list' %}"
-                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</a>
-            <button type="submit"
-                class="px-5 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold transition-colors">
-                {% if proveedor %}Guardar Cambios{% else %}Guardar Proveedor{% endif %}
-            </button>
+                <div id="tab-contacto" class="tab-panel">
+                    <div class="section-card">
+                        <div class="mb-6 flex items-center gap-3">
+                            <span class="section-badge border border-emerald-100 bg-emerald-50 text-emerald-700">02</span>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900">Contacto comercial y condiciones</h3>
+                                <p class="text-sm text-slate-500">Información operativa para compras y negociación.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
+                            <div class="xl:col-span-5">
+                                <label class="form-label">Persona de contacto</label>
+                                <input type="text" name="persona_contacto" value="{{ proveedor.persona_contacto|default:'' }}" placeholder="Nombre del contacto comercial" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div class="xl:col-span-4">
+                                <label class="form-label">Teléfono del contacto</label>
+                                <input type="text" name="telefono_contacto" value="{{ proveedor.telefono_contacto|default:'' }}" placeholder="Ej. 999888777" class="form-input rounded-2xl px-4 py-3.5">
+                            </div>
+
+                            <div class="xl:col-span-3">
+                                <label class="toggle-card cursor-pointer">
+                                    <input type="checkbox" name="activo" {% if not proveedor or proveedor.activo %}checked{% endif %}>
+                                    <div class="toggle-title">Proveedor activo</div>
+                                    <div class="toggle-desc">Disponible para compras.</div>
+                                </label>
+                            </div>
+
+                            <div class="xl:col-span-12">
+                                <label class="form-label">Condiciones de pago</label>
+                                <textarea name="condiciones_pago" rows="1" placeholder="Ej. Crédito 15 días, pago contado, transferencia bancaria..." class="form-textarea rounded-2xl px-4 py-3.5">{{ proveedor.condiciones_pago|default:'' }}</textarea>
+                                <p class="field-help">Puedes registrar condiciones comerciales, plazos o acuerdos internos.</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex flex-col-reverse justify-between gap-3 sm:flex-row">
+                            <button type="button" class="tab-prev inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700">Atrás</button>
+                            <button type="button" class="tab-next inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200">Continuar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-resumen" class="tab-panel">
+                    <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                        <section class="xl:col-span-6">
+                            <div class="section-card">
+                                <div class="mb-5 flex items-center gap-3">
+                                    <span class="section-badge border border-sky-100 bg-sky-50 text-sky-700">03</span>
+                                    <div>
+                                        <h3 class="text-base font-bold text-slate-900">Resumen rápido</h3>
+                                        <p class="text-sm text-slate-500">Vista previa del proveedor.</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Proveedor</p>
+                                        <p class="mt-1 truncate text-sm font-semibold text-slate-800">{% if proveedor and proveedor.nombre_comercial %}{{ proveedor.nombre_comercial }}{% else %}Nuevo proveedor{% endif %}</p>
+                                    </div>
+
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Documento</p>
+                                        <p class="mt-1 truncate text-sm font-semibold text-slate-800">{% if proveedor and proveedor.numero_documento %}{{ proveedor.tipo_documento }} - {{ proveedor.numero_documento }}{% else %}Pendiente{% endif %}</p>
+                                    </div>
+
+                                    <div class="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
+                                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-700">Recomendación</p>
+                                        <p class="mt-1 text-sm text-blue-800">Evita duplicados usando correctamente el número de documento.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <aside class="xl:col-span-6">
+                            <div class="section-card">
+                                <h3 class="text-base font-bold text-slate-900 mb-4">Ayuda rápida</h3>
+                                <ul class="space-y-3 text-sm leading-relaxed text-slate-500">
+                                    <li>El número de documento no debe repetirse.</li>
+                                    <li>Los proveedores inactivos no deberían usarse en nuevas compras.</li>
+                                    <li>Registra un contacto comercial para agilizar reposiciones.</li>
+                                </ul>
+                            </div>
+                        </aside>
+                    </div>
+
+                    <div class="mt-6 flex flex-col-reverse justify-between gap-3 sm:flex-row">
+                        <button type="button" class="tab-prev inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700">Atrás</button>
+
+                        <div class="flex flex-col-reverse gap-3 sm:flex-row">
+                            <a href="{% url 'proveedores:proveedor_list' %}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700">Cancelar</a>
+                            <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200">
+                                {% if proveedor %}Guardar cambios{% else %}Registrar proveedor{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const buttons = Array.from(document.querySelectorAll('.tab-btn'));
+    const panels = Array.from(document.querySelectorAll('.tab-panel'));
+    const nextButtons = Array.from(document.querySelectorAll('.tab-next'));
+    const prevButtons = Array.from(document.querySelectorAll('.tab-prev'));
+    let currentIndex = 0;
+
+    function activateTab(index) {
+        currentIndex = index;
+
+        buttons.forEach((button, i) => {
+            const active = i === index;
+            button.classList.toggle('active', active);
+
+            const badge = button.querySelector('.tab-index');
+            if (!badge) return;
+
+            badge.classList.toggle('bg-blue-600', active);
+            badge.classList.toggle('text-white', active);
+            badge.classList.toggle('shadow-sm', active);
+            badge.classList.toggle('bg-slate-100', !active);
+            badge.classList.toggle('text-slate-600', !active);
+        });
+
+        panels.forEach((panel, i) => {
+            panel.classList.toggle('active', i === index);
+        });
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    buttons.forEach((button, index) => button.addEventListener('click', () => activateTab(index)));
+
+    nextButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (currentIndex < panels.length - 1) activateTab(currentIndex + 1);
+        });
+    });
+
+    prevButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (currentIndex > 0) activateTab(currentIndex - 1);
+        });
+    });
+
+    activateTab(0);
+});
+</script>
 {% endblock %}

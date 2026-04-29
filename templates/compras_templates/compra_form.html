@@ -2,132 +2,346 @@
 {% load static %}
 
 {% block title %}
-{# MODIFICACIÓN 1: Título dinámico #}
-{% if compra %}
-VQL - Editando Compra #{{ compra.id }}
-{% else %}
-VQL - Registrar Nueva Compra
-{% endif %}
+{% if compra %}VQL - Editando Compra #{{ compra.id }}{% else %}VQL - Registrar Nueva Compra{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'compras:home' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver al Listado
-    </a>
-    <h1 id="form-title" class="text-xl font-extrabold text-white mt-6">Registrar Nueva Compra (Entrada de Stock)</h1>
-    <p class="text-slate-400 text-sm mt-1" id="page-subtitle">Registra los productos recibidos de un proveedor según la factura o guía de
-        remisión.</p>
-</header>
-
-{# MODIFICACIÓN 2: Insertar datos de la compra si estamos en modo edición #}
-{% if compra %}
-    {# Usamos un script para pasar el pk de la compra al archivo js externo #}
-    <script id="compra-pk-data" type="application/json">{{ compra.pk|default:'null' }}</script>
-{% endif %}
-
-
-<form id="purchase-form" autocomplete="off">
+<form method="post" action="" id="purchase-form" class="relative space-y-5 animate-in">
     {% csrf_token %}
-    <div class="space-y-8">
-        <div class="glass-card rounded-2xl p-6">
-            <h3 class="text-lg font-bold text-white mb-4">Información de la Factura</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label for="proveedor" class="block text-sm font-medium text-slate-300 mb-1">Proveedor</label>
-                    <select id="proveedor" class="form-select">
-                        <option value="">Seleccione un proveedor...</option>
-                        {% for proveedor in proveedores %}
-                        <option value="{{ proveedor.pk }}">{{ proveedor.nombre_comercial }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="sucursal" class="block text-sm font-medium text-slate-300 mb-1">Sucursal de
-                        Destino</label>
-                    <select id="sucursal" class="form-select">
-                        <option value="">Seleccione una sucursal...</option>
-                        {% for sucursal in sucursales %}<option value="{{ sucursal.pk }}">{{ sucursal.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="numero_factura" class="block text-sm font-medium text-slate-300 mb-1">Nº de Factura del
-                        Proveedor</label>
-                    <input type="text" id="numero_factura" class="form-input" placeholder="Ej: F001-12345">
-                </div>
-            </div>
-        </div>
+    {{ productos_data|json_script:"productos-data" }}
 
-        <div class="glass-card rounded-2xl p-6">
-            <h3 class="text-lg font-bold text-white mb-4">Detalle de Productos</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="border-b border-slate-700">
-                        <tr>
-                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 250px;">
-                                Producto</th>
-                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 140px;">
-                                Presentación</th>
-                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 100px;">Lote
-                            </th>
-                            <th class="p-2 text-left text-sm font-semibold text-white" style="min-width: 150px;">
-                                Vencimiento</th>
-                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 80px;">
-                                Cantidad</th>
-                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 120px;">Costo
-                                Unit.</th>
-                            <th class="p-2 text-right text-sm font-semibold text-white" style="min-width: 120px;">
-                                Subtotal</th>
-                            <th class="p-2 text-center text-sm font-semibold text-white" style="width: 48px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="purchase-details-body"></tbody>
-                </table>
-            </div>
-            <div id="add-product-section" class="mt-4 pt-4 border-t border-slate-700">
-                <label for="product-search" class="block text-sm font-medium text-slate-300 mb-1">Añadir
-                    Producto</label>
-                <div class="relative">
-                    <input type="text" id="product-search" class="form-input"
-                        placeholder="Escribe el nombre o código del producto para buscar...">
-                    <div id="product-suggestions"
-                        class="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-lg hidden">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white px-6 py-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
+
+        <div class="relative">
+            <a href="{% url 'compras:home' %}"
+               class="group mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-600 transition-colors">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm group-hover:border-emerald-200 group-hover:bg-emerald-50">
+                    <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </span>
+                Volver a compras
+            </a>
+
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex items-start gap-4">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M3 7h18M6 7v11a2 2 0 002 2h8a2 2 0 002-2V7M9 7V5a3 3 0 116 0v2" />
+                        </svg>
+                    </div>
+
+                    <div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="text-2xl font-black tracking-tight text-slate-900">
+                                {% if compra %}Editar Compra #{{ compra.id }}{% else %}Registrar Nueva Compra{% endif %}
+                            </h1>
+
+                            {% if compra %}
+                            <span class="inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                                {{ compra.estado }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex w-fit rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                                NUEVA ENTRADA
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Registra proveedor, sucursal y productos recibidos. El producto se busca por nombre y completa datos base automáticamente.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+    </header>
 
-        <div class="flex justify-end items-center gap-6 mt-8">
-            <div class="text-right">
-                <p class="text-slate-400">Subtotal:</p>
-                <p id="subtotal-display" class="text-2xl font-bold text-white">S/ 0.00</p>
-            </div>
-            <div class="text-right">
-                <p class="text-slate-400">Impuestos (18%):</p>
-                <p id="impuestos-display" class="text-2xl font-bold text-white">S/ 0.00</p>
-            </div>
-            <div class="text-right">
-                <p class="text-slate-400">TOTAL:</p>
-                <p id="total-display" class="text-3xl font-extrabold text-emerald-400">S/ 0.00</p>
-            </div>
-            <button type="button" id="process-button"
-    class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Finalizar
-    y Procesar</button>
+    {% if messages %}
+    <div class="space-y-3">
+        {% for message in messages %}
+        <div class="rounded-2xl border px-4 py-3 text-sm font-bold
+            {% if message.tags == 'success' %}
+                border-emerald-200 bg-emerald-50 text-emerald-700
+            {% else %}
+                border-rose-200 bg-rose-50 text-rose-700
+            {% endif %}">
+            {{ message }}
         </div>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-sm font-black text-emerald-700">01</span>
+            <div>
+                <h2 class="text-lg font-black text-slate-900">Información de la factura</h2>
+                <p class="text-sm text-slate-500">Datos principales de recepción.</p>
+            </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div>
+                <label class="form-label">Proveedor</label>
+                <select name="proveedor" class="form-input" required>
+                    <option value="">Seleccione proveedor...</option>
+                    {% for proveedor in proveedores %}
+                    <option value="{{ proveedor.pk }}" {% if compra and compra.proveedor_id == proveedor.pk %}selected{% endif %}>
+                        {{ proveedor.nombre_comercial }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label">Sucursal destino</label>
+                <select name="sucursal_destino" class="form-input" required>
+                    <option value="">Seleccione sucursal...</option>
+                    {% for sucursal in sucursales %}
+                    <option value="{{ sucursal.pk }}" {% if compra and compra.sucursal_destino_id == sucursal.pk %}selected{% endif %}>
+                        {{ sucursal.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label">N° factura proveedor</label>
+                <input type="text"
+                       name="numero_factura_proveedor"
+                       class="form-input"
+                       value="{% if compra %}{{ compra.numero_factura_proveedor }}{% endif %}"
+                       placeholder="Ej. F001-12345"
+                       required>
+            </div>
+        </div>
+    </section>
+
+    <section class="relative z-40 overflow-visible rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sm font-black text-sky-700">02</span>
+                <div>
+                    <h2 class="text-lg font-black text-slate-900">Detalle de productos</h2>
+                    <p class="text-sm text-slate-500">Busca productos, confirma lote, vencimiento, precio y cantidad.</p>
+                </div>
+            </div>
+
+            <button type="button" id="add-row-btn"
+                    class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all hover:-translate-y-0.5 hover:bg-emerald-600">
+                + Agregar producto
+            </button>
+        </div>
+
+        <div class="relative z-40 overflow-visible">
+            <table class="min-w-[1280px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-4 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Producto</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Unidad</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Lote</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Vencimiento</th>
+                        <th class="px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Cantidad</th>
+                        <th class="px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Costo unit.</th>
+                        <th class="px-4 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Subtotal</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Quitar</th>
+                    </tr>
+                </thead>
+
+                <tbody id="purchase-details-body" class="divide-y divide-slate-100">
+                    {% if compra %}
+                        {% for detalle in compra.detalles.all %}
+                        <tr class="purchase-row relative z-40 group transition-all duration-200 hover:bg-slate-50/80 focus-within:z-[9999]">
+                            <td class="px-4 py-3">
+                                <div class="relative z-[9999] product-search-wrapper">
+                                    <input type="hidden" name="producto" class="product-id-input" value="{{ detalle.producto_id }}" required>
+                                    <input type="text"
+                                           class="form-input product-search-input"
+                                           value="{{ detalle.producto.nombre }} {% if detalle.producto.concentracion %}- {{ detalle.producto.concentracion }}{% endif %}"
+                                           placeholder="Buscar producto..."
+                                           autocomplete="off">
+                                    <div class="product-suggestions hidden absolute left-0 right-0 z-[99999] mt-1 max-h-72 overflow-y-auto rounded-2xl border border-emerald-200 bg-white shadow-2xl"></div>
+                                </div>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <select name="presentacion" class="form-input presentation-select">
+                                    <option value="">Seleccione...</option>
+                                    {% for presentacion in presentaciones %}
+                                    <option value="{{ presentacion.pk }}" {% if detalle.presentacion_id == presentacion.pk %}selected{% endif %}>
+                                        {{ presentacion.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <input type="text" name="lote" class="form-input" value="{{ detalle.lote }}" placeholder="Lote" required>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <input type="date" name="fecha_vencimiento" class="form-input" value="{{ detalle.fecha_vencimiento|date:'Y-m-d' }}" required>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <input type="number" name="cantidad_recibida" class="form-input calc-field text-right" value="{{ detalle.cantidad_recibida }}" min="1" step="1" required>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <input type="number" name="precio_unitario_compra" class="form-input calc-field text-right" value="{{ detalle.precio_unitario_compra }}" min="0" step="0.01" required>
+                            </td>
+
+                            <td class="px-4 py-3 text-right">
+                                <span class="line-subtotal font-black text-emerald-600">S/ 0.00</span>
+                            </td>
+
+                            <td class="px-4 py-3 text-center">
+                                <button type="button" class="remove-row-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 font-black transition-all hover:bg-rose-100">×</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="sticky bottom-4 z-10 flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl lg:flex-row lg:items-center lg:justify-end">
+        <div class="text-right">
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Subtotal</p>
+            <p id="subtotal-display" class="text-xl font-black text-slate-900">S/ 0.00</p>
+        </div>
+
+        <div class="text-right">
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">IGV 18%</p>
+            <p id="impuestos-display" class="text-xl font-black text-slate-900">S/ 0.00</p>
+        </div>
+
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-right">
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Total</p>
+            <p id="total-display" class="text-2xl font-black text-emerald-700">S/ 0.00</p>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row">
+            <button type="submit" name="accion" value="guardar"
+                    class="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50">
+                Guardar
+            </button>
+
+            <button type="submit" name="accion" value="procesar"
+                    class="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-100 transition-all hover:-translate-y-0.5 hover:bg-emerald-700">
+                Guardar y procesar
+            </button>
+        </div>
+    </section>
 </form>
+
+<template id="purchase-row-template">
+    <tr class="purchase-row relative z-40 group transition-all duration-200 hover:bg-slate-50/80 focus-within:z-[9999]">
+        <td class="px-4 py-3">
+            <div class="relative z-[9999] product-search-wrapper">
+                <input type="hidden" name="producto" class="product-id-input" required>
+                <input type="text"
+                       class="form-input product-search-input"
+                       placeholder="Buscar producto..."
+                       autocomplete="off">
+                <div class="product-suggestions hidden absolute left-0 right-0 z-[99999] mt-1 max-h-72 overflow-y-auto rounded-2xl border border-emerald-200 bg-white shadow-2xl"></div>
+            </div>
+        </td>
+
+        <td class="px-4 py-3">
+            <select name="presentacion" class="form-input presentation-select">
+                <option value="">Seleccione...</option>
+                {% for presentacion in presentaciones %}
+                <option value="{{ presentacion.pk }}">{{ presentacion.nombre }}</option>
+                {% endfor %}
+            </select>
+        </td>
+
+        <td class="px-4 py-3">
+            <input type="text" name="lote" class="form-input" placeholder="Lote" required>
+        </td>
+
+        <td class="px-4 py-3">
+            <input type="date" name="fecha_vencimiento" class="form-input" required>
+        </td>
+
+        <td class="px-4 py-3">
+            <input type="number" name="cantidad_recibida" class="form-input calc-field text-right" min="1" step="1" value="1" required>
+        </td>
+
+        <td class="px-4 py-3">
+            <input type="number" name="precio_unitario_compra" class="form-input calc-field text-right" min="0" step="0.01" value="" required>
+        </td>
+
+        <td class="px-4 py-3 text-right">
+            <span class="line-subtotal font-black text-emerald-600">S/ 0.00</span>
+        </td>
+
+        <td class="px-4 py-3 text-center">
+            <button type="button" class="remove-row-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 font-black transition-all hover:bg-rose-100">×</button>
+        </td>
+    </tr>
+</template>
+
+<style>
+    .form-label {
+        display: block;
+        margin-bottom: .55rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-size: .70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #fff;
+        color: #0f172a;
+        border-radius: 1rem;
+        padding: .8rem 1rem;
+        outline: none;
+        transition: all .25s ease;
+    }
+
+    .form-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+    }
+
+    .product-suggestions button:not(:last-child) {
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .form-input[type="number"]::-webkit-outer-spin-button,
+    .form-input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .form-input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+</style>
 {% endblock %}
 
 {% block app_scripts %}
-<script>
-        const comprasHomeUrl = "{% url 'compras:home' %}";
-</script>
 <script src="{% static 'js/compras/compra_form.js' %}"></script>
 {% endblock %}
