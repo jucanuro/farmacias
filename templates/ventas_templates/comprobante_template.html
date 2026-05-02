@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>Comprobante de Venta #{{ venta.id }}</title>
+    <title>Ticketing Venta #{{ venta.id }}</title>
+
     <style>
         @page {
-            size: 80mm;
+            size: 80mm 297mm;
             margin: 4mm;
         }
 
@@ -14,252 +14,350 @@
             box-sizing: border-box;
         }
 
+        html,
         body {
-            font-family: 'Liberation Mono', 'Courier New', monospace;
-            font-size: 9pt;
-            color: #000;
-            line-height: 1.4;
+            margin: 0;
+            padding: 0;
         }
 
-        .ticket-container {
+        body {
+            font-family: "DejaVu Sans", Arial, sans-serif;
+            font-size: 7.8pt;
+            color: #111827;
+            line-height: 1.32;
+        }
+
+        .ticket {
             width: 100%;
         }
 
-        .header,
-        .footer {
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: 700; }
+        .muted { color: #6b7280; }
+
+        .header {
+            text-align: center;
+            padding-bottom: 7px;
+            border-bottom: 1px dashed #9ca3af;
+        }
+
+        .business-name {
+            font-size: 10.2pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .2px;
+            margin-bottom: 2px;
+        }
+
+        .business-info {
+            font-size: 7.2pt;
+            margin: 1px 0;
+            color: #374151;
+        }
+
+        .doc-box {
+            margin-top: 7px;
+            padding: 6px 5px;
+            border: 1px solid #111827;
+            border-radius: 5px;
             text-align: center;
         }
 
-        .header .logo {
-            max-width: 60%;
-            max-height: 40px;
-            margin-bottom: 5px;
+        .doc-title {
+            font-size: 8.4pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .25px;
         }
 
-        .header h1 {
-            font-size: 11pt;
-            margin: 0;
-            font-weight: bold;
-        }
-
-        .header p {
-            margin: 1px 0;
-            font-size: 8pt;
+        .doc-number {
+            margin-top: 2px;
+            font-size: 9.2pt;
+            font-weight: 800;
         }
 
         .section {
-            margin-top: 10px;
-            border-top: 1px dashed #555;
-            padding-top: 8px;
+            padding: 7px 0;
+            border-bottom: 1px dashed #d1d5db;
         }
 
         .section-title {
-            text-align: center;
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-size: 7pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #6b7280;
         }
 
-        .info-table,
-        .totals-table {
+        table {
             width: 100%;
+            border-collapse: collapse;
         }
 
-        .info-table td:first-child {
-            font-weight: bold;
-            width: 70px;
-            /* Ancho fijo para las etiquetas */
-        }
-
-        .items-table {
-            width: 100%;
-            margin-top: 5px;
-        }
-
-        .items-table thead th {
-            font-weight: bold;
-            border-bottom: 1px solid #000;
-            padding-bottom: 3px;
-        }
-
-        .items-table tbody tr td {
-            padding: 4px 0;
+        .info-table td {
+            padding: 1.8px 0;
             vertical-align: top;
         }
 
-        .items-table .item-name {
-            font-size: 8.5pt;
+        .info-table td:first-child {
+            width: 58px;
+            font-weight: 800;
+            color: #374151;
         }
 
-        .items-table .item-calc {
-            font-size: 8pt;
-            color: #333;
+        .info-table td:last-child {
+            color: #111827;
         }
 
-        .text-left {
-            text-align: left;
+        .items-table thead th {
+            padding: 4px 0;
+            border-bottom: 1px solid #111827;
+            font-size: 6.8pt;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            color: #374151;
         }
 
-        .text-center {
-            text-align: center;
+        .items-table tbody td {
+            padding: 5px 0;
+            vertical-align: top;
+            border-bottom: 1px dotted #e5e7eb;
         }
 
-        .text-right {
-            text-align: right;
+        .item-name {
+            font-size: 7.7pt;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .item-detail {
+            margin-top: 2px;
+            font-size: 6.9pt;
+            color: #6b7280;
         }
 
         .totals-table td {
-            padding: 1px 0;
+            padding: 2px 0;
         }
 
-        .totals-table .total-line td {
-            font-size: 11pt;
-            font-weight: bold;
-            border-top: 1px solid #000;
-            padding-top: 4px;
+        .totals-table td:first-child {
+            text-align: right;
+            font-weight: 800;
+            color: #374151;
         }
 
-        .qr-code {
-            margin-top: 10px;
+        .total-row td {
+            padding-top: 5px;
+            border-top: 1px solid #111827;
+            font-size: 10.5pt;
+            font-weight: 900;
+            color: #111827;
         }
 
-        .qr-code img {
-            display: block;
-            margin: 0 auto;
-            max-width: 120px;
+        .payment-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 6px;
+            background: #f9fafb;
+        }
+
+        .footer {
+            padding-top: 7px;
+            text-align: center;
+            font-size: 7pt;
+        }
+
+        .thanks {
+            font-size: 8.2pt;
+            font-weight: 900;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .legal {
+            margin-top: 4px;
+            font-size: 6.8pt;
+            color: #6b7280;
         }
     </style>
 </head>
 
 <body>
-    <div class="ticket-container">
-        <header class="header">
-            <h1>{{ empresa.razon_social|upper }}</h1>
-            <p>{{ sucursal.nombre }}</p>
-            <p>{{ sucursal.direccion }}</p>
-            <p>RUC: {{ empresa.ruc }} | Tel: {{ sucursal.telefono }}</p>
-        </header>
+<div class="ticket">
 
-        <section class="section">
+    <header class="header">
+        <div class="business-name">
+            {{ empresa.razon_social|default:"EMPRESA"|upper }}
+        </div>
+
+        <p class="business-info">RUC: {{ empresa.ruc|default:"-" }}</p>
+        <p class="business-info">{{ sucursal.nombre|default:"Sucursal principal" }}</p>
+        <p class="business-info">{{ sucursal.direccion|default:"Dirección no registrada" }}</p>
+        <p class="business-info">Tel: {{ sucursal.telefono|default:"-" }}</p>
+
+        <div class="doc-box">
             {% if venta.tipo_comprobante == 'BOLETA' %}
-            <div class="section-title">BOLETA DE VENTA ELECTRÓNICA</div>
+                <div class="doc-title">Boleta Electrónica</div>
             {% elif venta.tipo_comprobante == 'FACTURA' %}
-            <div class="section-title">FACTURA ELECTRÓNICA</div>
+                <div class="doc-title">Factura Electrónica</div>
             {% else %}
-            <div class="section-title">TICKET DE VENTA</div>
+                <div class="doc-title">Ticketing de Venta</div>
             {% endif %}
-            <div class="text-center" style="font-weight:bold; font-size:11pt;">{{
-                venta.serie_comprobante|default_if_none:'' }}-{{ venta.numero_comprobante|default_if_none:venta.id }}
-            </div>
 
-            <table class="info-table">
-                <tr>
-                    <td>Fecha:</td>
-                    <td>{{ venta.fecha_venta|date:"d/m/Y h:i a" }}</td>
-                </tr>
-                <tr>
-                    <td>Cajero:</td>
-                    <td>{{ venta.vendedor.username }}</td>
-                </tr>
-                <tr>
-                    <td>Cliente:</td>
-                    <td>
-                        {% if venta.cliente %}
-                        {{ venta.cliente.nombres|upper }} {{ venta.cliente.apellidos|upper|default:'' }}
-                        {% else %}
+            <div class="doc-number">
+                N.º {{ venta.numero_comprobante|default:venta.id }}
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="section-title">Datos de la operación</div>
+
+        <table class="info-table">
+            <tr>
+                <td>Fecha:</td>
+                <td>{{ venta.fecha_venta|date:"d/m/Y h:i a" }}</td>
+            </tr>
+            <tr>
+                <td>Atiende:</td>
+                <td>{{ venta.vendedor.get_full_name|default:venta.vendedor.username }}</td>
+            </tr>
+            <tr>
+                <td>Cliente:</td>
+                <td>
+                    {% if venta.cliente %}
+                        {{ venta.cliente.nombres|upper }} {{ venta.cliente.apellidos|default:""|upper }}
+                    {% else %}
                         PÚBLICO GENERAL
-                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% if venta.cliente %}
+                <tr>
+                    <td>{{ venta.cliente.tipo_documento|default:"DOC" }}:</td>
+                    <td>{{ venta.cliente.numero_documento|default:"-" }}</td>
+                </tr>
+
+                {% if venta.cliente.direccion %}
+                <tr>
+                    <td>Dirección:</td>
+                    <td>{{ venta.cliente.direccion }}</td>
+                </tr>
+                {% endif %}
+
+                {% if venta.cliente.telefono %}
+                <tr>
+                    <td>Teléfono:</td>
+                    <td>{{ venta.cliente.telefono }}</td>
+                </tr>
+                {% endif %}
+            {% endif %}
+        </table>
+    </section>
+
+    <section class="section">
+        <div class="section-title">Detalle de productos</div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">Detalle</th>
+                    <th class="center">Cant.</th>
+                    <th class="right">Importe</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in detalles %}
+                <tr>
+                    <td>
+                        <div class="item-name">{{ item.producto.nombre }}</div>
+                        <div class="item-detail">
+                            P. Unit: S/ {{ item.precio_unitario|floatformat:2 }}
+                            {% if item.monto_descuento_linea > 0 %}
+                                · Dcto: S/ {{ item.monto_descuento_linea|floatformat:2 }}
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <td class="center bold">
+                        {{ item.cantidad|floatformat:0 }}
+                    </td>
+
+                    <td class="right bold">
+                        S/ {{ item.subtotal_linea|floatformat:2 }}
                     </td>
                 </tr>
-                {% if venta.cliente.numero_documento %}
-                <tr>
-                    <td>{{ venta.cliente.tipo_documento }}:</td>
-                    <td>{{ venta.cliente.numero_documento }}</td>
-                </tr>
-                {% endif %}
-            </table>
-        </section>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
 
-        <section class="section">
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th class="text-left">DESCRIPCIÓN</th>
-                        <th class="text-right">TOTAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in detalles %}
-                    <tr>
-                        <td>
-                            <div class="item-name">{{ item.producto.nombre|upper }}</div>
-                            <div class="item-calc">
-                                {{ item.cantidad }} x S/ {{ item.precio_unitario|floatformat:2 }}
-                                {% if item.monto_descuento_linea > 0 %}
-                                - Dcto: S/ {{ item.monto_descuento_linea|floatformat:2 }}
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="text-right">S/ {{ item.subtotal|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
+    <section class="section">
+        <div class="section-title">Resumen de pago</div>
 
-        <section class="section">
-            <table class="totals-table">
-                <tr>
-                    <td class="text-right">SUBTOTAL:</td>
-                    <td class="text-right">S/ {{ venta.subtotal_venta|floatformat:2 }}</td>
-                </tr>
-                {% if venta.monto_descuento > 0 %}
-                <tr>
-                    <td class="text-right">DESCUENTO TOTAL:</td>
-                    <td class="text-right">- S/ {{ venta.monto_descuento|floatformat:2 }}</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td class="text-right">IGV (18%):</td>
-                    <td class="text-right">S/ {{ venta.monto_igv|floatformat:2 }}</td>
-                </tr>
-                <tr class="total-line">
-                    <td class="text-right">TOTAL A PAGAR:</td>
-                    <td class="text-right">S/ {{ venta.total_venta|floatformat:2 }}</td>
-                </tr>
-            </table>
-        </section>
+        <table class="totals-table">
+            <tr>
+                <td>Op. gravada:</td>
+                <td class="right">S/ {{ venta.subtotal|floatformat:2 }}</td>
+            </tr>
 
-        <section class="section">
+            {% if venta.monto_descuento > 0 %}
+            <tr>
+                <td>Descuento:</td>
+                <td class="right">- S/ {{ venta.monto_descuento|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+
+            <tr>
+                <td>IGV 18%:</td>
+                <td class="right">S/ {{ venta.impuestos|floatformat:2 }}</td>
+            </tr>
+
+            <tr class="total-row">
+                <td>Importe total:</td>
+                <td class="right">S/ {{ venta.total_venta|floatformat:2 }}</td>
+            </tr>
+        </table>
+    </section>
+
+    <section class="section">
+        <div class="payment-box">
             <table class="info-table">
                 <tr>
-                    <td>Pago:</td>
+                    <td>Medio:</td>
                     <td>{{ venta.get_metodo_pago_display }}</td>
                 </tr>
+
                 {% if venta.metodo_pago == 'EFECTIVO' %}
                 <tr>
-                    <td>Recibido:</td>
+                    <td>Entrega:</td>
                     <td>S/ {{ venta.monto_recibido|floatformat:2 }}</td>
                 </tr>
                 <tr>
-                    <td>Vuelto:</td>
+                    <td>Cambio:</td>
                     <td>S/ {{ venta.vuelto|floatformat:2 }}</td>
                 </tr>
                 {% endif %}
+
+                <tr>
+                    <td>Estado:</td>
+                    <td>{{ venta.estado }}</td>
+                </tr>
             </table>
-        </section>
+        </div>
+    </section>
 
-        {% if venta.qr_code_data %}
-        <section class="section qr-code">
-            <img src="{{ venta.qr_code_data }}" alt="QR">
-        </section>
-        {% endif %}
+    <footer class="footer">
+        <div class="thanks">Gracias por su compra</div>
+        <div class="muted">Este comprobante acredita la operación realizada.</div>
+        <div class="muted">Conserve su ticket para cambios o consultas.</div>
+        <div class="legal">Venta ID: {{ venta.id }}</div>
+    </footer>
 
-        <footer class="footer section">
-            <p>¡Gracias por su compra!</p>
-            <p style="font-size: 8pt;">Para canjes o devoluciones presente este comprobante.</p>
-        </footer>
-    </div>
+</div>
 </body>
-
 </html>

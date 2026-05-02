@@ -23,28 +23,75 @@ export function limpiarCliente(state, domElements) {
 }
 
 export async function buscarCliente(query, domElements, state) {
-    if (query.length < 3) {
+    const term = query.trim();
+
+    if (term.length < 3) {
         domElements.customerSuggestions.classList.add('hidden');
+        domElements.customerSuggestions.innerHTML = '';
         return;
     }
+
     try {
-        const data = await API.buscarClienteAPI(query);
+        const data = await API.buscarClienteAPI(term);
         const clientes = data.results || data;
+
         domElements.customerSuggestions.innerHTML = '';
+
         if (clientes.length > 0) {
             domElements.customerSuggestions.classList.remove('hidden');
+
             clientes.forEach(cliente => {
+                const nombreCompleto = `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim() || 'Cliente sin nombre';
+                const documento = `${cliente.tipo_documento || 'DOC'}: ${cliente.numero_documento || '-'}`;
+                const telefono = cliente.telefono ? cliente.telefono : 'Sin teléfono';
+
                 const item = document.createElement('div');
-                item.className = 'p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-800';
-                item.innerHTML = `<p class="font-semibold text-white">${cliente.nombres} ${cliente.apellidos}</p><p class="text-xs text-slate-400">${cliente.tipo_documento}: ${cliente.numero_documento}</p>`;
+
+                item.className = `
+                    group cursor-pointer border-b border-slate-100 bg-white px-4 py-3
+                    transition-all duration-200 last:border-b-0 hover:bg-slate-900
+                `;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-sm font-black text-emerald-700 transition group-hover:bg-emerald-500 group-hover:text-white">
+                            ${nombreCompleto.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-black text-slate-900 transition group-hover:text-white">
+                                ${nombreCompleto}
+                            </p>
+
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500 transition group-hover:bg-white/10 group-hover:text-slate-200">
+                                    ${documento}
+                                </span>
+
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700 transition group-hover:bg-emerald-400/20 group-hover:text-emerald-200">
+                                    ${telefono}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
                 item.addEventListener('click', () => seleccionarCliente(cliente, state, domElements));
                 domElements.customerSuggestions.appendChild(item);
             });
+
         } else {
             domElements.customerSuggestions.classList.add('hidden');
-            const userChoice = await UI.showConfirm(domElements.alertModal, `El cliente con documento "${query}" no existe.`, '¿Deseas registrarlo ahora?');
-            if (userChoice) abrirModalNuevoCliente(domElements.newCustomerModal, query);
+
+            const userChoice = await UI.showConfirm(
+                domElements.alertModal,
+                `El cliente con documento "${term}" no existe.`,
+                '¿Deseas registrarlo ahora?'
+            );
+
+            if (userChoice) abrirModalNuevoCliente(domElements.newCustomerModal, term);
         }
+
     } catch (error) {
         console.error('Error buscando cliente:', error);
     }

@@ -2,122 +2,411 @@
 {% load static %}
 
 {% block title %}
-{% if cliente %}
-Editar Cliente
-{% else %}
-Registrar Nuevo Cliente
-{% endif %}
+{% if cliente %}Editar Cliente{% else %}Registrar Nuevo Cliente{% endif %}
 {% endblock %}
 
 {% block app_content %}
-<header class="mb-10">
-    <a href="{% url 'clientes:lista' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700/50 text-slate-300 font-semibold rounded-full hover:bg-slate-700 hover:text-white transition-all duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clip-rule="evenodd" />
-        </svg>
-        Volver al Listado
-    </a>
-    <h1 id="form-title" class="text-xl font-extrabold text-white mt-6">
-        {% if cliente %}
-        Editando Cliente: {{ cliente.get_full_name }}
-        {% else %}
-        Registrar Nuevo Cliente
-        {% endif %}
-    </h1>
-    <p class="text-slate-400 text-sm mt-1">Completa la información del cliente.</p>
-</header>
+<style>
+    .form-shell {
+        position: relative;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05), 0 32px 80px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
 
-{% if cliente %}
-<script id="cliente-data" type="application/json">{{ cliente.pk }}</script>
-{% endif %}
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+        transition: all 0.25s ease;
+    }
 
-<form id="cliente-form" class="space-y-8">
-    {% csrf_token %}
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-lg font-bold text-white mb-6">Información de Identificación</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
-                <select id="tipo_documento" class="form-select">
-                    {% for value, display in tipos_documento %}
-                    {# Esta estructura es diferente y evita el problema de formato #}
-                    {% if cliente.tipo_documento == value %}
-                    <option value="{{ value }}" selected>{{ display }}</option>
-                    {% else %}
-                    <option value="{{ value }}">{{ display }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
+    .section-card:hover {
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.70rem;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .cliente-form input,
+    .cliente-form select,
+    .cliente-form textarea,
+    .form-input,
+    .form-select {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #0f172a;
+        outline: none;
+        border-radius: 1rem;
+        padding: 0.875rem 1rem;
+        transition: all 0.25s ease;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .cliente-form input::placeholder,
+    .cliente-form textarea::placeholder {
+        color: #94a3b8;
+    }
+
+    .cliente-form input:hover,
+    .cliente-form select:hover,
+    .cliente-form textarea:hover,
+    .form-input:hover,
+    .form-select:hover {
+        border-color: #cbd5e1;
+    }
+
+    .cliente-form input:focus,
+    .cliente-form select:focus,
+    .cliente-form textarea:focus,
+    .form-input:focus,
+    .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.11), 0 8px 24px rgba(16, 185, 129, 0.08);
+    }
+
+    .cliente-form input[type="checkbox"] {
+        width: 1.1rem;
+        height: 1.1rem;
+        padding: 0;
+        border-radius: 0.35rem;
+        accent-color: #10b981;
+    }
+
+    .section-badge {
+        width: 2.2rem;
+        height: 2.2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.95rem;
+        font-weight: 800;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+
+    .mini-stat {
+        border-radius: 1.15rem;
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .mini-stat-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        font-weight: 800;
+    }
+
+    .mini-stat-value {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .soft-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.48rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+
+    .action-primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 14px 30px rgba(16, 185, 129, 0.20);
+        transition: all 0.22s ease;
+    }
+
+    .action-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 36px rgba(16, 185, 129, 0.24);
+    }
+
+    .action-secondary {
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #475569;
+        transition: all 0.22s ease;
+    }
+
+    .action-secondary:hover {
+        transform: translateY(-1px);
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .field-help {
+        margin-top: 0.45rem;
+        font-size: 0.76rem;
+        color: #94a3b8;
+        line-height: 1.35;
+    }
+</style>
+
+<div>
+    <header class="relative mb-10 rounded-[1.6rem] border border-slate-200 bg-white/90 px-6 py-6 shadow-[0_12px_36px_rgba(15,23,42,0.05)] backdrop-blur-xl">
+        <nav class="mb-6">
+            <a href="{% url 'clientes:lista' %}"
+               class="group inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-600 transition-colors duration-200">
+                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 group-hover:border-emerald-200 group-hover:bg-emerald-50 transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </div>
+                <span>Volver al listado</span>
+            </a>
+        </nav>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div class="flex items-start gap-5">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 bg-emerald-500 blur-lg opacity-20 rounded-2xl"></div>
+                    <div class="relative w-16 h-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-emerald-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 id="form-title" class="text-3xl font-bold tracking-tight text-slate-900">
+                            {% if cliente %}Editar Cliente{% else %}Registrar Cliente{% endif %}
+                        </h1>
+
+                        {% if cliente %}
+                        <span class="soft-chip bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                            ID: #{{ cliente.pk }}
+                        </span>
+                        {% else %}
+                        <span class="soft-chip bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                            BORRADOR
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-slate-500 text-sm leading-relaxed max-w-2xl">
+                        {% if cliente %}
+                        Actualiza la información del cliente <strong class="text-slate-700">{{ cliente.get_full_name }}</strong>.
+                        {% else %}
+                        Completa la información de identificación, contacto y configuración del nuevo cliente.
+                        {% endif %}
+                    </p>
+                </div>
             </div>
-            <div>
-                <label for="numero_documento" class="form-label">Número de Documento</label>
-                <input type="text" id="numero_documento" class="form-input" required>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 w-full lg:w-auto">
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-value text-sm flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full {% if cliente %}bg-emerald-500{% else %}bg-amber-500{% endif %}"></div>
+                        {% if cliente %}Activo{% else %}En creación{% endif %}
+                    </span>
+                </div>
+
+                <div class="mini-stat min-w-[140px]">
+                    <span class="mini-stat-label">Documento</span>
+                    <span class="mini-stat-value text-sm font-mono truncate">
+                        {% if cliente and cliente.numero_documento %}{{ cliente.numero_documento }}{% else %}---{% endif %}
+                    </span>
+                </div>
+
+                <div class="flex flex-col p-4 rounded-xl bg-slate-900 border border-slate-800 min-w-[140px] col-span-2 md:col-span-1 shadow-sm">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tipo de Registro</span>
+                    <span class="text-sm font-semibold text-white mt-1">Cliente CRM</span>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-lg font-bold text-white mb-6">Información Personal y de Contacto</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="nombres" class="form-label">Nombres</label>
-                <input type="text" id="nombres" class="form-input" required>
-            </div>
-            <div>
-                <label for="apellidos" class="form-label">Apellidos</label>
-                <input type="text" id="apellidos" class="form-input">
-            </div>
-            <div>
-                <label for="telefono" class="form-label">Teléfono</label>
-                <input type="tel" id="telefono" class="form-input">
-            </div>
-            <div>
-                <label for="email" class="form-label">Email</label>
-                <input type="email" id="email" class="form-input">
-            </div>
-            <div class="md:col-span-2">
-                <label for="direccion" class="form-label">Dirección</label>
-                <input type="text" id="direccion" class="form-input">
-            </div>
-            <div>
-                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
-                <input type="date" id="fecha_nacimiento" class="form-input">
-            </div>
+    {% if cliente %}
+    <script id="cliente-data" type="application/json">{{ cliente.pk }}</script>
+    {% endif %}
+
+    <div class="relative">
+        <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-emerald-200/60 via-sky-100/50 to-cyan-100/50 blur-2xl"></div>
+
+        <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-6">
+            <form id="cliente-form" class="cliente-form space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <section class="xl:col-span-9 space-y-6">
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-emerald-50 text-emerald-700 border border-emerald-100">01</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información de identificación</h3>
+                                    <p class="text-sm text-slate-500">Define el tipo y número de documento del cliente.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                                <div class="xl:col-span-2">
+                                    <label for="tipo_documento" class="form-label">Tipo de documento</label>
+                                    <select id="tipo_documento" class="form-select">
+                                        {% for value, display in tipos_documento %}
+                                            {% if cliente.tipo_documento == value %}
+                                            <option value="{{ value }}" selected>{{ display }}</option>
+                                            {% else %}
+                                            <option value="{{ value }}">{{ display }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="xl:col-span-2">
+                                    <label for="numero_documento" class="form-label">Número de documento</label>
+                                    <input type="text" id="numero_documento" class="form-input" placeholder="Ej. DNI, RUC o CE" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-sky-50 text-sky-700 border border-sky-100">02</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Información personal y contacto</h3>
+                                    <p class="text-sm text-slate-500">Completa los datos principales de contacto y ubicación.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                                <div>
+                                    <label for="nombres" class="form-label">Nombres / Razón social</label>
+                                    <input type="text" id="nombres" class="form-input" placeholder="Ej. Juan Carlos / Empresa SAC" required>
+                                </div>
+
+                                <div>
+                                    <label for="apellidos" class="form-label">Apellidos</label>
+                                    <input type="text" id="apellidos" class="form-input" placeholder="Opcional si es RUC">
+                                </div>
+
+                                <div>
+                                    <label for="telefono" class="form-label">Teléfono</label>
+                                    <input type="tel" id="telefono" class="form-input" placeholder="Ej. 987654321">
+                                </div>
+
+                                <div>
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" id="email" class="form-input" placeholder="cliente@correo.com">
+                                </div>
+
+                                <div class="xl:col-span-3">
+                                    <label for="direccion" class="form-label">Dirección</label>
+                                    <input type="text" id="direccion" class="form-input" placeholder="Dirección fiscal o domicilio">
+                                </div>
+
+                                <div>
+                                    <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+                                    <input type="date" id="fecha_nacimiento" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-card">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="section-badge bg-violet-50 text-violet-700 border border-violet-100">03</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900">Configuración adicional</h3>
+                                    <p class="text-sm text-slate-500">Asocia el cliente a una farmacia y define su estado.</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                                <div class="xl:col-span-2">
+                                    <label for="farmacia" class="form-label">Farmacia asociada</label>
+                                    <select id="farmacia" class="form-select">
+                                        <option value="">Ninguna</option>
+                                        {% for farmacia in farmacias %}
+                                        <option value="{{ farmacia.pk }}">{{ farmacia.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <p class="field-help">Puedes dejarlo vacío si el cliente no pertenece a una farmacia específica.</p>
+                                </div>
+
+                                <div class="xl:col-span-2">
+                                    <label class="form-label">Estado</label>
+                                    <label class="flex min-h-[52px] items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer">
+                                        <input type="checkbox" id="activo" class="form-checkbox" checked>
+                                        <span class="text-sm font-bold text-slate-700">Cliente activo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="xl:col-span-3">
+                        <div class="section-card sticky top-6">
+                            <h3 class="text-base font-bold text-slate-900 mb-4">Resumen</h3>
+
+                            <div class="space-y-2.5">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Cliente</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if cliente %}{{ cliente.get_full_name }}{% else %}Nuevo cliente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Documento</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if cliente and cliente.numero_documento %}{{ cliente.numero_documento }}{% else %}Pendiente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Contacto</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if cliente and cliente.telefono %}{{ cliente.telefono }}{% else %}Pendiente{% endif %}
+                                    </p>
+                                </div>
+
+                                <div class="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2">
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-600">Módulo</p>
+                                    <p class="mt-1 text-sm font-bold text-slate-800">Clientes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-2">
+                    <a href="{% url 'clientes:lista' %}"
+                       class="action-secondary inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold">
+                        Cancelar
+                    </a>
+
+                    <button type="submit" id="save-button"
+                            class="action-primary inline-flex items-center justify-center rounded-2xl px-7 py-3 text-sm font-bold">
+                        {% if cliente %}Actualizar cliente{% else %}Guardar cliente{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-lg font-bold text-white mb-6">Configuración Adicional</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="farmacia" class="form-label">Farmacia Asociada (Opcional)</label>
-                <select id="farmacia" class="form-select">
-                    <option value="">Ninguna</option>
-                    {% for farmacia in farmacias %}
-                    <option value="{{ farmacia.pk }}">{{ farmacia.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="activo" class="form-label">Estado</label>
-                <label class="flex items-center space-x-3 cursor-pointer">
-                    <input type="checkbox" id="activo" class="form-checkbox" checked>
-                    <span class="text-white">Cliente Activo</span>
-                </label>
-            </div>
-        </div>
-    </div>
-
-    <div class="flex justify-end pt-4">
-        <button type="submit" id="save-button"
-            class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors shadow-lg">
-            Guardar Cliente
-        </button>
-    </div>
-</form>
+</div>
 {% endblock %}
 
 {% block app_scripts %}
@@ -126,19 +415,20 @@ Registrar Nuevo Cliente
         const form = document.getElementById('cliente-form');
         const saveButton = document.getElementById('save-button');
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        // Identificar si estamos en modo edición
         const clienteDataElement = document.getElementById('cliente-data');
         const clienteId = clienteDataElement ? clienteDataElement.textContent : null;
 
+        const setValue = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.value = value || '';
+        };
+
         const inicializarFormulario = async () => {
             if (!clienteId) {
-                console.log("Modo: Creación");
                 return;
             }
 
-            console.log("Modo: Edición de Cliente ID:", clienteId);
-            saveButton.textContent = 'Actualizar Cliente';
+            saveButton.textContent = 'Actualizar cliente';
 
             try {
                 const response = await fetch(`/clientes/api/clientes/${clienteId}/`);
@@ -146,17 +436,18 @@ Registrar Nuevo Cliente
 
                 const cliente = await response.json();
 
-                // Rellenar el formulario con los datos del cliente
-                document.getElementById('tipo_documento').value = cliente.tipo_documento;
-                document.getElementById('numero_documento').value = cliente.numero_documento;
-                document.getElementById('nombres').value = cliente.nombres;
-                document.getElementById('apellidos').value = cliente.apellidos;
-                document.getElementById('telefono').value = cliente.telefono;
-                document.getElementById('email').value = cliente.email;
-                document.getElementById('direccion').value = cliente.direccion;
-                document.getElementById('fecha_nacimiento').value = cliente.fecha_nacimiento;
-                document.getElementById('farmacia').value = cliente.farmacia || '';
-                document.getElementById('activo').checked = cliente.activo;
+                setValue('tipo_documento', cliente.tipo_documento);
+                setValue('numero_documento', cliente.numero_documento);
+                setValue('nombres', cliente.nombres);
+                setValue('apellidos', cliente.apellidos);
+                setValue('telefono', cliente.telefono);
+                setValue('email', cliente.email);
+                setValue('direccion', cliente.direccion);
+                setValue('fecha_nacimiento', cliente.fecha_nacimiento);
+                setValue('farmacia', cliente.farmacia || '');
+
+                const activo = document.getElementById('activo');
+                if (activo) activo.checked = cliente.activo;
 
             } catch (error) {
                 console.error(error);
@@ -205,14 +496,19 @@ Registrar Nuevo Cliente
 
             } catch (error) {
                 console.error('Error al guardar:', error);
-                // Manejo de errores de validación (ejemplo simple)
                 let errorMessage = "No se pudo guardar el cliente.\n\n";
-                for (const field in error) {
-                    errorMessage += `${field}: ${error[field]}\n`;
+
+                if (typeof error === 'object') {
+                    for (const field in error) {
+                        errorMessage += `${field}: ${error[field]}\n`;
+                    }
+                } else {
+                    errorMessage += error;
                 }
+
                 alert(errorMessage);
                 saveButton.disabled = false;
-                saveButton.textContent = clienteId ? 'Actualizar Cliente' : 'Guardar Cliente';
+                saveButton.textContent = clienteId ? 'Actualizar cliente' : 'Guardar cliente';
             }
         };
 

@@ -3,7 +3,7 @@
 from django.db import models
 from django.conf import settings
 from decimal import Decimal
-
+from django.core.exceptions import ValidationError
 from core.models import Sucursal, Usuario
 from clientes.models import Cliente
 from inventario.models import Producto, StockProducto, MovimientoInventario
@@ -30,14 +30,13 @@ ESTADO_VENTA_CHOICES = [
 ]
 
 class Venta(models.Model):
-    # ... (todos tus campos de Venta no cambian) ...
     sucursal = models.ForeignKey(Sucursal, on_delete=models.PROTECT, verbose_name="Sucursal de Venta")
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cliente Asociado")
     vendedor = models.ForeignKey(Usuario, on_delete=models.PROTECT, verbose_name="Vendedor")
     sesion_caja = models.ForeignKey(
         'SesionCaja', 
         on_delete=models.PROTECT,
-        null=True, # Permite nulo por si tienes ventas antiguas sin sesión
+        null=True,
         blank=True,
         verbose_name="Sesión de Caja"
     )
@@ -69,7 +68,6 @@ class Venta(models.Model):
         """
         Calcula y actualiza los totales de la venta basado en sus detalles.
         """
-        # Sumamos los subtotales y descuentos ya calculados en cada línea de detalle.
         agregados = self.detalles.aggregate(
             subtotal_lineas=Sum('subtotal_linea'),
             total_descuentos=Sum('monto_descuento_linea')
@@ -86,8 +84,6 @@ class Venta(models.Model):
         self.save(update_fields=['subtotal', 'monto_descuento', 'impuestos', 'total_venta'])
     
     def save(self, *args, **kwargs):
-        # No es necesario llamar a actualizar_totales() aquí.
-        # La lógica se dispara desde los detalles.
         super().save(*args, **kwargs)
 
 
@@ -112,7 +108,7 @@ class DetalleVenta(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal_linea = (self.cantidad * self.precio_unitario) - self.monto_descuento_linea
         super().save(*args, **kwargs)
-        if self.venta_id: # Usamos venta_id para evitar una consulta extra
+        if self.venta_id: 
             self.venta.actualizar_totales()
 
     def delete(self, *args, **kwargs):

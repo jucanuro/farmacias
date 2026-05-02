@@ -4,56 +4,302 @@
 {% block title %}Listado de Clientes{% endblock %}
 
 {% block app_content %}
-<header class="mb-10 flex justify-between items-center">
-    <div>
-        <h1 class="text-xl font-extrabold text-white">Gestión de Clientes</h1>
-        <p class="text-slate-400 mt-1 text-sm">Consulta, registra y edita la información de tus clientes.</p>
-    </div>
-    <a href="{% url 'clientes:crear' %}"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors shadow-md">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                clip-rule="evenodd" />
-        </svg>
-        Registrar Cliente
-    </a>
-</header>
+<div class="space-y-5 animate-in">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
 
-<div class="glass-card rounded-2xl p-6">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left">
-            <thead class="border-b border-slate-700">
-                <tr>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Nombre Completo</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Documento</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Teléfono</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Email</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Estado</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="clientes-list-body">
-                <tr>
-                    <td colspan="6" class="text-center p-8">
-                        <div class="text-slate-400">Cargando clientes...</div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="relative px-5 py-5 md:px-7 md:py-6">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="truncate text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                                Gestión de Clientes
+                            </h1>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                CRM activo
+                            </span>
+                        </div>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Consulta, registra y edita la información de tus clientes desde una vista clara y operativa.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span id="clientes-count-badge" class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                                Cargando clientes
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                                Base comercial
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                    <div class="relative w-full sm:w-80 group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-emerald-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="cliente-search-input"
+                            placeholder="Buscar cliente, documento, teléfono o email..."
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <a href="{% url 'clientes:crear' %}"
+                       class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.8">
+                            <path d="M12 4v16m8-8H4" />
+                        </svg>
+                        Registrar cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div>
+                <h2 class="text-base font-black tracking-tight text-slate-900">Listado de clientes</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Visualiza datos de contacto, documentos y estado comercial.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Vista premium
+                </span>
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Clientes activos
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[1120px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Cliente</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Documento</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Teléfono</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Email</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Estado</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="clientes-list-body" class="divide-y divide-slate-100">
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center">
+                            <div class="mx-auto flex max-w-md flex-col items-center">
+                                <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-emerald-500"></div>
+                                <p class="mt-4 text-sm font-bold text-slate-400">Cargando clientes...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    @media (max-width: 768px) {
+        .group-hover\:opacity-100 { opacity: 1 !important; }
+    }
+</style>
 {% endblock %}
 
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const clientesTableBody = document.getElementById('clientes-list-body');
-        // El token CSRF es necesario para hacer peticiones que modifican datos (PATCH)
+        const clientesCountBadge = document.getElementById('clientes-count-badge');
+        const searchInput = document.getElementById('cliente-search-input');
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
 
+        let clientesCache = [];
+
+        const renderLoading = () => {
+            clientesTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-20 text-center">
+                        <div class="mx-auto flex max-w-md flex-col items-center">
+                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-emerald-500"></div>
+                            <p class="mt-4 text-sm font-bold text-slate-400">Cargando clientes...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        };
+
+        const renderEmpty = (message = 'No hay clientes registrados.') => {
+            clientesTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-20 text-center">
+                        <div class="mx-auto flex max-w-md flex-col items-center">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                                </svg>
+                            </div>
+                            <h3 class="mt-5 text-sm font-black uppercase tracking-[0.18em] text-slate-400">${message}</h3>
+                            <p class="mt-2 text-sm text-slate-400">Cuando registres clientes, aparecerán aquí con sus datos principales.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        };
+
+        const renderClientes = (clientes) => {
+            clientesTableBody.innerHTML = '';
+
+            if (clientesCountBadge) {
+                clientesCountBadge.textContent = `${clientesCache.length} clientes`;
+            }
+
+            if (!clientes || clientes.length === 0) {
+                renderEmpty('No se encontraron clientes.');
+                return;
+            }
+
+            clientes.forEach(cliente => {
+                const nombreCompleto = `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim() || 'Cliente sin nombre';
+
+                const estadoHtml = cliente.activo
+                    ? `<span class="estado-cliente inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700" data-activo="true"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Activo</span>`
+                    : `<span class="estado-cliente inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-black text-rose-700" data-activo="false"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>Inactivo</span>`;
+
+                const row = document.createElement('tr');
+                row.className = 'cliente-row group transition-all duration-200 hover:bg-slate-50/80';
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-4">
+                            <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase text-slate-500 shadow-sm transition-all group-hover:border-emerald-200 group-hover:text-emerald-600 group-hover:shadow-md">
+                                ${nombreCompleto.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div class="min-w-0">
+                                <p class="block truncate text-sm font-black tracking-tight text-slate-900">
+                                    ${nombreCompleto}
+                                </p>
+                                <div class="mt-1 flex flex-wrap items-center gap-2">
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-mono font-bold text-slate-500">
+                                        ID #${cliente.id}
+                                    </span>
+                                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                                        Cliente
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                        <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-600">
+                            ${cliente.tipo_documento || '-'}: ${cliente.numero_documento || '-'}
+                        </span>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                        <span class="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                            ${cliente.telefono || 'N/A'}
+                        </span>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                        <span class="inline-flex max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                            <span class="truncate">${cliente.email || 'N/A'}</span>
+                        </span>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                        ${estadoHtml}
+                    </td>
+
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                            <a href="/clientes/${cliente.id}/editar/"
+                               title="Editar cliente"
+                               class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </a>
+
+                            <button type="button"
+                                title="Activar/Desactivar cliente"
+                                class="delete-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-100 hover:bg-rose-50 hover:text-rose-600"
+                                data-cliente-id="${cliente.id}">
+                                <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636A9 9 0 115.636 18.364 9 9 0 0118.364 5.636zM5.636 5.636l12.728 12.728" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                clientesTableBody.appendChild(row);
+            });
+        };
+
+        const filtrarClientes = () => {
+            const term = searchInput.value.toLowerCase().trim();
+
+            if (!term) {
+                renderClientes(clientesCache);
+                return;
+            }
+
+            const filtrados = clientesCache.filter(cliente => {
+                const texto = [
+                    cliente.nombres,
+                    cliente.apellidos,
+                    cliente.tipo_documento,
+                    cliente.numero_documento,
+                    cliente.telefono,
+                    cliente.email,
+                    cliente.activo ? 'activo' : 'inactivo'
+                ].join(' ').toLowerCase();
+
+                return texto.includes(term);
+            });
+
+            renderClientes(filtrados);
+        };
+
         const desactivarCliente = async (clienteId, boton) => {
-            // Se usa el span del estado para saber el estado actual y evitar otra llamada a la API
             const fila = boton.closest('tr');
             const estadoActual = fila.querySelector('.estado-cliente').dataset.activo === 'true';
             const nuevaAccion = estadoActual ? 'desactivar' : 'activar';
@@ -69,17 +315,15 @@
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrftoken,
                     },
-                    body: JSON.stringify({ activo: !estadoActual }), // Enviamos el estado opuesto
+                    body: JSON.stringify({ activo: !estadoActual }),
                 });
 
                 if (!response.ok) {
                     throw new Error('No se pudo actualizar el estado del cliente.');
                 }
 
-                // Recargamos la lista para mostrar el cambio visualmente.
-                cargarClientes();
+                await cargarClientes();
                 alert('Estado del cliente actualizado con éxito.');
-
             } catch (error) {
                 console.error(error);
                 alert(error.message);
@@ -87,65 +331,48 @@
         };
 
         const cargarClientes = async () => {
+            renderLoading();
+
             try {
                 const response = await fetch('/clientes/api/clientes/');
                 if (!response.ok) throw new Error('No se pudieron cargar los datos.');
 
                 const data = await response.json();
-                const clientes = data.results || data;
+                clientesCache = data.results || data;
 
-                clientesTableBody.innerHTML = '';
+                if (clientesCountBadge) {
+                    clientesCountBadge.textContent = `${clientesCache.length} clientes`;
+                }
 
-                if (clientes.length === 0) {
-                    clientesTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-slate-400">No hay clientes registrados.</td></tr>`;
+                if (clientesCache.length === 0) {
+                    renderEmpty();
                     return;
                 }
 
-                clientes.forEach(cliente => {
-                    const nombreCompleto = `${cliente.nombres} ${cliente.apellidos}`.trim();
-                    // Añadimos una clase y un data-attribute al span del estado
-                    const estadoHtml = cliente.activo
-                        ? `<span class="px-2 py-1 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 estado-cliente" data-activo="true">Activo</span>`
-                        : `<span class="px-2 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 estado-cliente" data-activo="false">Inactivo</span>`;
-
-                    const row = `
-                        <tr class="border-b border-slate-800 hover:bg-slate-800/50 text-sm">
-                            <td class="p-3 text-white font-semibold">${nombreCompleto}</td>
-                            <td class="p-3 text-slate-300">${cliente.tipo_documento}: ${cliente.numero_documento}</td>
-                            <td class="p-3 text-slate-300">${cliente.telefono || 'N/A'}</td>
-                            <td class="p-3 text-slate-300">${cliente.email || 'N/A'}</td>
-                            <td class="p-3">${estadoHtml}</td>
-                            <td class="p-3">
-                                <div class="flex items-center justify-center gap-3">
-                                    <a href="/clientes/${cliente.id}/editar/" title="Editar Cliente" class="text-slate-400 hover:text-amber-400 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                                    </a>
-                                    <button title="Activar/Desactivar Cliente" class="text-slate-400 hover:text-rose-400 transition-colors delete-btn" data-cliente-id="${cliente.id}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                    clientesTableBody.innerHTML += row;
-                });
-
+                renderClientes(clientesCache);
             } catch (error) {
                 console.error('Error:', error);
-                clientesTableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-rose-400">Error al cargar los datos.</td></tr>`;
+                clientesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center text-rose-500 font-bold">
+                            Error al cargar los datos.
+                        </td>
+                    </tr>
+                `;
             }
         };
 
-        // Se usa delegación de eventos para manejar los clics de los botones de la tabla
         clientesTableBody.addEventListener('click', (e) => {
             const botonDesactivar = e.target.closest('.delete-btn');
             if (botonDesactivar) {
-                const clienteId = botonDesactivar.dataset.clienteId;
-                desactivarCliente(clienteId, botonDesactivar);
+                desactivarCliente(botonDesactivar.dataset.clienteId, botonDesactivar);
             }
         });
 
-        // Carga inicial de los datos
+        if (searchInput) {
+            searchInput.addEventListener('input', filtrarClientes);
+        }
+
         cargarClientes();
     });
 </script>

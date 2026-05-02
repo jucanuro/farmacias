@@ -105,7 +105,7 @@
             {
                 id: 'traslados', icon: '↔️', category: 'Logística', title: 'Traslados de Stock', desc: 'Movimiento entre sucursales.', glow: '#7c3aed',
                 children: [
-                    { id: 'listado-traslados', url: "{% url 'traslados:home' %}", icon: '🚚', title: 'Listado de Traslados', desc: 'Historial de movimientos.', category: 'Traslados' },
+                    { id: 'listado-traslados', url: "{% url 'traslados:traslados_home' %}", icon: '🚚', title: 'Listado de Traslados', desc: 'Historial de movimientos.', category: 'Traslados' },
                     { id: 'nuevo-traslado', url: "{% url 'traslados:traslado_create' %}", icon: '➕', title: 'Nuevo Traslado', desc: 'Inicia un nuevo envío.', category: 'Traslados' },
                 ]
             },

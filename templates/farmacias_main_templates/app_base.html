@@ -38,9 +38,9 @@
                         </svg>
                     </a>
 
-                    <a href="{% url 'traslados:home' %}"
-                       class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
-                       title="Traslados">
+                    <a href="{% url 'traslados:traslados_home' %}"
+                        class="group flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-500 transition hover:border-emerald-200 hover:bg-white hover:text-emerald-600 hover:shadow-md"
+                        title="Traslados">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                         </svg>
@@ -294,7 +294,7 @@
 
                             <div class="mobile-group-content hidden border-t border-slate-100 px-3 pb-3 pt-2">
                                 <div class="grid gap-2">
-                                    <a href="{% url 'traslados:home' %}" class="mobile-subitem">Ver Traslados</a>
+                                    <a href="{% url 'traslados:traslados_home' %}" class="mobile-subitem">Ver Traslados</a>
                                     <a href="{% url 'traslados:traslado_create' %}" class="mobile-subitem">Nuevo Traslado</a>
                                 </div>
                             </div>
@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description: 'Transferencias entre sedes',
             icon: '🚚',
             children: [
-                { id: 'listado-traslados', url: "{% url 'traslados:home' %}", icon: '🚚', title: 'Ver Traslados', description: 'Seguimiento general' },
+                { id: 'listado-traslados', url: "{% url 'traslados:traslados_home' %}", icon: '🚚', title: 'Ver Traslados', description: 'Seguimiento general' },
                 { id: 'nuevo-traslado', url: "{% url 'traslados:traslado_create' %}", icon: '➕', title: 'Nuevo Traslado', description: 'Registrar movimiento' }
             ]
         },

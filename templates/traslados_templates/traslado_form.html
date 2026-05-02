@@ -1,76 +1,175 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}Registrar Nuevo Traslado{% endblock %}
+{% block title %}Nuevo Traslado{% endblock %}
 
 {% block app_content %}
-<header class="mb-8">
-    <h1 class="text-2xl font-bold text-white">Registrar Nuevo Traslado de Stock</h1>
-</header>
+<style>
+    .form-shell {
+        background: rgba(255,255,255,0.96);
+        border: 1px solid #e2e8f0;
+        box-shadow:
+            0 18px 40px rgba(15, 23, 42, 0.05),
+            0 32px 80px rgba(15, 23, 42, 0.06);
+        backdrop-filter: blur(10px);
+    }
 
-<form id="transfer-form" data-success-url="{% url 'traslados:home' %}">
-    {% csrf_token %}
+    .section-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.35rem;
+        padding: 1.35rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    }
 
-    <div class="space-y-6">
-        <div class="glass-card p-6 rounded-2xl">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    .form-input, .form-select {
+        width: 100%;
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        transition: all 0.25s ease;
+    }
+
+    .form-input:focus, .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16,185,129,0.1);
+    }
+
+    .form-label {
+        font-size: 0.70rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+</style>
+
+<div class="space-y-6">
+
+    <!-- HEADER -->
+    <header class="relative mb-8 rounded-[1.6rem] border border-slate-200 bg-white px-6 py-6 shadow-sm">
+        <div class="flex items-center justify-between">
+
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-emerald-400">
+                    ⇄
+                </div>
+
                 <div>
-                    <label for="sucursal-origen" class="form-label">Sucursal Origen</label>
-                    <select id="sucursal-origen" class="form-select">
-                        <option value="">Seleccione origen...</option>
-                        {% for sucursal in sucursales %}
-                        <option value="{{ sucursal.pk }}">{{ sucursal.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="sucursal-destino" class="form-label">Sucursal Destino</label>
-                    <select id="sucursal-destino" class="form-select">
-                        <option value="">Seleccione destino...</option>
-                        {% for sucursal in sucursales %}
-                        <option value="{{ sucursal.pk }}">{{ sucursal.nombre }}</option>
-                        {% endfor %}
-                    </select>
+                    <h1 class="text-2xl font-bold text-slate-900">
+                        Nuevo Traslado
+                    </h1>
+                    <p class="text-sm text-slate-500">
+                        Registra el movimiento de stock entre sucursales
+                    </p>
                 </div>
             </div>
-            <div class="mt-4">
-                <label for="observaciones" class="form-label">Observaciones (Opcional)</label>
-                <textarea id="observaciones" class="form-input" rows="2"></textarea>
-            </div>
+
+            <a href="{% url 'traslados:traslados_home' %}"
+               class="text-sm font-semibold text-slate-500 hover:text-emerald-600">
+                ← Volver
+            </a>
+
         </div>
+    </header>
 
-        <div class="glass-card p-6 rounded-2xl">
-            <h3 class="text-lg font-bold text-white mb-4">Productos a Enviar</h3>
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-slate-700">
-                        <th class="p-2 text-left text-sm text-slate-400">Producto</th>
-                        <th class="p-2 text-left text-sm text-slate-400">Lote</th>
-                        <th class="p-2 text-center text-sm text-slate-400">Disponible</th>
-                        <th class="p-2 text-center text-sm text-slate-400">Cantidad a Enviar</th>
-                        <th class="p-2"></th>
-                    </tr>
-                </thead>
-                <tbody id="transfer-details-body">
-                </tbody>
-            </table>
+    <!-- FORM -->
+    <div class="form-shell rounded-[2rem] p-6">
+        <form id="transfer-form" data-success-url="{% url 'traslados:traslados_home' %}">
 
-            <div class="mt-4 pt-4 border-t border-slate-700">
-                <label for="stock-search" class="form-label">Añadir Producto (desde Origen)</label>
-                <div class="relative">
-                    <input type="text" id="stock-search" class="form-input" placeholder="Buscar producto en stock de origen..." disabled>
-                    <div id="stock-suggestions" class="absolute z-10 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-lg hidden"></div>
+            {% csrf_token %}
+
+            <!-- DATOS GENERALES -->
+            <div class="section-card mb-6">
+                <h3 class="text-lg font-bold text-slate-900 mb-4">
+                    Datos del traslado
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                        <label class="form-label">Sucursal origen</label>
+                        <select id="sucursal-origen" class="form-select">
+                            <option value="">Seleccionar...</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}">{{ s.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Sucursal destino</label>
+                        <select id="sucursal-destino" class="form-select">
+                            <option value="">Seleccionar...</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}">{{ s.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="form-label">Observaciones</label>
+                        <textarea id="observaciones" class="form-input" rows="2"></textarea>
+                    </div>
+
                 </div>
             </div>
-        </div>
 
-        <div class="flex justify-end">
-            <button type="button" id="save-transfer-btn" class="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold">
-                Crear Solicitud de Traslado
-            </button>
-        </div>
+            <!-- PRODUCTOS -->
+            <div class="section-card">
+                <h3 class="text-lg font-bold text-slate-900 mb-4">
+                    Productos del traslado
+                </h3>
+
+                <!-- TABLA -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="border-b border-slate-200">
+                            <tr>
+                                <th class="p-2 text-left text-xs text-slate-400">Producto</th>
+                                <th class="p-2 text-left text-xs text-slate-400">Lote</th>
+                                <th class="p-2 text-center text-xs text-slate-400">Disponible</th>
+                                <th class="p-2 text-center text-xs text-slate-400">Cantidad</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="transfer-details-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- BUSCADOR -->
+                <div class="mt-5">
+                    <label class="form-label">Buscar producto en origen</label>
+
+                    <input type="text"
+                           id="stock-search"
+                           class="form-input"
+                           placeholder="Selecciona sucursal primero"
+                           disabled>
+
+                    <div id="stock-suggestions"
+                         class="hidden mt-2 border rounded-xl bg-white shadow"></div>
+                </div>
+            </div>
+
+            <!-- BOTÓN -->
+            <div class="flex justify-end mt-6">
+                <button type="button"
+                        id="save-transfer-btn"
+                        class="px-6 py-3 rounded-2xl bg-emerald-500 text-white font-bold hover:bg-emerald-600">
+                    Crear traslado
+                </button>
+            </div>
+
+        </form>
     </div>
-</form>
+
+</div>
 {% endblock %}
 
 {% block app_scripts %}

@@ -1,257 +1,422 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
+{% load static %}
 
-{% load static %}  {% block title %}Punto de Venta (POS){% endblock %}
-
+{% block title %}Punto de Venta POS{% endblock %}
 
 {% block app_content %}
-<style>
-    .comprobante-btn {
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        background-color: #334155;
-        color: #94a3b8;
-        transition: all 0.2s;
-    }
+<div id="pos-main-container" class="min-h-[calc(100vh-120px)] space-y-5 animate-in">
 
-    .comprobante-btn.selected {
-        background-color: #10b981;
-        color: white;
-    }
-</style>
-<div id="pos-main-container" class="flex flex-col h-full">
-    <header class="mb-4">
-        <div class="relative">
-            <svg class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input type="text" id="product-search-input" class="form-input !pl-11 !py-3"
-                placeholder="Buscar producto por nombre o código...">
+    <!-- TOP BAR -->
+   <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400"></div>
+        <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-emerald-100/70 blur-3xl"></div>
+
+        <div class="relative p-5 lg:p-6 overflow-visible">
+            <div class="grid grid-cols-1 gap-5 xl:grid-cols-12 xl:items-center">
+
+                <div class="xl:col-span-4">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-emerald-300 shadow-lg">
+                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3h18v4H3zM5 10h14v11H5zM8 14h3m2 0h3m-8 4h8" />
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h1 class="text-2xl font-black tracking-tight text-slate-900">Punto de Venta</h1>
+                                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Caja activa
+                                </span>
+                            </div>
+                            <p class="mt-1 text-sm font-medium text-slate-500">
+                                Venta rápida, cliente y comprobante en una sola pantalla.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-[120] xl:col-span-4">
+                    <label class="pos-label">Buscar cliente</label>
+
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                <path d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                            </svg>
+                        </span>
+
+                        <input
+                            type="text"
+                            id="customer-search-input"
+                            placeholder="DNI, RUC, nombre..."
+                            autocomplete="off"
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/80 py-3.5 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <div id="customer-suggestions" class="hidden"></div>
+                </div>
+
+                <div class="xl:col-span-4">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                        <div>
+                            <label class="pos-label">Comprobante</label>
+                            <div id="comprobante-selector" class="grid grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1">
+                                <button data-tipo="TICKET" class="comprobante-btn selected">Ticket</button>
+                                <button data-tipo="BOLETA" class="comprobante-btn">Boleta</button>
+                                <button data-tipo="FACTURA" class="comprobante-btn">Factura</button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end">
+                            <button id="show-cierre-modal-btn" class="h-[46px] rounded-2xl border border-rose-100 bg-rose-50 px-4 text-sm font-black text-rose-600 transition hover:bg-rose-100">
+                                Cerrar caja
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="customer-display" class="mt-4 hidden">
+                <div class="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">Cliente seleccionado</p>
+                        <span id="customer-name" class="text-sm font-black text-slate-900"></span>
+                    </div>
+
+                    <button id="clear-customer-btn" class="rounded-xl bg-white px-3 py-2 text-xs font-black text-rose-500 shadow-sm">
+                        Quitar
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <div class="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-6 overflow-hidden">
+    <!-- POS BODY -->
+    <section class="grid grid-cols-1 gap-5 xl:grid-cols-12">
 
-        <div class="lg:col-span-2 bg-slate-900/50 rounded-2xl p-4 overflow-y-auto">
-            <div id="product-grid" class="grid grid-cols-1 gap-2">
-                <p id="grid-placeholder" class="col-span-full text-center text-slate-500 py-16">Escribe en la barra para
-                    buscar productos...</p>
+        <!-- LEFT: TICKET -->
+        <aside id="sale-cart" class="xl:col-span-5 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+            <div class="border-b border-slate-100 px-5 py-4">
+                <h2 class="text-lg font-black text-slate-900">Ticket actual</h2>
+                <p class="text-sm text-slate-500">Productos agregados a la venta.</p>
             </div>
-        </div>
 
-        <div id="sale-cart" class="lg:col-span-3 bg-slate-900/50 rounded-2xl p-6 flex flex-col">
-            <div class="flex-shrink-0">
-                <div class="relative">
-                    <label for="customer-search-input" class="form-label text-xs">Buscar Cliente
-                        (DNI/RUC/Nombre):</label>
-                    <input type="text" id="customer-search-input" class="form-input !py-2 mt-1"
-                        placeholder="Escribe para buscar..." autocomplete="off">
-                    <div id="customer-suggestions"
-                        class="absolute z-20 w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg shadow-lg hidden">
-                    </div>
-                </div>
-                <div id="customer-display" class="mt-2 hidden">
-                    <p class="text-sm text-slate-400">Cliente:</p>
-                    <div class="flex items-center justify-between bg-slate-800 p-2 rounded-md">
-                        <span id="customer-name" class="font-semibold text-white"></span>
-                        <button id="clear-customer-btn"
-                            class="text-xs text-rose-400 hover:text-rose-300">Quitar</button>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <label class="form-label text-xs">Tipo de Comprobante:</label>
-                    <div id="comprobante-selector" class="flex items-center gap-2 mt-1">
-                        <button data-tipo="TICKET" class="comprobante-btn selected">Ticket</button>
-                        <button data-tipo="BOLETA" class="comprobante-btn">Boleta</button>
-                        <button data-tipo="FACTURA" class="comprobante-btn">Factura</button>
-                    </div>
+            <div id="cart-items" class="min-h-[420px] max-h-[calc(100vh-470px)] overflow-y-auto bg-slate-50/70 p-5">
+                <div class="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center">
+                    <h3 class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">Carrito vacío</h3>
+                    <p class="mt-2 text-sm text-slate-400">Selecciona productos del catálogo.</p>
                 </div>
             </div>
 
-            <div id="cart-items" class="flex-grow space-y-3 overflow-y-auto my-4 border-y border-slate-700 py-2">
-                <p class="text-center text-slate-500 pt-16">Selecciona productos para añadirlos a la venta.</p>
-            </div>
+            <div class="border-t border-slate-100 bg-white p-5">
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="font-bold text-slate-500">Subtotal</span>
+                        <span id="cart-subtotal" class="font-black text-slate-900">S/ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="font-bold text-slate-500">IGV 18%</span>
+                        <span id="cart-taxes" class="font-black text-slate-900">S/ 0.00</span>
+                    </div>
 
-            <div class="flex-shrink-0">
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between text-slate-300"><span>Subtotal:</span><span id="cart-subtotal">S/
-                            0.00</span></div>
-                    <div class="flex justify-between text-slate-300"><span>IGV (18%):</span><span id="cart-taxes">S/
-                            0.00</span></div>
-                    <div class="flex justify-between font-bold text-xl text-white pt-2 border-t border-slate-800">
-                        <span>TOTAL:</span><span id="cart-total">S/ 0.00</span>
+                    <div class="rounded-[1.5rem] bg-slate-900 p-5 text-white">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Total</p>
+                        <div class="mt-1 flex items-end justify-between">
+                            <span class="text-sm font-bold text-slate-300">PEN</span>
+                            <span id="cart-total" class="text-4xl font-black">S/ 0.00</span>
+                        </div>
                     </div>
                 </div>
-                <button id="proceed-to-payment-btn"
-                    class="w-full mt-4 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-colors">PROCEDER
-                    AL PAGO</button>
-                <button id="show-cierre-modal-btn"
-                    class="w-full mt-2 text-xs text-rose-400 hover:text-rose-300 py-1">Cerrar Caja</button>
+
+                <button id="proceed-to-payment-btn" class="mt-5 w-full rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-emerald-100 transition hover:-translate-y-0.5 hover:bg-emerald-500">
+                    Cobrar venta
+                </button>
             </div>
-        </div>
-    </div>
+        </aside>
+
+        <!-- RIGHT: PRODUCTS -->
+        <main class="xl:col-span-7 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+            <div class="border-b border-slate-100 p-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900">Catálogo de productos</h2>
+                        <p class="text-sm text-slate-500">Busca y toca un producto para agregarlo.</p>
+                    </div>
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        Inventario
+                    </span>
+                </div>
+
+                <div class="relative mt-4">
+                    <input
+                        type="text"
+                        id="product-search-input"
+                        placeholder="Buscar producto por nombre, código o laboratorio..."
+                        class="w-full rounded-2xl border border-slate-200 bg-slate-50 py-4 pl-5 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    >
+                </div>
+            </div>
+
+            <div class="max-h-[calc(100vh-345px)] min-h-[600px] overflow-y-auto bg-emerald-50/30 p-5">
+                <div id="product-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div id="grid-placeholder" class="col-span-full flex min-h-[420px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center">
+                        <h3 class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">Busca productos</h3>
+                        <p class="mt-2 max-w-xs text-sm text-slate-400">Escribe en el buscador para mostrar resultados.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </section>
 </div>
 
-<div id="new-customer-modal"
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
-    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-lg">
+<!-- MODALES: se mantienen igual en IDs -->
+
+<div id="new-customer-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
         <form id="new-customer-form">
             {% csrf_token %}
-            <h3 class="text-xl font-bold text-white mb-4">Registrar Nuevo Cliente</h3>
-            <div class="space-y-4">
+            <div class="border-b border-slate-100 px-6 py-5">
+                <h3 class="text-xl font-black text-slate-900">Registrar nuevo cliente</h3>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
                 <div>
-                    <label for="modal-tipo-documento" class="form-label text-xs">Tipo de Documento</label>
-                    <input type="text" id="modal-tipo-documento-display" class="form-input" readonly>
-                    <input type="hidden" id="modal-tipo-documento">
+                    <label class="pos-label">Tipo documento</label>
+                    <select id="modal-tipo-documento" class="pos-input" required>
+                        <option value="">Seleccionar</option>
+                        {% for value, label in tipos_documento %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
-                    <label for="modal-numero-documento" class="form-label text-xs">Número de Documento</label>
-                    <input type="text" id="modal-numero-documento" class="form-input">
+                    <label class="pos-label">Número documento</label>
+                    <input type="text" id="modal-numero-documento" class="pos-input">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="pos-label">Nombres / Razón social</label>
+                    <input type="text" id="modal-nombres" class="pos-input" required>
                 </div>
                 <div>
-                    <label for="modal-nombres" class="form-label text-xs">Nombres / Razón Social</label>
-                    <input type="text" id="modal-nombres" class="form-input" required>
+                    <label class="pos-label">Apellidos</label>
+                    <input type="text" id="modal-apellidos" class="pos-input">
                 </div>
                 <div>
-                    <label for="modal-apellidos" class="form-label text-xs">Apellidos (Opcional si es RUC)</label>
-                    <input type="text" id="modal-apellidos" class="form-input">
+                    <label class="pos-label">Teléfono</label>
+                    <input type="tel" id="modal-telefono" class="pos-input">
                 </div>
-                <div>
-                    <label for="modal-direccion" class="form-label text-xs">Dirección</label>
-                    <input type="text" id="modal-direccion" class="form-input">
-                </div>
-                <div>
-                    <label for="modal-telefono" class="form-label text-xs">Teléfono</label>
-                    <input type="tel" id="modal-telefono" class="form-input">
+                <div class="md:col-span-2">
+                    <label class="pos-label">Dirección</label>
+                    <input type="text" id="modal-direccion" class="pos-input">
                 </div>
             </div>
-            <div class="flex justify-end gap-4 mt-6">
-                <button type="button" id="modal-cancel-btn"
-                    class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cancelar</button>
-                <button type="submit"
-                    class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">Guardar
-                    Cliente</button>
+
+            <div class="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+                <button type="button" id="modal-cancel-btn" class="pos-btn-secondary">Cancelar</button>
+                <button type="submit" class="pos-btn-primary">Guardar cliente</button>
             </div>
         </form>
     </div>
 </div>
-<div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-[60]">
-    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm text-center">
-        <h3 id="alert-title" class="text-xl font-bold text-white mb-2">Título de la Alerta</h3>
-        <p id="alert-message" class="text-slate-300 mb-6">Este es el mensaje de la alerta.</p>
-        <div id="alert-buttons" class="flex justify-center gap-4">
-        </div>
+
+<div id="alert-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl">
+        <h3 id="alert-title" class="text-xl font-black text-slate-900">Aviso</h3>
+        <p id="alert-message" class="mt-3 text-sm leading-6 text-slate-500">Mensaje</p>
+        <div id="alert-buttons" class="mt-6 flex justify-center gap-3"></div>
     </div>
 </div>
-<div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
-    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-md">
+
+<div id="payment-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-2xl">
         <form id="payment-form">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white">Procesar Pago</h3>
-                <button type="button" id="payment-modal-close-btn"
-                    class="text-slate-400 hover:text-white">&times;</button>
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                <h3 class="text-xl font-black text-slate-900">Procesar pago</h3>
+                <button type="button" id="payment-modal-close-btn" class="text-2xl font-black text-slate-400">&times;</button>
             </div>
 
-            <div class="bg-slate-900/50 p-4 rounded-lg text-center mb-6">
-                <p class="text-slate-400 text-sm">TOTAL A PAGAR</p>
-                <p id="payment-total-display" class="text-4xl font-bold text-emerald-400">S/ 0.00</p>
-            </div>
-
-            <div>
-                <p class="form-label text-xs mb-2">Método de Pago:</p>
-                <div id="payment-method-selector" class="grid grid-cols-3 gap-2">
-                    <button type="button" data-method="EFECTIVO" class="payment-method-btn selected">Efectivo</button>
-                    <button type="button" data-method="TARJETA" class="payment-method-btn">Tarjeta</button>
-                    <button type="button" data-method="YAPE" class="payment-method-btn">Yape/Plin</button>
+            <div class="p-6">
+                <div class="rounded-[1.5rem] bg-slate-900 p-5 text-center text-white">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Total a pagar</p>
+                    <p id="payment-total-display" class="mt-2 text-4xl font-black">S/ 0.00</p>
                 </div>
-            </div>
 
-            <div id="payment-details-container" class="mt-4">
-                <div id="efectivo-details">
-                    <label for="monto-recibido" class="form-label text-xs">Monto Recibido (S/):</label>
-                    <input type="number" id="monto-recibido" class="form-input text-center !text-lg mt-1" step="0.10"
-                        min="0">
-                    <div class="mt-2 text-center">
-                        <span class="text-slate-400 text-sm">Vuelto:</span>
-                        <span id="vuelto-display" class="font-bold text-white text-lg ml-2">S/ 0.00</span>
+                <div class="mt-5">
+                    <p class="pos-label">Método de pago</p>
+                    <div id="payment-method-selector" class="grid grid-cols-3 gap-2">
+                        <button type="button" data-method="EFECTIVO" class="payment-method-btn selected">Efectivo</button>
+                        <button type="button" data-method="TARJETA" class="payment-method-btn">Tarjeta</button>
+                        <button type="button" data-method="YAPE" class="payment-method-btn">Yape/Plin</button>
                     </div>
                 </div>
-                <div id="yape-details" class="hidden text-center">
-                    <p class="text-slate-300 mb-2">Escanee el código QR para pagar</p>
-                    <div id="yape-qr-code"
-                        class="w-48 h-48 bg-white mx-auto rounded-lg p-2 flex items-center justify-center">
-                        <p class="text-sm text-slate-600">QR no disponible</p>
+
+                <div id="payment-details-container" class="mt-5">
+                    <div id="efectivo-details">
+                        <label class="pos-label">Monto recibido</label>
+                        <input type="number" id="monto-recibido" class="pos-input text-center !text-2xl font-black" step="0.10" min="0">
+                        <div class="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-center">
+                            <span class="text-xs font-black uppercase tracking-[0.16em] text-emerald-600">Vuelto</span>
+                            <span id="vuelto-display" class="ml-2 text-lg font-black text-slate-900">S/ 0.00</span>
+                        </div>
+                    </div>
+
+                    <div id="yape-details" class="hidden text-center">
+                        <p class="mb-3 text-sm font-bold text-slate-500">Escanea el código QR para pagar</p>
+                        <div id="yape-qr-code" class="mx-auto flex h-48 w-48 items-center justify-center rounded-3xl bg-slate-50">
+                            <p class="text-sm font-bold text-slate-400">QR no disponible</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="mt-6">
-                <button type="submit" id="confirm-payment-btn"
-                    class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-500 transition-colors">
-                    Confirmar Venta
+                <button type="submit" id="confirm-payment-btn" class="pos-btn-primary mt-6 w-full py-4">
+                    Confirmar venta
                 </button>
             </div>
         </form>
     </div>
 </div>
-<div id="apertura-caja-modal"
-    class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[70] hidden">
-    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm text-center">
+
+<div id="apertura-caja-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-[2rem] bg-white p-7 text-center shadow-2xl">
         <form id="apertura-caja-form">
-            <h3 class="text-xl font-bold text-white mb-2">Abrir Caja</h3>
-            <p class="text-slate-300 mb-6">Debes abrir tu caja para poder registrar ventas.</p>
-            <div>
-                <label for="monto-inicial" class="form-label text-xs">Monto Inicial (S/)</label>
-                <input type="number" id="monto-inicial" class="form-input text-center !text-2xl mt-1" step="0.10"
-                    min="0" required>
-            </div>
+            <h3 class="text-xl font-black text-slate-900">Abrir caja</h3>
+            <p class="mt-2 text-sm text-slate-500">Debes abrir caja para vender.</p>
+
             <div class="mt-6">
-                <button type="submit" id="confirm-apertura-btn"
-                    class="w-full py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-500 transition-colors">
-                    Confirmar Apertura
-                </button>
-                <div class="mt-4 text-center">
-                    <a href="{% url 'core:logout' %}" class="text-sm text-slate-400 hover:text-white transition-colors">
-                        Salir y Cerrar Sesión
-                    </a>
-                </div>
+                <label class="pos-label text-center">Monto inicial</label>
+                <input type="number" id="monto-inicial" class="pos-input text-center !text-3xl font-black" step="0.10" min="0" required>
             </div>
+
+            <button type="submit" id="confirm-apertura-btn" class="pos-btn-primary mt-6 w-full py-4">
+                Confirmar apertura
+            </button>
+
+            <a href="{% url 'core:logout' %}" class="mt-5 block text-sm font-bold text-slate-400 hover:text-rose-500">
+                Salir y cerrar sesión
+            </a>
         </form>
     </div>
 </div>
-<div id="cierre-caja-modal"
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
-    <div class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-sm">
+
+<div id="cierre-caja-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl">
         <form id="cierre-caja-form">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white">Cerrar Caja</h3>
-                <button type="button" id="cierre-modal-close-btn"
-                    class="text-slate-400 hover:text-white">&times;</button>
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                <h3 class="text-xl font-black text-slate-900">Cerrar caja</h3>
+                <button type="button" id="cierre-modal-close-btn" class="text-2xl font-black text-slate-400">&times;</button>
             </div>
-            <div class="space-y-4">
+
+            <div class="space-y-4 p-6">
                 <div>
-                    <label for="monto-final-real" class="form-label text-xs">Monto Final Contado (S/)</label>
-                    <input type="number" id="monto-final-real" class="form-input text-center !text-2xl mt-1" step="0.10"
-                        min="0" required>
+                    <label class="pos-label">Monto final contado</label>
+                    <input type="number" id="monto-final-real" class="pos-input text-center !text-3xl font-black" step="0.10" min="0" required>
                 </div>
+
                 <div>
-                    <label for="observaciones-cierre" class="form-label text-xs">Observaciones (Opcional)</label>
-                    <textarea id="observaciones-cierre" class="form-input mt-1" rows="3"></textarea>
+                    <label class="pos-label">Observaciones</label>
+                    <textarea id="observaciones-cierre" class="pos-input min-h-[100px] resize-none" rows="3"></textarea>
                 </div>
-            </div>
-            <div class="mt-6">
-                <button type="submit" id="confirm-cierre-btn"
-                    class="w-full py-3 bg-rose-600 text-white font-bold rounded-lg hover:bg-rose-500 transition-colors">
-                    Confirmar y Cerrar Caja
+
+                <button type="submit" id="confirm-cierre-btn" class="w-full rounded-2xl bg-rose-600 px-5 py-4 text-sm font-black text-white hover:bg-rose-500">
+                    Confirmar y cerrar caja
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: fadeInSoft .45s ease-out both; }
+
+    .pos-label {
+        margin-bottom: .5rem;
+        display: block;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        color: #94a3b8;
+    }
+
+    .pos-input {
+        width: 100%;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: .85rem 1rem;
+        font-size: .875rem;
+        font-weight: 700;
+        color: #334155;
+        outline: none;
+        transition: all .2s ease;
+    }
+
+    .pos-input:focus {
+        border-color: #34d399;
+        box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+    }
+
+    .comprobante-btn,
+    .payment-method-btn {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: .75rem 1rem;
+        font-size: .75rem;
+        font-weight: 900;
+        color: #64748b;
+        transition: all .2s ease;
+    }
+
+    .comprobante-btn.selected,
+    .payment-method-btn.selected {
+        background: #0f172a;
+        border-color: #0f172a;
+        color: white;
+    }
+
+    .pos-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        background: #0f172a;
+        padding: .85rem 1.2rem;
+        font-size: .875rem;
+        font-weight: 900;
+        color: white;
+        transition: all .2s ease;
+    }
+
+    .pos-btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+
+    .pos-btn-secondary {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        padding: .85rem 1.2rem;
+        font-size: .875rem;
+        font-weight: 900;
+        color: #64748b;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+</style>
 {% endblock %}
+
 {% block app_scripts %}
-    <script type="module" src="{% static 'js/ventas/pos.js' %}"></script>
+<script type="module" src="{% static 'js/ventas/pos.js' %}"></script>
 {% endblock %}

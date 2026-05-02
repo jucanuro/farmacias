@@ -1,9 +1,10 @@
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
-from django.views.decorators.http import require_POST
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST, require_GET
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Sum, Subquery, OuterRef, IntegerField, ProtectedError
+from django.db.models import Sum, Subquery, OuterRef, IntegerField, ProtectedError, Q
 from django.db.models.functions import Coalesce
 from django.db import IntegrityError
 from django.core.paginator import Paginator
@@ -394,3 +395,111 @@ def unidad_presentacion_delete_view(request, pk):
     except ProtectedError:
         messages.error(request, f"La unidad '{item.nombre}' no se puede eliminar porque está en uso.")
     return redirect('inventario:unidad_presentacion_list')
+
+@login_required
+@require_GET
+def productos_api(request):
+    search = (request.GET.get('search') or '').strip()
+
+    user = request.user
+    sucursal = getattr(user, 'sucursal', None)
+
+    productos = Producto.objects.select_related(
+        'categoria',
+        'laboratorio',
+        'forma_farmaceutica',
+        'unidad_venta'
+    ).all()
+
+    if search:
+        productos = productos.filter(
+            Q(nombre__icontains=search) |
+            Q(codigo_barras__icontains=search) |
+            Q(concentracion__icontains=search) |
+            Q(laboratorio__nombre__icontains=search) |
+            Q(categoria__nombre__icontains=search)
+        )
+
+    productos = productos.order_by('nombre')[:40]
+
+    results = []
+
+    for producto in productos:
+        stock_qs = StockProducto.objects.filter(
+            producto=producto,
+            cantidad__gt=0
+        )
+
+        if sucursal:
+            stock_qs = stock_qs.filter(sucursal=sucursal)
+
+        stock_total = stock_qs.aggregate(
+            total=Sum('cantidad')
+        )['total'] or Decimal('0.00')
+
+        precio_venta = producto.precio_venta_sugerido or Decimal('0.00')
+
+        results.append({
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'descripcion': producto.descripcion or '',
+            'codigo_barras': producto.codigo_barras or '',
+            'concentracion': producto.concentracion or '',
+            'precio_venta': str(precio_venta),
+            'stock_total': str(stock_total),
+            'imagen_producto': producto.imagen_producto.url if producto.imagen_producto else '',
+            'laboratorio_nombre': producto.laboratorio.nombre if producto.laboratorio else '',
+            'categoria_nombre': producto.categoria.nombre if producto.categoria else '',
+            'forma_farmaceutica': producto.forma_farmaceutica.nombre if producto.forma_farmaceutica else '',
+            'unidad_venta': producto.unidad_venta.nombre if producto.unidad_venta else 'UNIDAD',
+        })
+
+    return JsonResponse({
+        'results': results
+    })
+    
+@login_required
+@require_GET
+def buscar_stock_api(request):
+    sucursal_id = request.GET.get('sucursal_id')
+    search = request.GET.get('search', '').strip()
+
+    if not sucursal_id:
+        return JsonResponse({
+            'error': 'Debe enviar una sucursal.'
+        }, status=400)
+
+    stock = StockProducto.objects.select_related(
+        'producto',
+        'sucursal'
+    ).filter(
+        sucursal_id=sucursal_id,
+        cantidad__gt=0
+    )
+
+    if search:
+        stock = stock.filter(
+            producto__nombre__icontains=search
+        )
+
+    stock = stock.order_by('producto__nombre')[:20]
+
+    results = []
+
+    for item in stock:
+        results.append({
+            'id': item.id,
+            'producto': item.producto_id,
+            'producto_id': item.producto_id,
+            'producto_nombre': item.producto.nombre,
+            'sucursal': item.sucursal_id,
+            'lote': item.lote or '',
+            'cantidad': item.cantidad,
+            'fecha_vencimiento': item.fecha_vencimiento.strftime('%d/%m/%Y') if item.fecha_vencimiento else '',
+            'precio_compra': str(item.precio_compra) if item.precio_compra else '0.00',
+            'precio_venta': str(item.precio_venta) if item.precio_venta else '0.00',
+        })
+
+    return JsonResponse({
+        'results': results
+    })

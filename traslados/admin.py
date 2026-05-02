@@ -6,9 +6,9 @@ from .models import Transferencia, DetalleTransferencia
 class DetalleTransferenciaInline(admin.TabularInline):
     """Permite ver y editar los detalles de la transferencia en la misma página."""
     model = DetalleTransferencia
-    extra = 1 # Número de filas extra para añadir nuevos productos
-    raw_id_fields = ('stock_origen',) # Mejora la selección de lotes de stock
-    autocomplete_fields = ('producto',) # Para buscar productos fácilmente
+    extra = 1 
+    raw_id_fields = ('stock_origen',) 
+    autocomplete_fields = ('producto',) 
 
 @admin.register(Transferencia)
 class TransferenciaAdmin(admin.ModelAdmin):
@@ -19,10 +19,9 @@ class TransferenciaAdmin(admin.ModelAdmin):
     )
     list_filter = ('estado', 'sucursal_origen', 'sucursal_destino')
     search_fields = ('id', 'observaciones')
-    inlines = [DetalleTransferenciaInline] # Añade los detalles a la vista principal
+    inlines = [DetalleTransferenciaInline] 
     readonly_fields = ('fecha_creacion', 'fecha_envio', 'fecha_recepcion')
     
-    # Para poder buscar los productos en el inline
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('detalles__producto')
 

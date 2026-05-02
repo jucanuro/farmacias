@@ -40,8 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'rest_framework',
     'django_filters',
-    'rest_framework.authtoken', # Usado para TokenAuthentication
-    #'rest_framework_simplejwt', # Comentado, por lo tanto no se usa JWT
+    'rest_framework.authtoken',
 
     'core',
     'inventario',
@@ -59,7 +58,7 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    'corsheaders.middleware.CorsMiddleware', # Debe estar lo más arriba posible
+    'corsheaders.middleware.CorsMiddleware', 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -73,7 +72,7 @@ ROOT_URLCONF = "farmacias.urls"
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # <-- ¡Añade esta línea!
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,16 +88,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "farmacias.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
 
 DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -116,8 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
+
 
 LANGUAGE_CODE = "es-pe"
 
@@ -128,59 +123,56 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/topics/static-files/
+
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static", # Directorio para archivos estáticos de todo el proyecto
+    BASE_DIR / "static", 
 ]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media' # Directorio donde se guardarán los archivos subidos por el usuario (ej. imágenes de productos)
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Especifica tu modelo de usuario personalizado
 AUTH_USER_MODEL = 'core.Usuario'
 
-# Configuración de Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication', # Habilita la autenticación por Token
-        'rest_framework.authentication.SessionAuthentication', # Permite la autenticación basada en sesión (útil para el navegador y el admin)
+        'rest_framework.authentication.TokenAuthentication', 
+        'rest_framework.authentication.SessionAuthentication', 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', # Por defecto, todas las vistas requerirán autenticación
+        'rest_framework.permissions.IsAuthenticated', 
     ],
     'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend', # Permite el uso de filtros por defecto
+        'django_filters.rest_framework.DjangoFilterBackend',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10 # Define el tamaño de la página para la paginación por defecto
+    'PAGE_SIZE': 10 
 }
 
-# --- Configuración de CORS HEADERS ---
+LOGIN_URL = '/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", # La URL de tu aplicación React
+    "http://localhost:3000", 
     "http://127.0.0.1:3000",
-    # Añade aquí cualquier otra URL desde la que tu frontend pueda acceder
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False # Mejor especificar los orígenes permitidos
+CORS_ALLOW_ALL_ORIGINS = False 
 
-# *** ¡ESTAS LÍNEAS ERAN LAS QUE FALTABAN O ESTABAN INCOMPLETAS! ***
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
-    'authorization', # <-- ¡CRUCIAL! Permite que el encabezado Authorization sea enviado
+    'authorization',
     'content-type',
     'dnt',
     'origin',
     'user-agent',
-    'x-csrftoken', # Necesario si usas CSRF con sesión
+    'x-csrftoken', 
     'x-requested-with',
 ]
-CORS_ALLOW_CREDENTIALS = True # Permite que el navegador envíe cookies y encabezados de autenticación con peticiones cross-origin
-# --- FIN Configuración de CORS HEADERS ---
+CORS_ALLOW_CREDENTIALS = True 
 

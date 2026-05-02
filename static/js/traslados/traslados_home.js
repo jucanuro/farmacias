@@ -1,116 +1,153 @@
 // static/js/traslados/traslados_home.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Función para leer el token de seguridad desde las cookies
+    const tableBody = document.getElementById('transfers-list-body');
+    const searchInput = document.getElementById('transfer-search-input');
+    const countBadge = document.getElementById('transfers-count-badge');
+
     function getCookie(name) {
         let cookieValue = null;
+
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+
+                if (cookie.startsWith(name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
             }
         }
+
         return cookieValue;
     }
+
     const csrftoken = getCookie('csrftoken');
 
-    const tableBody = document.getElementById('transfers-list-body');
-
-    const estadoStyles = {
-        'PENDIENTE': 'bg-amber-500/20 text-amber-400',
-        'EN_TRANSITO': 'bg-sky-500/20 text-sky-400',
-        'RECIBIDO': 'bg-emerald-500/20 text-emerald-400',
-        'CANCELADO': 'bg-rose-500/20 text-rose-400'
-    };
-
-    const fetchTransfers = async () => {
-        try {
-            const response = await fetch('/traslados/api/transferencias/');
-            if (!response.ok) throw new Error('No se pudieron cargar los traslados.');
-            
-            const data = await response.json();
-            const transfers = data.results || data;
-            
-            tableBody.innerHTML = '';
-            if (transfers.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-slate-400">No hay traslados registrados.</td></tr>`;
-                return;
-            }
-
-            transfers.forEach(transfer => {
-                const fecha = new Date(transfer.fecha_creacion).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const estilo = estadoStyles[transfer.estado] || 'bg-slate-500/20 text-slate-400';
-                
-                let actionButtons = '';
-                if (transfer.estado === 'PENDIENTE') {
-                    actionButtons = `<button data-action="enviar" data-id="${transfer.id}" class="action-btn text-sky-400 hover:text-sky-300 font-semibold" title="Marcar como Enviado">Enviar</button>`;
-                } else if (transfer.estado === 'EN_TRANSITO') {
-                    actionButtons = `<button data-action="recibir" data-id="${transfer.id}" class="action-btn text-emerald-400 hover:text-emerald-300 font-semibold" title="Marcar como Recibido">Recibir</button>`;
-                } else {
-                    actionButtons = `<button title="Ver Detalles" class="text-slate-400 hover:text-cyan-400">Ver</button>`;
-                }
-
-                const row = `
-                    <tr class="border-b border-slate-800 hover:bg-slate-800/50 text-sm">
-                        <td class="p-3 font-mono text-slate-400">#${transfer.id}</td>
-                        <td class="p-3 text-white">${transfer.sucursal_origen_nombre}</td>
-                        <td class="p-3 text-white">${transfer.sucursal_destino_nombre}</td>
-                        <td class="p-3"><span class="px-2 py-1 text-xs font-bold rounded-full ${estilo}">${transfer.estado}</span></td>
-                        <td class="p-3 text-slate-400">${fecha}</td>
-                        <td class="p-3 text-center">${actionButtons}</td>
-                    </tr>`;
-                tableBody.innerHTML += row;
-            });
-
-        } catch (error) {
-            console.error(error);
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-rose-400">Error al cargar los traslados.</td></tr>`;
+    const updateCount = () => {
+        const rows = document.querySelectorAll('.transfer-row');
+        if (countBadge) {
+            countBadge.textContent = `${rows.length} traslados`;
         }
     };
 
-    const handleTransferAction = async (action, transferId) => {
-        const url = `/traslados/api/transferencias/${transferId}/${action}/`;
-        const confirmationMessage = action === 'enviar' 
-            ? '¿Estás seguro de que quieres enviar este traslado? El stock se descontará del origen.'
-            : '¿Estás seguro de que quieres recibir este traslado? El stock se añadirá al destino.';
+    const postAction = async (url) => {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({}),
+        });
 
-        if (!confirm(confirmationMessage)) {
-            return;
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ocurrió un error.');
         }
 
+        return data;
+    };
+
+    const viewTransferDetail = async (transferId) => {
         try {
-            const response = await fetch(url, {
-                method: 'POST',
+            const response = await fetch(`/traslados/api/transferencias/${transferId}/`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken 
+                    Accept: 'application/json',
                 },
             });
-            
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Ocurrió un error.');
 
-            alert(`Éxito: ${result.status}`);
-            fetchTransfers();
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'No se pudo cargar el detalle.');
+            }
+
+            const detalles = data.detalles || [];
+
+            let productosTexto = 'Sin productos registrados.';
+
+            if (detalles.length > 0) {
+                productosTexto = detalles.map((item) => {
+                    return `• ${item.producto_nombre} | Lote: ${item.lote} | Cantidad: ${item.cantidad}`;
+                }).join('\n');
+            }
+
+            alert(
+                `Traslado #${data.id}\n\n` +
+                `Origen: ${data.sucursal_origen_nombre}\n` +
+                `Destino: ${data.sucursal_destino_nombre}\n` +
+                `Estado: ${data.estado}\n\n` +
+                `Productos:\n${productosTexto}`
+            );
 
         } catch (error) {
             alert(`Error: ${error.message}`);
         }
     };
 
-    tableBody.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target.classList.contains('action-btn')) {
-            const action = target.dataset.action;
-            const transferId = target.dataset.id;
-            handleTransferAction(action, transferId);
+    const handleTransferAction = async (action, transferId) => {
+        let url = '';
+        let confirmationMessage = '';
+
+        if (action === 'ver') {
+            viewTransferDetail(transferId);
+            return;
         }
+
+        if (action === 'enviar') {
+            url = `/traslados/api/transferencias/${transferId}/enviar/`;
+            confirmationMessage = '¿Seguro que quieres enviar este traslado? El stock se descontará del origen.';
+        }
+
+        if (action === 'recibir') {
+            url = `/traslados/api/transferencias/${transferId}/recibir/`;
+            confirmationMessage = '¿Seguro que quieres recibir este traslado? El stock se añadirá al destino.';
+        }
+
+        if (action === 'eliminar') {
+            url = `/traslados/api/transferencias/${transferId}/eliminar/`;
+            confirmationMessage = '¿Seguro que quieres eliminar este traslado? Esta acción no se puede deshacer.';
+        }
+
+        if (!url) return;
+        if (!confirm(confirmationMessage)) return;
+
+        try {
+            const result = await postAction(url);
+            alert(result.message || result.status || 'Operación realizada correctamente.');
+            window.location.reload();
+
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    };
+
+    const applySearch = () => {
+        const term = searchInput.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.transfer-row');
+
+        rows.forEach((row) => {
+            const text = row.dataset.search.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    };
+
+    tableBody.addEventListener('click', (event) => {
+        const button = event.target.closest('.action-btn');
+        if (!button) return;
+
+        handleTransferAction(button.dataset.action, button.dataset.id);
     });
 
-    fetchTransfers();
+    if (searchInput) {
+        searchInput.addEventListener('keyup', applySearch);
+    }
+
+    updateCount();
 });

@@ -3,84 +3,187 @@
 {% block title %}Listado de Ventas{% endblock %}
 
 {% block app_content %}
-<div class="glass-card rounded-2xl p-6 lg:p-8">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Historial de Ventas</h2>
-                <a href="{% url 'ventas:pos' %}"            
-            class="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors">
-                        + Nueva Venta (POS)
-                    </a>
-            </div>
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <input type="text" id="search-input" class="form-input md:col-span-2"            
-            placeholder="Buscar por cliente, vendedor o N° de comprobante...">
-                <input type="date" id="start-date-input" class="form-input" placeholder="Fecha Desde">
-                <input type="date" id="end-date-input" class="form-input" placeholder="Fecha Hasta">
-            </div>
+<div class="space-y-5 animate-in">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
 
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-slate-400">
-            <thead class="text-xs text-slate-300 uppercase bg-slate-900/50">
-                <tr>
-                    <th scope="col" class="px-6 py-3">ID</th>
-                    <th scope="col" class="px-6 py-3">Fecha</th>
-                    <th scope="col" class="px-6 py-3">Cliente</th>
-                    <th scope="col" class="px-6 py-3">Comprobante</th>
-                    <th scope="col" class="px-6 py-3">Total</th>
-                    <th scope="col" class="px-6 py-3">Estado</th>
-                    <th scope="col" class="px-6 py-3 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="sales-table-body">
-                <tr>
-                    <td colspan="7" class="text-center py-16 text-slate-500">Cargando ventas...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="relative px-5 py-5 md:px-7 md:py-6">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 7h14M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+                        </svg>
+                    </div>
 
-    <div id="pagination-controls" class="flex justify-between items-center mt-6">
-    </div>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="truncate text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                                Historial de Ventas
+                            </h1>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                POS activo
+                            </span>
+                        </div>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Consulta, filtra y revisa el detalle de las ventas registradas en el sistema.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span id="sales-count-badge" class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                                Cargando ventas
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                                Control comercial
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'ventas:pos' %}"
+                   class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 active:scale-[0.98]">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.8">
+                        <path d="M12 4v16m8-8H4" />
+                    </svg>
+                    Nueva venta POS
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="border-b border-slate-100 px-5 py-4 md:px-6">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                    <h2 class="text-base font-black tracking-tight text-slate-900">Listado de ventas</h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Filtra por cliente, vendedor, comprobante o rango de fechas.
+                    </p>
+                </div>
+
+                <div class="grid w-full grid-cols-1 gap-3 md:grid-cols-4 xl:max-w-4xl">
+                    <div class="relative md:col-span-2 group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-emerald-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Buscar por cliente, vendedor o comprobante..."
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <input
+                        type="date"
+                        id="start-date-input"
+                        class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    >
+
+                    <input
+                        type="date"
+                        id="end-date-input"
+                        class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition-all focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[1120px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Venta</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Fecha</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Cliente</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Comprobante</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Total</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Estado</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="sales-table-body" class="divide-y divide-slate-100">
+                    <tr>
+                        <td colspan="7" class="px-6 py-20 text-center">
+                            <div class="mx-auto flex max-w-md flex-col items-center">
+                                <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-emerald-500"></div>
+                                <p class="mt-4 text-sm font-bold text-slate-400">Cargando ventas...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pagination-controls" class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6"></div>
+    </section>
 </div>
 
-<div id="sale-detail-modal"
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
-    <div id="modal-content"
-        class="glass-card rounded-2xl p-6 lg:p-8 w-full max-w-2xl transform scale-95 transition-transform duration-300">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-white">Detalle de Venta</h3>
-            <button id="modal-close-btn" class="text-slate-400 hover:text-white" title="Cerrar">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+<div id="sale-detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div id="modal-content" class="w-full max-w-4xl scale-95 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl transition-transform duration-300">
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+            <div>
+                <h3 class="text-xl font-black tracking-tight text-slate-900">Detalle de venta</h3>
+                <p class="mt-1 text-sm text-slate-500">Resumen del comprobante, productos y totales.</p>
+            </div>
+
+            <button id="modal-close-btn" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-all hover:bg-slate-50 hover:text-slate-700" title="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
-        <div id="modal-sale-details" class="space-y-6">
+        <div id="modal-sale-details" class="max-h-[70vh] overflow-y-auto p-6">
             <div class="text-center text-slate-400 py-8">Cargando detalle...</div>
         </div>
 
-        <div class="mt-6 flex justify-end gap-4">
-            <button id="modal-print-btn"
-                class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-bold transition-colors">Imprimir</button>
+        <div class="flex justify-end border-t border-slate-100 px-6 py-5">
+            <button id="modal-print-btn" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all hover:-translate-y-0.5 hover:bg-sky-600">
+                Imprimir
+            </button>
         </div>
     </div>
 </div>
 
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    @media (max-width: 768px) {
+        .group-hover\:opacity-100 { opacity: 1 !important; }
+    }
+</style>
 {% endblock %}
 
 {% block app_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // === ELEMENTOS DEL DOM ===
         const tableBody = document.getElementById('sales-table-body');
         const paginationControls = document.getElementById('pagination-controls');
         const searchInput = document.getElementById('search-input');
         const startDateInput = document.getElementById('start-date-input');
         const endDateInput = document.getElementById('end-date-input');
+        const salesCountBadge = document.getElementById('sales-count-badge');
 
-        // Elementos del Modal
         const saleDetailModal = document.getElementById('sale-detail-modal');
         const modalContent = document.getElementById('modal-content');
         const closeModalBtn = document.getElementById('modal-close-btn');
@@ -90,209 +193,351 @@
         let searchTimeout;
         let currentSaleId = null;
 
-        // === FUNCIONES ===
+        const formatCurrency = value => `S/ ${parseFloat(value || 0).toFixed(2)}`;
 
-        /**
-         * @description Abre el modal y busca los detalles de una venta específica por su ID.
-         * @param {string|number} saleId - El ID de la venta a consultar.
-         */
+        const formatDate = value => {
+            if (!value) return '-';
+            return new Date(value).toLocaleString();
+        };
+
         const openDetailModal = async (saleId) => {
             currentSaleId = saleId;
-            // 1. Mostrar el modal con un estado de carga
             saleDetailModal.classList.remove('hidden');
-            setTimeout(() => { // Pequeño delay para la animación
-                saleDetailModal.classList.add('opacity-100');
+            saleDetailModal.classList.add('flex');
+
+            setTimeout(() => {
                 modalContent.classList.add('scale-100');
             }, 10);
 
-            modalSaleDetailsContainer.innerHTML = '<div class="text-center text-slate-400 py-8">Cargando detalle...</div>';
+            modalSaleDetailsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12">
+                    <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-emerald-500"></div>
+                    <p class="mt-4 text-sm font-bold text-slate-400">Cargando detalle...</p>
+                </div>
+            `;
 
             try {
-                // 2. Hacer fetch a la API para obtener el detalle de la venta
                 const response = await fetch(`/ventas/api/ventas/${saleId}/`);
                 if (!response.ok) throw new Error('No se pudo cargar el detalle de la venta.');
 
                 const venta = await response.json();
 
-                // 3. Construir el HTML con los datos recibidos
                 const detailsHTML = `
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                    <div><strong class="text-slate-400">ID Venta:</strong> <span class="text-white font-mono">#${venta.id}</span></div>
-                    <div><strong class="text-slate-400">Fecha:</strong> <span class="text-white">${new Date(venta.fecha_venta).toLocaleString()}</span></div>
-                    <div><strong class="text-slate-400">Cliente:</strong> <span class="text-white">${venta.cliente_nombre_completo || 'Público General'}</span></div>
-                    <div><strong class="text-slate-400">Comprobante:</strong> <span class="text-white">${venta.tipo_comprobante} ${venta.serie_comprobante || ''}-${venta.numero_comprobante || ''}</span></div>
-                    <div><strong class="text-slate-400">Vendedor:</strong> <span class="text-white">${venta.vendedor_username || 'No especificado'}</span></div>
-                    <div><strong class="text-slate-400">Método de Pago:</strong> <span class="text-white">${venta.metodo_pago}</span></div>
-                </div>
-                
-                <div class="mt-6">
-                    <p class="text-xs text-slate-300 uppercase font-bold mb-2">Productos</p>
-                    <div class="overflow-x-auto border border-slate-700 rounded-lg">
-                        <table class="w-full text-sm">
-                            <thead class="bg-slate-900/50">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">Producto</th>
-                                    <th class="px-4 py-2 text-center">Cant.</th>
-                                    <th class="px-4 py-2 text-right">P. Unitario</th>
-                                    <th class="px-4 py-2 text-right">Descuento</th>
-                                    <th class="px-4 py-2 text-right">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-700">
-                                ${venta.detalles.map(item => `
-                                    <tr>
-                                        <td class="px-4 py-2 text-white">${item.producto_nombre}</td>
-                                        <td class="px-4 py-2 text-center">${item.cantidad}</td>
-                                        <td class="px-4 py-2 text-right font-mono">S/ ${parseFloat(item.precio_unitario).toFixed(2)}</td>
-                                        <td class="px-4 py-2 text-right font-mono text-rose-400">S/ ${parseFloat(item.monto_descuento_linea).toFixed(2)}</td>
-                                        <td class="px-4 py-2 text-right font-mono text-white font-semibold">S/ ${parseFloat(item.subtotal).toFixed(2)}</td>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Venta</p>
+                            <p class="mt-1 text-sm font-black text-slate-900">#${venta.id}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Fecha</p>
+                            <p class="mt-1 text-sm font-bold text-slate-700">${formatDate(venta.fecha_venta)}</p>
+                        </div>
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600">Total</p>
+                            <p class="mt-1 text-lg font-black text-emerald-700">${formatCurrency(venta.total_venta)}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Cliente</p>
+                            <p class="mt-1 text-sm font-bold text-slate-800">${venta.cliente_nombre_completo || 'Público General'}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Comprobante</p>
+                            <p class="mt-1 text-sm font-bold text-slate-800">${venta.tipo_comprobante} ${venta.serie_comprobante || ''}-${venta.numero_comprobante || ''}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Vendedor</p>
+                            <p class="mt-1 text-sm font-bold text-slate-800">${venta.vendedor_username || 'No especificado'}</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Método de pago</p>
+                            <p class="mt-1 text-sm font-bold text-slate-800">${venta.metodo_pago || '-'}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="mb-3 flex items-center justify-between">
+                            <h4 class="text-sm font-black uppercase tracking-[0.16em] text-slate-400">Productos</h4>
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-500">${venta.detalles.length} ítems</span>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                            <table class="min-w-[720px] w-full text-sm">
+                                <thead class="bg-slate-50">
+                                    <tr class="border-b border-slate-100">
+                                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Producto</th>
+                                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Cant.</th>
+                                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">P. Unitario</th>
+                                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Descuento</th>
+                                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Subtotal</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${venta.detalles.map(item => `
+                                        <tr>
+                                            <td class="px-4 py-3 font-bold text-slate-800">${item.producto_nombre}</td>
+                                            <td class="px-4 py-3 text-center font-bold text-slate-500">${item.cantidad}</td>
+                                            <td class="px-4 py-3 text-right font-mono text-slate-600">${formatCurrency(item.precio_unitario)}</td>
+                                            <td class="px-4 py-3 text-right font-mono text-rose-500">${formatCurrency(item.monto_descuento_linea)}</td>
+                                            <td class="px-4 py-3 text-right font-mono font-black text-slate-900">${formatCurrency(item.subtotal)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
 
-                <div class="mt-4 flex justify-end">
-                    <div class="w-full max-w-xs space-y-2 text-sm">
-                         <div class="flex justify-between"><span class="text-slate-300">Subtotal:</span> <span class="text-white font-mono">S/ ${parseFloat(venta.subtotal_venta).toFixed(2)}</span></div>
-                         <div class="flex justify-between"><span class="text-slate-300">IGV (18%):</span> <span class="text-white font-mono">S/ ${parseFloat(venta.monto_igv).toFixed(2)}</span></div>
-                         <div class="flex justify-between pt-2 border-t border-slate-700 text-base"><strong class="text-white">TOTAL:</strong> <strong class="text-emerald-400 font-mono">S/ ${parseFloat(venta.total_venta).toFixed(2)}</strong></div>
+                    <div class="mt-5 flex justify-end">
+                        <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="font-bold text-slate-500">Subtotal</span>
+                                <span class="font-mono font-bold text-slate-700">${formatCurrency(venta.subtotal_venta)}</span>
+                            </div>
+                            <div class="mt-2 flex justify-between text-sm">
+                                <span class="font-bold text-slate-500">IGV 18%</span>
+                                <span class="font-mono font-bold text-slate-700">${formatCurrency(venta.monto_igv)}</span>
+                            </div>
+                            <div class="mt-3 flex justify-between border-t border-slate-200 pt-3">
+                                <span class="text-base font-black text-slate-900">TOTAL</span>
+                                <span class="font-mono text-xl font-black text-emerald-600">${formatCurrency(venta.total_venta)}</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+
                 modalSaleDetailsContainer.innerHTML = detailsHTML;
-
             } catch (error) {
-                modalSaleDetailsContainer.innerHTML = `<div class="text-center text-red-400 py-8">${error.message}</div>`;
+                modalSaleDetailsContainer.innerHTML = `<div class="text-center text-rose-500 py-8">${error.message}</div>`;
             }
         };
 
-        /**
-         * @description Cierra el modal de detalle de venta y resetea su estado.
-         */
         const closeDetailModal = () => {
             modalContent.classList.remove('scale-100');
-            saleDetailModal.classList.remove('opacity-100');
+
             setTimeout(() => {
                 saleDetailModal.classList.add('hidden');
+                saleDetailModal.classList.remove('flex');
                 currentSaleId = null;
-            }, 300); // Coincide con la duración de la transición
+            }, 250);
+        };
+
+        const renderEmptyState = (message = 'No se encontraron ventas.') => {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-20 text-center">
+                        <div class="mx-auto flex max-w-md flex-col items-center">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2 7h14" />
+                                </svg>
+                            </div>
+                            <h3 class="mt-5 text-sm font-black uppercase tracking-[0.18em] text-slate-400">${message}</h3>
+                            <p class="mt-2 text-sm text-slate-400">Cuando registres ventas, aparecerán aquí con su detalle y acciones rápidas.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
         };
 
         const fetchSales = async (url = '/ventas/api/ventas/?ordering=-fecha_venta') => {
-            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-16 text-slate-500">Cargando ventas...</td></tr>';
-            // ... (código de fetchSales sin cambios hasta el row.innerHTML)
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-20 text-center">
+                        <div class="mx-auto flex max-w-md flex-col items-center">
+                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-100 border-t-emerald-500"></div>
+                            <p class="mt-4 text-sm font-bold text-slate-400">Cargando ventas...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Error al cargar los datos.');
+
                 const data = await response.json();
 
                 tableBody.innerHTML = '';
-                if (data.results.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-16 text-slate-500">No se encontraron ventas.</td></tr>';
+
+                if (salesCountBadge) {
+                    salesCountBadge.textContent = `${data.count || 0} ventas`;
+                }
+
+                if (!data.results || data.results.length === 0) {
+                    renderEmptyState();
                 } else {
                     data.results.forEach(venta => {
                         const row = document.createElement('tr');
-                        row.className = 'bg-slate-800/50 border-b border-slate-700 hover:bg-slate-800';
-                        // --- MODIFICACIÓN AQUÍ ---
+                        row.className = 'venta-row group transition-all duration-200 hover:bg-slate-50/80';
+
+                        const estadoClass = venta.estado === 'COMPLETADA'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-amber-200 bg-amber-50 text-amber-700';
+
                         row.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-xs text-slate-300">#${venta.id}</td>
-                        <td class="px-6 py-4">${new Date(venta.fecha_venta).toLocaleString()}</td>
-                        <td class="px-6 py-4 font-medium text-white">${venta.cliente_nombre_completo || 'Público General'}</td>
-                        <td class="px-6 py-4">${venta.tipo_comprobante}</td>
-                        <td class="px-6 py-4 font-bold text-emerald-400">S/ ${parseFloat(venta.total_venta).toFixed(2)}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 text-xs rounded-full ${venta.estado === 'COMPLETADA' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}">${venta.estado}</span></td>
-                        <td class="px-6 py-4 text-center">
-                            <button data-sale-id="${venta.id}" class="view-sale-btn text-sky-400 hover:text-sky-300 transition-colors" title="Ver Detalle">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </td>
-                    `;
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase text-slate-500 shadow-sm transition-all group-hover:border-emerald-200 group-hover:text-emerald-600 group-hover:shadow-md">
+                                        #${venta.id}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="block truncate text-sm font-black tracking-tight text-slate-900">
+                                            Venta #${venta.id}
+                                        </p>
+                                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-mono font-bold text-slate-500">
+                                                ${venta.vendedor_username || 'Sin vendedor'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                                    ${formatDate(venta.fecha_venta)}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-600">
+                                    ${venta.cliente_nombre_completo || 'Público General'}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold text-sky-700">
+                                    ${venta.tipo_comprobante || '-'}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-4 text-center">
+                                <span class="text-sm font-black text-emerald-600">
+                                    ${formatCurrency(venta.total_venta)}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex rounded-xl border px-3 py-1.5 text-[11px] font-black ${estadoClass}">
+                                    ${venta.estado || '-'}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                                    <button data-sale-id="${venta.id}"
+                                        class="view-sale-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
+                                        title="Ver detalle">
+                                        <svg class="h-4 w-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4">
+                                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+
                         tableBody.appendChild(row);
                     });
                 }
+
                 renderPagination(data);
             } catch (error) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-16 text-red-400">${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-20 text-center text-rose-500 font-bold">${error.message}</td></tr>`;
             }
         };
 
-        // ... (resto de funciones renderPagination y applyFilters sin cambios) ...
         const renderPagination = (data) => {
             paginationControls.innerHTML = '';
-            let buttonsHTML = `<div class="text-sm text-slate-500">Mostrando ${data.results.length} de ${data.count} resultados</div><div>`;
+
+            const resultsCount = data.results ? data.results.length : 0;
+
+            let buttonsHTML = `
+                <div class="text-sm font-bold text-slate-500">
+                    Mostrando ${resultsCount} de ${data.count || 0} resultados
+                </div>
+                <div class="flex items-center gap-2">
+            `;
+
             if (data.previous) {
-                buttonsHTML += `<button data-url="${data.previous}" class="pagination-btn px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-600 mr-2">Anterior</button>`;
+                buttonsHTML += `
+                    <button data-url="${data.previous}" class="pagination-btn rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50">
+                        Anterior
+                    </button>
+                `;
             } else {
-                buttonsHTML += `<span class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-800 rounded-lg cursor-not-allowed mr-2">Anterior</span>`;
+                buttonsHTML += `
+                    <span class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-300 cursor-not-allowed">
+                        Anterior
+                    </span>
+                `;
             }
+
             if (data.next) {
-                buttonsHTML += `<button data-url="${data.next}" class="pagination-btn px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-600">Siguiente</button>`;
+                buttonsHTML += `
+                    <button data-url="${data.next}" class="pagination-btn rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50">
+                        Siguiente
+                    </button>
+                `;
             } else {
-                buttonsHTML += `<span class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-800 rounded-lg cursor-not-allowed">Siguiente</span>`;
+                buttonsHTML += `
+                    <span class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-300 cursor-not-allowed">
+                        Siguiente
+                    </span>
+                `;
             }
-            buttonsHTML += '</div>'
+
+            buttonsHTML += '</div>';
             paginationControls.innerHTML = buttonsHTML;
         };
+
         const applyFilters = () => {
             const searchTerm = searchInput.value.trim();
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
+
             let url = '/ventas/api/ventas/?ordering=-fecha_venta';
-            if (searchTerm) url += `&search=${searchTerm}`;
+
+            if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
             if (startDate) url += `&fecha_venta__date__gte=${startDate}`;
             if (endDate) url += `&fecha_venta__date__lte=${endDate}`;
+
             fetchSales(url);
         };
 
-
-        // === EVENT LISTENERS ===
-
-        // Listener para los botones de paginación
         paginationControls.addEventListener('click', e => {
-            if (e.target.classList.contains('pagination-btn')) {
-                fetchSales(e.target.dataset.url);
-            }
+            const button = e.target.closest('.pagination-btn');
+            if (button) fetchSales(button.dataset.url);
         });
 
-        // Listeners para los filtros
-        searchInput.addEventListener('keyup', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(applyFilters, 500); });
+        searchInput.addEventListener('keyup', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+
         startDateInput.addEventListener('change', applyFilters);
         endDateInput.addEventListener('change', applyFilters);
 
-        // Listener para los botones de ver detalle (usando delegación de eventos)
         tableBody.addEventListener('click', e => {
             const viewButton = e.target.closest('.view-sale-btn');
-            if (viewButton) {
-                const saleId = viewButton.dataset.saleId;
-                openDetailModal(saleId);
-            }
+            if (viewButton) openDetailModal(viewButton.dataset.saleId);
         });
 
-        // Listeners para cerrar el modal
         closeModalBtn.addEventListener('click', closeDetailModal);
+
         saleDetailModal.addEventListener('click', e => {
-            // Cierra el modal si se hace clic en el fondo oscuro
-            if (e.target === saleDetailModal) {
-                closeDetailModal();
-            }
+            if (e.target === saleDetailModal) closeDetailModal();
         });
 
-        // Listener para el botón de imprimir
         modalPrintBtn.addEventListener('click', () => {
             if (currentSaleId) {
-                // Asume que tienes una URL para generar el comprobante en PDF
                 window.open(`/ventas/comprobante/${currentSaleId}/pdf/`, '_blank');
             }
         });
 
-        // === CARGA INICIAL ===
         fetchSales();
-
     });
 </script>
 {% endblock %}

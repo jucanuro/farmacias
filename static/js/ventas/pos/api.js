@@ -23,7 +23,7 @@ export async function guardarNuevoClienteAPI(data, csrftoken) {
 }
 
 export async function finalizarVentaAPI(ventaData, csrftoken) {
-    const response = await fetch('/ventas/api/ventas/', {
+    const response = await fetch('/ventas/api/ventas/registrar/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
         body: JSON.stringify(ventaData)

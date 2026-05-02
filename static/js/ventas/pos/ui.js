@@ -17,18 +17,116 @@ export function renderProductGrid(productGrid, productos) {
 
 export function renderCart(cartItemsContainer, cart, totals) {
     cartItemsContainer.innerHTML = '';
+
     if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p class="text-center text-slate-500 pt-16">Selecciona productos...</p>';
+        cartItemsContainer.innerHTML = `
+            <div class="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-500">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
+                        <path d="M7 13L5.4 5M7 13l-2 6h14M10 21a1 1 0 100-2 1 1 0 000 2zm7 0a1 1 0 100-2 1 1 0 000 2z" />
+                    </svg>
+                </div>
+                <h3 class="mt-5 text-sm font-black uppercase tracking-[0.18em] text-slate-400">Ticket vacío</h3>
+                <p class="mt-2 text-sm text-slate-400">Selecciona productos del catálogo para iniciar la venta.</p>
+            </div>
+        `;
         updateTotalsUI(totals);
         return;
     }
-    const headerHTML = `<div class="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase pb-2 border-b border-slate-700"><div class="w-6"></div><div class="flex-grow">Producto</div><div class="w-20 text-center">Cant.</div><div class="w-24 text-right">Subtotal</div><div class="w-6"></div></div>`;
-    cartItemsContainer.innerHTML = headerHTML;
-    cart.forEach(item => {
-        const subtotal = (item.quantity * item.precio_unitario) - (item.monto_descuento_linea || 0);
-        const cartItemHTML = `<div class="border-b border-slate-800 py-3"><div class="flex items-center gap-3 text-sm"><div class="w-6 flex justify-center flex-shrink-0"><input type="checkbox" class="form-checkbox h-3.5 w-3.5 discount-checkbox" data-item-id="${item.id}" ${item.hasDiscount ? 'checked' : ''} title="Aplicar Descuento"></div><div class="flex-grow min-w-0"><p class="text-white truncate font-semibold" title="${item.nombre}">${item.nombre}</p><p class="text-xs text-slate-400">P. Unit: S/ ${parseFloat(item.precio_unitario).toFixed(2)}</p></div><div class="w-20 flex-shrink-0"><input type="number" value="${item.quantity}" min="1" class="w-full text-center form-input !py-1 quantity-input" data-item-id="${item.id}"></div><div class="w-24 text-right text-white font-mono flex-shrink-0">S/ ${subtotal.toFixed(2)}</div><div class="w-6 flex justify-center flex-shrink-0"><button class="text-rose-400 hover:text-rose-300 remove-item-btn" data-item-id="${item.id}" title="Quitar producto"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button></div></div><div class="pl-8 pt-2 flex items-center gap-2 ${item.hasDiscount ? '' : 'hidden'}"><label class="text-xs text-slate-400">Dcto:</label><div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">S/</span><input type="number" value="${item.monto_descuento_linea || '0.00'}" min="0" step="0.10" class="form-input !py-0.5 !pl-5 !text-xs w-20 discount-input" data-item-id="${item.id}"></div></div></div>`;
-        cartItemsContainer.innerHTML += cartItemHTML;
-    });
+
+    cartItemsContainer.innerHTML = `
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="grid grid-cols-[1fr_120px_120px_48px] items-center border-b border-slate-100 bg-slate-50 px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                <div>Producto</div>
+                <div class="text-center">Cant.</div>
+                <div class="text-right">Total</div>
+                <div></div>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                ${cart.map(item => {
+                    const subtotal = (item.quantity * item.precio_unitario) - (item.monto_descuento_linea || 0);
+
+                    return `
+                        <div class="cart-ticket-row grid grid-cols-[1fr_120px_120px_48px] items-center gap-3 px-4 py-4 transition hover:bg-emerald-50/40">
+                            <div class="min-w-0">
+                                <div class="flex items-start gap-3">
+                                    <input 
+                                        type="checkbox" 
+                                        class="discount-checkbox mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" 
+                                        data-item-id="${item.id}" 
+                                        ${item.hasDiscount ? 'checked' : ''} 
+                                        title="Aplicar descuento"
+                                    >
+
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-black text-slate-900" title="${item.nombre}">
+                                            ${item.nombre}
+                                        </p>
+                                        <p class="mt-1 text-xs font-bold text-slate-400">
+                                            P. Unit: S/ ${parseFloat(item.precio_unitario).toFixed(2)}
+                                        </p>
+
+                                        <div class="mt-2 ${item.hasDiscount ? '' : 'hidden'}">
+                                            <label class="mr-2 text-[10px] font-black uppercase tracking-[0.12em] text-rose-400">Dcto.</label>
+                                            <div class="inline-flex items-center rounded-xl border border-rose-100 bg-rose-50 px-2 py-1">
+                                                <span class="text-xs font-black text-rose-400">S/</span>
+                                                <input 
+                                                    type="number" 
+                                                    value="${item.monto_descuento_linea || '0.00'}" 
+                                                    min="0" 
+                                                    step="0.10" 
+                                                    class="discount-input ml-1 w-20 bg-transparent text-xs font-black text-rose-600 outline-none" 
+                                                    data-item-id="${item.id}"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" class="qty-btn qty-minus flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-white text-lg font-black text-emerald-600 hover:bg-emerald-50" data-item-id="${item.id}">
+                                    −
+                                </button>
+
+                                <input 
+                                    type="number" 
+                                    value="${item.quantity}" 
+                                    min="1" 
+                                    class="quantity-input h-10 w-14 rounded-xl border border-slate-200 bg-slate-50 text-center text-sm font-black text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" 
+                                    data-item-id="${item.id}"
+                                >
+
+                                <button type="button" class="qty-btn qty-plus flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-white text-lg font-black text-emerald-600 hover:bg-emerald-50" data-item-id="${item.id}">
+                                    +
+                                </button>
+                            </div>
+
+                            <div class="text-right">
+                                <p class="text-sm font-black text-slate-900">
+                                    S/ ${subtotal.toFixed(2)}
+                                </p>
+                            </div>
+
+                            <button 
+                                type="button" 
+                                class="remove-item-btn flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 transition hover:bg-rose-100" 
+                                data-item-id="${item.id}" 
+                                title="Quitar producto"
+                            >
+                                <svg class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+
     updateTotalsUI(totals);
 }
 

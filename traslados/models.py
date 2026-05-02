@@ -117,7 +117,7 @@ class DetalleTransferencia(models.Model):
     cantidad = models.PositiveIntegerField()
 
     class Meta:
-        unique_together = ('transferencia', 'stock_origen') # No puedes enviar el mismo lote dos veces en un traslado
+        unique_together = ('transferencia', 'stock_origen') 
         verbose_name = "Detalle de Transferencia"
         verbose_name_plural = "Detalles de Transferencia"
 

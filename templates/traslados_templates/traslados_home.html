@@ -1,42 +1,235 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}Listado de Traslados{% endblock %}
+{% block title %}Gestión de Traslados{% endblock %}
 
 {% block app_content %}
-<header class="flex justify-between items-center mb-10">
-    <div>
-        <h1 class="text-xl font-extrabold text-white">Gestión de Traslados</h1>
-        <p class="text-slate-400 mt-1">Revisa y administra el movimiento de stock entre sucursales.</p>
-    </div>
-    <a href="{% url 'traslados:traslado_create' %}"
-       class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600">
-       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-       Nuevo Traslado
-    </a>
-</header>
+<div class="space-y-5 animate-in">
+    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-emerald-100/50 blur-3xl"></div>
+        <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-100/50 blur-3xl"></div>
 
-<div class="glass-card rounded-2xl p-6">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left">
-            <thead class="border-b border-slate-700">
-                <tr>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">ID</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Sucursal Origen</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Sucursal Destino</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Estado</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400">Fecha</th>
-                    <th class="p-3 text-xs font-bold uppercase text-slate-400 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="transfers-list-body">
-                <tr>
-                    <td colspan="6" class="text-center p-8 text-slate-400">Cargando traslados...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="relative px-5 py-5 md:px-7 md:py-6">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-200">
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-700/90"></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="relative h-7 w-7 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h1 class="truncate text-xl md:text-2xl font-black tracking-tight text-slate-900">
+                                Gestión de Traslados
+                            </h1>
+                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Stock activo
+                            </span>
+                        </div>
+
+                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                            Controla el movimiento de productos entre sucursales, estados de envío y recepción de stock.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span id="transfers-count-badge" class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                                Cargando traslados
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-bold text-sky-700">
+                                Control operativo
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
+                    <div class="relative w-full sm:w-80 group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-emerald-500">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="text"
+                            id="transfer-search-input"
+                            placeholder="Buscar por sucursal, estado o ID..."
+                            class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                        >
+                    </div>
+
+                    <a href="{% url 'traslados:traslado_create' %}"
+                       class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 active:scale-[0.98]">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.8">
+                            <path d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nuevo traslado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-6">
+            <div>
+                <h2 class="text-base font-black tracking-tight text-slate-900">Listado de traslados</h2>
+                <p class="mt-1 text-sm text-slate-500">
+                    Visualiza, edita, envía, recibe o elimina traslados pendientes.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Vista premium
+                </span>
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Monitoreo activo
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[1120px] w-full border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-100 bg-slate-50/70">
+                        <th class="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Traslado</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Origen</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Destino</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Estado</th>
+                        <th class="px-4 py-4 text-center text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Fecha</th>
+                        <th class="px-6 py-4 text-right text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="transfers-list-body" class="divide-y divide-slate-100">
+                    {% for transfer in transferencias %}
+                    <tr class="transfer-row group transition-all duration-200 hover:bg-slate-50/80"
+                        data-search="#{{ transfer.id }} {{ transfer.sucursal_origen }} {{ transfer.sucursal_destino }} {{ transfer.estado }}">
+
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase text-slate-500 shadow-sm transition-all group-hover:border-emerald-200 group-hover:text-emerald-600 group-hover:shadow-md">
+                                    #{{ transfer.id }}
+                                </div>
+
+                                <div class="min-w-0">
+                                    <button data-action="ver" data-id="{{ transfer.id }}"
+                                        class="action-btn block truncate text-sm font-black tracking-tight text-slate-900 transition-colors hover:text-emerald-600">
+                                        Traslado #{{ transfer.id }}
+                                    </button>
+
+                                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-mono font-bold text-slate-500">
+                                            {{ transfer.solicitado_por|default:"Usuario" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">
+                                {{ transfer.sucursal_origen }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                                {{ transfer.sucursal_destino }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            {% if transfer.estado == "PENDIENTE" %}
+                                <span class="inline-flex rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">Pendiente</span>
+                            {% elif transfer.estado == "EN_TRANSITO" %}
+                                <span class="inline-flex rounded-xl border border-sky-200 bg-sky-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-sky-700">En tránsito</span>
+                            {% elif transfer.estado == "RECIBIDO" %}
+                                <span class="inline-flex rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">Recibido</span>
+                            {% else %}
+                                <span class="inline-flex rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-rose-700">{{ transfer.estado }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-4 py-4 text-center">
+                            <span class="inline-flex rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-500 shadow-sm">
+                                {{ transfer.fecha_creacion|date:"d/m/Y H:i" }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                                <button data-action="ver" data-id="{{ transfer.id }}"
+                                    class="action-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-600"
+                                    title="Ver detalle">
+                                    👁
+                                </button>
+
+                                {% if transfer.estado == "PENDIENTE" %}
+                                <button data-action="enviar" data-id="{{ transfer.id }}"
+                                    class="action-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-100 hover:bg-sky-50 hover:text-sky-600"
+                                    title="Enviar">
+                                    ➜
+                                </button>
+
+                                <a href="{% url 'traslados:traslado_edit' transfer.id %}"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                                    title="Editar">
+                                    ✎
+                                </a>
+
+                                <button data-action="eliminar" data-id="{{ transfer.id }}"
+                                    class="action-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-100 hover:bg-rose-50 hover:text-rose-600"
+                                    title="Eliminar">
+                                    🗑
+                                </button>
+                                {% endif %}
+
+                                {% if transfer.estado == "EN_TRANSITO" %}
+                                <button data-action="recibir" data-id="{{ transfer.id }}"
+                                    class="action-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:bg-emerald-50 hover:text-emerald-600"
+                                    title="Recibir">
+                                    ✓
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-20 text-center text-slate-400">
+                            No hay traslados registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
+
+<style>
+    @keyframes fadeInSoft {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeInSoft 0.45s ease-out both;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+
+    @media (max-width: 768px) {
+        .group-hover\:opacity-100 { opacity: 1 !important; }
+    }
+</style>
 {% endblock %}
 
 {% block app_scripts %}

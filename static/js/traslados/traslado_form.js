@@ -1,16 +1,46 @@
-// static/js/traslados/traslado_form.js
-
 document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('transfer-form');
     const sucursalOrigenSelect = document.getElementById('sucursal-origen');
+    const sucursalDestinoSelect = document.getElementById('sucursal-destino');
+    const observacionesInput = document.getElementById('observaciones');
     const stockSearchInput = document.getElementById('stock-search');
     const suggestionsContainer = document.getElementById('stock-suggestions');
     const transferDetailsBody = document.getElementById('transfer-details-body');
     const saveTransferBtn = document.getElementById('save-transfer-btn');
 
-    let transferItems = []; // Almacena los productos a transferir
+    let transferItems = [];
 
-    // Habilita/deshabilita el buscador de stock
-    sucursalOrigenSelect.addEventListener('change', () => {
+    const getCsrfToken = () => {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        return input ? input.value : '';
+    };
+
+    const parseJsonResponse = async (response) => {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error('La respuesta del servidor no es JSON. Revisa si la URL existe o si la sesión expiró.');
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.detail || 'Ocurrió un error en el servidor.');
+        }
+
+        return data;
+    };
+
+    const resetProducts = () => {
+        transferItems = [];
+        renderTransferTable();
+        stockSearchInput.value = '';
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.classList.add('hidden');
+    };
+
+    const enableStockSearch = () => {
         if (sucursalOrigenSelect.value) {
             stockSearchInput.disabled = false;
             stockSearchInput.placeholder = 'Buscar producto en stock de origen...';
@@ -18,143 +48,239 @@ document.addEventListener('DOMContentLoaded', () => {
             stockSearchInput.disabled = true;
             stockSearchInput.placeholder = 'Seleccione una sucursal de origen primero';
         }
+    };
+
+    sucursalOrigenSelect.addEventListener('change', () => {
+        enableStockSearch();
+        resetProducts();
     });
 
-    // Lógica de autocompletado para el stock
-    stockSearchInput.addEventListener('input', async (e) => {
-        const query = e.target.value;
+    stockSearchInput.addEventListener('input', async (event) => {
+        const query = event.target.value.trim();
         const sucursalId = sucursalOrigenSelect.value;
 
         if (query.length < 2 || !sucursalId) {
+            suggestionsContainer.innerHTML = '';
             suggestionsContainer.classList.add('hidden');
             return;
         }
 
         try {
-            // Asegúrate que la URL apunte a la API de inventario
-            const response = await fetch(`/inventario/api/stock/buscar/?sucursal_id=${sucursalId}&search=${query}`);
-            const data = await response.json(); // Recibimos el objeto completo
+            const url = `/inventario/api/stock/buscar/?sucursal_id=${encodeURIComponent(sucursalId)}&search=${encodeURIComponent(query)}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json'
+                }
+            });
 
-            // --- CORRECCIÓN AQUÍ ---
-            // Accedemos al array de productos que está dentro de 'data.results'
-            const stockItems = data.results;
-            // ---------------------
+            const data = await parseJsonResponse(response);
+            const stockItems = data.results || data;
 
             suggestionsContainer.innerHTML = '';
-            if (stockItems && stockItems.length > 0) {
-                suggestionsContainer.classList.remove('hidden');
-                stockItems.forEach(stock => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-800 last:border-b-0';
-                    item.innerHTML = `
-                        <p class="font-semibold text-white">${stock.producto_nombre}</p>
-                        <p class="text-xs text-slate-400">Lote: ${stock.lote} | Disp: ${stock.cantidad} | Venc: ${stock.fecha_vencimiento}</p>
-                    `;
-                    item.addEventListener('click', () => addStockItemToTransfer(stock));
-                    suggestionsContainer.appendChild(item);
-                });
-            } else {
+
+            if (!stockItems || stockItems.length === 0) {
                 suggestionsContainer.classList.add('hidden');
+                return;
             }
+
+            suggestionsContainer.classList.remove('hidden');
+
+            stockItems.forEach((stock) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'block w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-emerald-50 last:border-b-0';
+                item.innerHTML = `
+                    <p class="text-sm font-black text-slate-900">${stock.producto_nombre || '-'}</p>
+                    <p class="mt-1 text-xs font-semibold text-slate-500">
+                        Lote: ${stock.lote || '-'} | Disponible: ${stock.cantidad || 0} | Vence: ${stock.fecha_vencimiento || '-'}
+                    </p>
+                `;
+
+                item.addEventListener('click', () => addStockItemToTransfer(stock));
+                suggestionsContainer.appendChild(item);
+            });
+
         } catch (error) {
-            console.error("Error buscando stock:", error);
+            console.error('Error buscando stock:', error);
+            suggestionsContainer.innerHTML = `
+                <div class="px-4 py-3 text-sm font-semibold text-rose-500">
+                    ${error.message}
+                </div>
+            `;
+            suggestionsContainer.classList.remove('hidden');
         }
     });
-    
-    // Añade un item a la tabla de transferencia
+
     function addStockItemToTransfer(stockItem) {
-        // Evita añadir el mismo lote dos veces
-        if (transferItems.some(item => item.stock_origen_id === stockItem.id)) {
-            alert('Este lote ya ha sido añadido a la transferencia.');
+        if (transferItems.some(item => String(item.stock_origen) === String(stockItem.id))) {
+            alert('Este lote ya fue agregado al traslado.');
             return;
         }
 
-        const item = {
-            stock_origen_id: stockItem.id,
+        transferItems.push({
+            producto: stockItem.producto || stockItem.producto_id,
+            stock_origen: stockItem.id,
             producto_nombre: stockItem.producto_nombre,
             lote: stockItem.lote,
-            cantidad_disponible: stockItem.cantidad,
-            cantidad: 1 // Cantidad por defecto
-        };
-        transferItems.push(item);
+            cantidad_disponible: Number(stockItem.cantidad || 0),
+            cantidad: 1
+        });
+
         renderTransferTable();
-        
+
         stockSearchInput.value = '';
+        suggestionsContainer.innerHTML = '';
         suggestionsContainer.classList.add('hidden');
     }
 
-    // Dibuja la tabla con los items
     function renderTransferTable() {
         transferDetailsBody.innerHTML = '';
+
+        if (transferItems.length === 0) {
+            transferDetailsBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-4 py-10 text-center text-sm font-semibold text-slate-400">
+                        Aún no agregaste productos al traslado.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
         transferItems.forEach((item, index) => {
             const row = document.createElement('tr');
-            // He añadido la clase 'align-middle' a cada <td> para centrar todo verticalmente
+            row.className = 'border-b border-slate-100 last:border-b-0';
+
             row.innerHTML = `
-                <td class="p-2 align-middle">${item.producto_nombre}</td>
-                <td class="p-2 align-middle">${item.lote}</td>
-                <td class="p-2 align-middle text-center font-semibold">${item.cantidad_disponible}</td>
-                <td class="p-2 align-middle text-center">
-                    <input type="number" class="form-input py-1 w-24 text-center bg-slate-900 border-slate-700" value="${item.cantidad}" min="1" max="${item.cantidad_disponible}" data-index="${index}">
+                <td class="px-3 py-4">
+                    <p class="text-sm font-black text-slate-900">${item.producto_nombre || '-'}</p>
                 </td>
-                <td class="p-2 align-middle text-center">
-                    <button class="text-rose-400 hover:text-rose-300 transition-colors" data-index="${index}" title="Eliminar Producto">
-                        <button class="text-rose-400 hover:text-rose-300 transition-colors text-2xl font-bold" data-index="${index}" title="Eliminar Producto">
-                            &times;
-                        </button>
+
+                <td class="px-3 py-4">
+                    <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600">
+                        ${item.lote || '-'}
+                    </span>
+                </td>
+
+                <td class="px-3 py-4 text-center">
+                    <span class="text-sm font-black text-emerald-600">${item.cantidad_disponible}</span>
+                </td>
+
+                <td class="px-3 py-4 text-center">
+                    <input
+                        type="number"
+                        min="1"
+                        max="${item.cantidad_disponible}"
+                        value="${item.cantidad}"
+                        data-index="${index}"
+                        class="transfer-quantity-input w-24 rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-sm font-bold text-slate-700 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                    >
+                </td>
+
+                <td class="px-3 py-4 text-center">
+                    <button
+                        type="button"
+                        data-index="${index}"
+                        class="remove-transfer-item inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-lg font-black text-rose-500 transition hover:bg-rose-100"
+                    >
+                        ×
                     </button>
                 </td>
             `;
+
             transferDetailsBody.appendChild(row);
         });
     }
 
-    // Listener para actualizar cantidad o eliminar item
-    transferDetailsBody.addEventListener('change', (e) => {
-        if (e.target.type === 'number') {
-            const index = e.target.dataset.index;
-            transferItems[index].cantidad = parseInt(e.target.value);
-        }
-    });
-    transferDetailsBody.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
-            const index = e.target.dataset.index;
-            transferItems.splice(index, 1);
-            renderTransferTable();
-        }
+    transferDetailsBody.addEventListener('input', (event) => {
+        const input = event.target.closest('.transfer-quantity-input');
+
+        if (!input) return;
+
+        const index = Number(input.dataset.index);
+        let value = Number(input.value || 0);
+        const max = transferItems[index].cantidad_disponible;
+
+        if (value < 1) value = 1;
+        if (value > max) value = max;
+
+        input.value = value;
+        transferItems[index].cantidad = value;
     });
 
-    // Lógica para guardar el traslado
+    transferDetailsBody.addEventListener('click', (event) => {
+        const button = event.target.closest('.remove-transfer-item');
+
+        if (!button) return;
+
+        const index = Number(button.dataset.index);
+        transferItems.splice(index, 1);
+        renderTransferTable();
+    });
+
     saveTransferBtn.addEventListener('click', async () => {
+        const sucursalOrigen = sucursalOrigenSelect.value;
+        const sucursalDestino = sucursalDestinoSelect.value;
+
+        if (!sucursalOrigen) {
+            alert('Selecciona la sucursal de origen.');
+            return;
+        }
+
+        if (!sucursalDestino) {
+            alert('Selecciona la sucursal de destino.');
+            return;
+        }
+
+        if (sucursalOrigen === sucursalDestino) {
+            alert('La sucursal de origen y destino no pueden ser la misma.');
+            return;
+        }
+
+        if (transferItems.length === 0) {
+            alert('Agrega al menos un producto al traslado.');
+            return;
+        }
+
         const data = {
-            sucursal_origen: document.getElementById('sucursal-origen').value,
-            sucursal_destino: document.getElementById('sucursal-destino').value,
-            observaciones: document.getElementById('observaciones').value,
-            detalles_write: transferItems.map(item => ({
-                stock_origen_id: item.stock_origen_id,
+            sucursal_origen: sucursalOrigen,
+            sucursal_destino: sucursalDestino,
+            observaciones: observacionesInput.value,
+            detalles: transferItems.map(item => ({
+                producto: item.producto,
+                stock_origen: item.stock_origen,
                 cantidad: item.cantidad
             }))
         };
 
-        // Aquí harías el fetch POST a tu API de /traslados/api/transferencias/
-        console.log("Enviando al backend:", data);
-        
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const successUrl = document.getElementById('transfer-form').dataset.successUrl;
-
         try {
-            const response = await fetch('/traslados/api/transferencias/', {
+            saveTransferBtn.disabled = true;
+            saveTransferBtn.textContent = 'Guardando...';
+
+            const response = await fetch('/traslados/api/transferencias/crear/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
                 body: JSON.stringify(data)
             });
-            if (!response.ok) throw await response.json();
-            
-            alert('¡Solicitud de traslado creada con éxito!');
-            window.location.href = successUrl; 
 
-        } catch(error) {
-            console.error("Error al crear la transferencia:", error);
-            alert('Error: ' + JSON.stringify(error));
+            await parseJsonResponse(response);
+
+            alert('Traslado creado correctamente.');
+            window.location.href = form.dataset.successUrl;
+
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        } finally {
+            saveTransferBtn.disabled = false;
+            saveTransferBtn.textContent = 'Crear traslado';
         }
     });
+
+    enableStockSearch();
+    renderTransferTable();
 });

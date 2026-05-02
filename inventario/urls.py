@@ -35,4 +35,7 @@ urlpatterns = [
     path('unidades/nueva/', views.unidad_presentacion_create_view, name='unidad_presentacion_create'),
     path('unidades/<int:pk>/editar/', views.unidad_presentacion_update_view, name='unidad_presentacion_update'),
     path('unidades/<int:pk>/eliminar/', views.unidad_presentacion_delete_view, name='unidad_presentacion_delete'),
+    
+    path('api/productos/', views.productos_api, name='productos_api'),
+     path('api/stock/buscar/', views.buscar_stock_api, name='buscar_stock_api'),
 ]

@@ -179,21 +179,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-   dom.cartItemsContainer.addEventListener('change', e => {
+    dom.cartItemsContainer.addEventListener('click', e => {
         const target = e.target;
         const itemElement = target.closest('[data-item-id]');
         if (!itemElement) return;
-        const itemId = parseInt(itemElement.dataset.itemId);
 
-        if (target.classList.contains('quantity-input')) {
-            Cart.updateCartItem(itemId, 'quantity', target.value);
+        const itemId = parseInt(itemElement.dataset.itemId);
+        const currentItem = Cart.getCart().find(i => i.id === itemId);
+
+        if (!currentItem) return;
+
+        if (target.closest('.qty-minus')) {
+            const currentQty = parseInt(currentItem.quantity) || 1;
+
+            if (currentQty > 1) {
+                Cart.updateCartItem(itemId, 'quantity', currentQty - 1);
+                updateFullUI();
+            }
+
+            return;
         }
-        if (target.classList.contains('discount-input')) {
-            Cart.updateCartItem(itemId, 'monto_descuento_linea', target.value);
+
+        if (target.closest('.qty-plus')) {
+            const currentQty = parseInt(currentItem.quantity) || 1;
+
+            Cart.updateCartItem(itemId, 'quantity', currentQty + 1);
+            updateFullUI();
+
+            return;
         }
-        
-        // Actualizamos la UI solo cuando terminas de editar y sales del campo
-        updateFullUI();
+
+        if (target.classList.contains('discount-checkbox')) {
+            Cart.updateCartItem(itemId, 'hasDiscount', target.checked);
+            updateFullUI();
+
+            return;
+        }
+
+        if (target.closest('.remove-item-btn')) {
+            Cart.removeFromCart(itemId);
+            updateFullUI();
+
+            return;
+        }
     });
 
 // Listener para cuando HACES CLIC en un botón (eliminar, checkbox)
@@ -251,6 +279,28 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.cierreCajaForm.addEventListener('submit', (e) => Caja.handleCerrarCaja(e, dom, csrftoken));
     dom.showCierreModalBtn.addEventListener('click', () => dom.cierreCajaModal.classList.remove('hidden'));
     dom.cierreModalCloseBtn.addEventListener('click', () => dom.cierreCajaModal.classList.add('hidden'));
+
+
+    // === DROPDOWN CLIENTES SIEMPRE ENCIMA ===
+    if (dom.customerSuggestions && dom.customerSearchInput) {
+        document.body.appendChild(dom.customerSuggestions);
+
+        dom.customerSuggestions.className =
+            'fixed z-[99999] hidden max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.25)]';
+
+        const posicionarCustomerSuggestions = () => {
+            const rect = dom.customerSearchInput.getBoundingClientRect();
+
+            dom.customerSuggestions.style.left = `${rect.left}px`;
+            dom.customerSuggestions.style.top = `${rect.bottom + 8}px`;
+            dom.customerSuggestions.style.width = `${rect.width}px`;
+        };
+
+        dom.customerSearchInput.addEventListener('input', posicionarCustomerSuggestions);
+        dom.customerSearchInput.addEventListener('focus', posicionarCustomerSuggestions);
+        window.addEventListener('resize', posicionarCustomerSuggestions);
+        window.addEventListener('scroll', posicionarCustomerSuggestions, true);
+}
 
     // === CARGA INICIAL ===
     Caja.verificarEstadoCaja(dom);
