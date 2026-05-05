@@ -452,14 +452,40 @@ def registrar_venta_api(request):
 
             venta.actualizar_totales()
 
+            comprobante_data = None
+
+            if venta.tipo_comprobante in ["BOLETA", "FACTURA"]:
+                from facturacion.services import crear_comprobante_desde_venta
+
+                comprobante, creado = crear_comprobante_desde_venta(
+                    venta_id=venta.id,
+                    tipo_comprobante_pos=venta.tipo_comprobante,
+                    usuario=request.user,
+                    ambiente="BETA"
+                )
+
+                comprobante_data = {
+                    "id": comprobante.id,
+                    "numero_formateado": comprobante.numero_formateado,
+                    "estado": comprobante.estado,
+                    "tipo_comprobante": comprobante.tipo_comprobante,
+                    "nombre_archivo_sunat": comprobante.nombre_archivo_sunat,
+                    "created": creado,
+                }
+
+                venta.refresh_from_db()
+
             return JsonResponse({
                 "id": venta.id,
                 "tipo_comprobante": venta.tipo_comprobante,
+                "numero_comprobante": venta.numero_comprobante,
+                "estado_facturacion_electronica": venta.estado_facturacion_electronica,
                 "total_venta": str(venta.total_venta),
                 "subtotal": str(venta.subtotal),
                 "impuestos": str(venta.impuestos),
                 "metodo_pago": venta.metodo_pago,
                 "cliente_telefono": venta.cliente.telefono if venta.cliente else "",
+                "comprobante_electronico": comprobante_data,
                 "mensaje": "Venta registrada correctamente.",
             }, status=201)
 
@@ -471,5 +497,3 @@ def registrar_venta_api(request):
 
     except Exception as e:
         return _json_error(f"Error interno al registrar la venta: {e}", 500)
-    
-    

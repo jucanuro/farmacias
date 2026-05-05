@@ -87,6 +87,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const nuevaVenta = await API.finalizarVentaAPI(ventaData, csrftoken);
+
+            if (state.tipoComprobante === 'BOLETA' || state.tipoComprobante === 'FACTURA') {
+                try {
+                    const comprobante = await API.crearComprobanteElectronicoAPI({
+                        venta_id: nuevaVenta.id,
+                        tipo_comprobante: state.tipoComprobante,
+                        ambiente: 'BETA',
+                    }, csrftoken);
+
+                    nuevaVenta.comprobante_electronico = comprobante.comprobante;
+                } catch (feError) {
+                    nuevaVenta.error_facturacion = feError.error || 'La venta se registró, pero no se pudo crear el comprobante electrónico.';
+                }
+            }
+
             resetPOS();
             UI.showActionDialog(dom.alertModal, `Venta #${nuevaVenta.id} registrada`, '¡Venta Completada!', nuevaVenta);
         } catch (error) {

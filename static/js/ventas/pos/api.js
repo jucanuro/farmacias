@@ -58,3 +58,24 @@ export async function cerrarCajaAPI(data, csrftoken) {
     if (!response.ok) throw await response.json();
     return await response.json();
 }
+
+export async function crearComprobanteElectronicoAPI(data, csrftoken) {
+    const response = await fetch('/facturacion/api/comprobantes/crear-desde-venta/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw await response.json();
+    return await response.json();
+}
+
+export async function generarXMLAPI(comprobanteId, csrftoken) {
+    const response = await fetch(`/facturacion/api/comprobantes/${comprobanteId}/generar-xml/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrftoken }
+    });
+
+    if (!response.ok) throw await response.json();
+    return await response.json();
+}

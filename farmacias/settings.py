@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'compras',
     'ventas',
     'traslados',
+    'facturacion',
+    
     'crispy_forms',
     'crispy_tailwind',
 ]
