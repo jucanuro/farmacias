@@ -41,4 +41,25 @@ urlpatterns = [
 
     path('configuracion-fe/', views.configuracion_facturacion_view, name='configuracion_facturacion'),
     path('enviar-factura/', views.enviar_factura_electronica_view, name='enviar_factura_electronica'),
+    
+    path(
+        "farmacias/<int:farmacia_id>/series/",
+        views.series_list_view,
+        name="series_list"
+    ),
+    path(
+        "farmacias/<int:farmacia_id>/series/nueva/",
+        views.serie_create_view,
+        name="serie_create"
+    ),
+    path(
+        "series/<int:pk>/editar/",
+        views.serie_update_view,
+        name="serie_update"
+    ),
+    path(
+        "series/<int:pk>/eliminar/",
+        views.serie_delete_view,
+        name="serie_delete"
+    ),
 ]

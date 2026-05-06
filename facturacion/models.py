@@ -4,53 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
-
-class SerieComprobante(models.Model):
-    TIPO_COMPROBANTE_CHOICES = [
-        ("01", "Factura Electrónica"),
-        ("03", "Boleta de Venta Electrónica"),
-        ("07", "Nota de Crédito Electrónica"),
-        ("08", "Nota de Débito Electrónica"),
-    ]
-
-    AMBIENTE_CHOICES = [
-        ("BETA", "Beta / Pruebas"),
-        ("PRODUCCION", "Producción"),
-    ]
-
-    sucursal = models.ForeignKey(
-        "core.Sucursal",
-        on_delete=models.PROTECT,
-        related_name="series_comprobantes"
-    )
-    tipo_comprobante = models.CharField(
-        max_length=2,
-        choices=TIPO_COMPROBANTE_CHOICES
-    )
-    serie = models.CharField(max_length=4)
-    correlativo_actual = models.PositiveIntegerField(default=0)
-    ambiente = models.CharField(
-        max_length=20,
-        choices=AMBIENTE_CHOICES,
-        default="BETA"
-    )
-    activo = models.BooleanField(default=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Serie de Comprobante"
-        verbose_name_plural = "Series de Comprobantes"
-        unique_together = ("sucursal", "tipo_comprobante", "serie", "ambiente")
-        ordering = ["sucursal", "tipo_comprobante", "serie"]
-
-    def __str__(self):
-        return f"{self.serie} - {self.get_tipo_comprobante_display()}"
-
-    def siguiente_numero(self):
-        self.correlativo_actual += 1
-        self.save(update_fields=["correlativo_actual"])
-        return self.correlativo_actual
+from core.models import SerieComprobante
 
 
 class ComprobanteElectronico(models.Model):

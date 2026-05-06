@@ -6,8 +6,8 @@ from .xml_generator import generar_xml_basico
 
 
 from ventas.models import Venta
+from core.models import SerieComprobante
 from .models import (
-    SerieComprobante,
     ComprobanteElectronico,
     ComprobanteElectronicoDetalle,
     EventoComprobanteElectronico,
@@ -93,9 +93,11 @@ def _datos_cliente(cliente):
 
 
 def _obtener_serie(sucursal, tipo_comprobante, ambiente="BETA"):
+    farmacia = sucursal.farmacia
     serie_default = "F001" if tipo_comprobante == "01" else "B001"
 
-    serie, _ = SerieComprobante.objects.get_or_create(
+    serie, _ = SerieComprobante.objects.select_for_update().get_or_create(
+        farmacia=farmacia,
         sucursal=sucursal,
         tipo_comprobante=tipo_comprobante,
         serie=serie_default,
@@ -109,7 +111,10 @@ def _obtener_serie(sucursal, tipo_comprobante, ambiente="BETA"):
     if not serie.activo:
         raise ValueError(f"La serie {serie.serie} está inactiva.")
 
-    return serie
+    serie.correlativo_actual += 1
+    serie.save(update_fields=["correlativo_actual"])
+
+    return serie, serie.correlativo_actual
 
 
 @transaction.atomic
