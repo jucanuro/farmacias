@@ -14,17 +14,18 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
-        
-    path('core/', include('core.urls')), 
-    path('inventario/', include('inventario.urls')), 
+
+    path('core/', include('core.urls')),
+    path('inventario/', include('inventario.urls')),
     path('clientes/', include('clientes.urls')),
     path('proveedores/', include('proveedores.urls')),
     path('compras/', include('compras.urls')),
     path('ventas/', include('ventas.urls')),
     path('traslados/', include('traslados.urls')),
     path("facturacion/", include("facturacion.urls")),
-    
-    path('', TemplateView.as_view(template_name='farmacias_main_templates/index.html'), name='login'), 
+
+    path('', TemplateView.as_view(template_name='landing.html'), name='landing'),
+    path('login/', TemplateView.as_view(template_name='farmacias_main_templates/index.html'), name='login'),
     path('dashboard/', TemplateView.as_view(template_name='farmacias_main_templates/dashboard.html'), name='dashboard'),
 ]
 

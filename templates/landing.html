@@ -1,0 +1,1181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <title>Qhalisys+ | Sistema SaaS para Farmacias en Perú</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Qhalisys+ es un sistema SaaS para farmacias con ventas POS, inventario, compras, traslados, facturación electrónica, cotizaciones, reportes e IA de búsqueda inteligente.">
+    <meta name="keywords" content="sistema para farmacias, software farmacia, POS farmacia, inventario farmacia, facturación electrónica farmacia, SaaS farmacia Perú, Qhalisys">
+    <meta name="author" content="Vertex Quant Labs">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="Qhalisys+ | Sistema SaaS para Farmacias">
+    <meta property="og:description" content="Gestiona ventas, inventario, compras, traslados, facturación electrónica, reportes e IA en una sola plataforma farmacéutica.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_PE">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        qGreen: '#10b981',
+                        qCyan: '#06b6d4',
+                        qDark: '#07111f',
+                        qInk: '#0f172a'
+                    },
+                    boxShadow: {
+                        glow: '0 0 60px rgba(16,185,129,.35)',
+                        cyanGlow: '0 0 70px rgba(6,182,212,.28)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(16,185,129,.18), transparent 32rem),
+                radial-gradient(circle at top right, rgba(6,182,212,.15), transparent 34rem),
+                #f8fafc;
+        }
+
+        .glass {
+            background: rgba(255,255,255,.76);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(226,232,240,.9);
+        }
+
+        .dark-glass {
+            background: rgba(15,23,42,.72);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,.10);
+        }
+
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(15,23,42,.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15,23,42,.045) 1px, transparent 1px);
+            background-size: 44px 44px;
+        }
+
+        .float-card {
+            animation: floatCard 6s ease-in-out infinite;
+        }
+
+        @keyframes floatCard {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+        }
+
+        .pulse-line {
+            animation: pulseLine 2.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseLine {
+            0%, 100% { width: 32%; opacity: .55; }
+            50% { width: 92%; opacity: 1; }
+        }
+    </style>
+</head>
+
+<body class="text-slate-950 antialiased overflow-x-hidden">
+
+<header class="fixed top-0 inset-x-0 z-50">
+    <nav class="relative mx-auto max-w-full overflow-hidden border border-white/70 bg-white/85 backdrop-blur-2xl shadow-[0_18px_60px_rgba(15,23,42,0.11)]">
+        <div class="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-500"></div>
+
+        <div class="relative flex items-center justify-between gap-2 px-3 py-2.5 sm:px-5 lg:px-6">
+            <a href="/" class="group flex min-w-0 items-center gap-2 sm:gap-3">
+                <div class="relative shrink-0">
+                    <div class="absolute inset-0 rounded-2xl bg-emerald-400 opacity-30 blur-xl transition group-hover:opacity-60"></div>
+                    <div class="relative flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-slate-950 text-emerald-300 shadow-lg ring-1 ring-white/10">
+                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M9 3h6a2 2 0 012 2v2h1a2 2 0 012 2v9a3 3 0 01-3 3H7a3 3 0 01-3-3V9a2 2 0 012-2h1V5a2 2 0 012-2z"/>
+                            <path d="M9 7h6M12 11v6M9 14h6"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 class="truncate text-lg sm:text-2xl font-black tracking-tight text-slate-950">
+                            Qhalisys<span class="text-emerald-500">+</span>
+                        </h1>
+                        <span class="hidden md:inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[9px] font-black tracking-[0.16em] text-emerald-700">
+                            SAAS
+                        </span>
+                    </div>
+                    <p class="hidden sm:block truncate text-[8px] sm:text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
+                        Pharma Intelligence Platform
+                    </p>
+                </div>
+            </a>
+
+            <div class="hidden xl:flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50/90 p-1 shadow-inner">
+                <a href="#producto" class="rounded-xl px-3.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">Producto</a>
+                <a href="#modulos" class="rounded-xl px-3.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">Módulos</a>
+                <a href="#ia" class="rounded-xl px-3.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">IA Operativa</a>
+                <a href="#planes" class="rounded-xl px-3.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">Planes</a>
+                <a href="#contacto" class="rounded-xl px-3.5 py-1.5 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950 hover:shadow-sm">Contacto</a>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-2">
+                <div class="hidden lg:flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[10px] font-black tracking-wide text-emerald-700">Sistema online</span>
+                </div>
+
+                <a href="{% url 'login' %}" class="hidden md:inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700 hover:shadow-lg">
+                    Ingresar
+                </a>
+
+                <a href="#planes" class="hidden sm:inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-emerald-600">
+                    Ver planes
+                </a>
+
+                <button id="landingMenuButton" type="button" class="xl:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-800 transition hover:bg-white">
+                    <svg id="menuIconOpen" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                    <svg id="menuIconClose" class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M6 6l12 12M18 6L6 18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="landingMobileMenu" class="hidden xl:hidden border-t border-slate-200 bg-white/95 px-3 pb-3 pt-3 backdrop-blur-xl sm:px-5">
+            <div class="grid gap-2">
+                <a href="#producto" class="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700">Producto</a>
+                <a href="#modulos" class="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700">Módulos</a>
+                <a href="#ia" class="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700">IA Operativa</a>
+                <a href="#planes" class="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700">Planes</a>
+                <a href="#contacto" class="rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700">Contacto</a>
+
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                    <a href="{% url 'login' %}" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-center text-xs font-black text-slate-800">
+                        Ingresar
+                    </a>
+                    <a href="#planes" class="rounded-2xl bg-slate-950 px-4 py-2.5 text-center text-xs font-black text-white">
+                        Ver planes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main>
+<section id="producto" class="relative min-h-screen pt- 24 sm:pt-24 pb-8 sm:pb-24 overflow-hidden grid-bg">
+    <div class="absolute top-20 left-4 sm:left-10 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 right-4 sm:right-10 w-80 sm:w-[34rem] h-80 sm:h-[34rem] bg-cyan-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/2 w-[42rem] h-[42rem] -translate-x-1/2 -translate-y-1/2 bg-white/40 rounded-full blur-3xl"></div>
+
+    <div class="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-[0.95fr_1.05fr] gap-10 xl:gap-16 items-center">
+
+            <div class="relative z-10">
+                <div class="inline-flex flex-wrap items-center gap-2 rounded-full border border-emerald-200 bg-white/80 backdrop-blur-xl px-4 py-2 shadow-sm">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[10px] sm:text-[11px] font-black text-emerald-700">
+                        SaaS farmacéutico con POS, inventario, facturación e IA
+                    </span>
+                </div>
+
+                <h2 class="mt-7 max-w-5xl text-3xl sm:text-[2.45rem] md:text-5xl xl:text-[3.65rem] 2xl:text-[4.15rem] font-black tracking-tight leading-[0.96] text-slate-950">
+                    La nueva forma de gestionar farmacias:
+                    <span class="block bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-600 bg-clip-text text-transparent">
+                        rápida, inteligente y escalable.
+                    </span>
+                </h2>
+
+                <p class="mt-6 max-w-3xl text-sm sm:text-[15px] md:text-base text-slate-600 leading-relaxed">
+                    Qhalisys+ centraliza tus ventas POS, productos, stock, compras, traslados,
+                    cotizaciones, clientes, reportes y facturación electrónica en una experiencia
+                    moderna diseñada para farmacias que quieren operar con más control y menos desorden.
+                </p>
+
+                <div class="mt-6 grid sm:grid-cols-2 gap-3 max-w-3xl">
+                    <div class="rounded-3xl border border-slate-200 bg-white/80 backdrop-blur-xl p-4 shadow-sm">
+                        <p class="text-[11px] font-black text-slate-950">Control operativo diario</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Caja, ventas, comprobantes, clientes y productos desde una sola pantalla.</p>
+                    </div>
+                    <div class="rounded-3xl border border-emerald-200 bg-emerald-50/80 backdrop-blur-xl p-4 shadow-sm">
+                        <p class="text-[11px] font-black text-emerald-800">Búsqueda inteligente</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-emerald-700">Encuentra productos, módulos o acciones con experiencia tipo IA.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <a href="{% url 'login' %}" class="group inline-flex items-center justify-center gap-3 rounded-2xl bg-slate-950 px-7 sm:px-8 py-4 text-[13px] font-black text-white shadow-2xl shadow-slate-950/20 transition hover:bg-emerald-600">
+                        Ingresar al sistema
+                        <svg class="w-4 h-4 transition group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M5 12h14"/>
+                            <path d="M13 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+
+                    <a href="#planes" class="inline-flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-7 sm:px-8 py-4 text-[13px] font-black text-slate-900 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700">
+                        Ver planes disponibles
+                    </a>
+                </div>
+
+                <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl">
+                    <div class="rounded-3xl bg-white/80 border border-slate-200 p-4 shadow-sm">
+                        <p class="text-lg sm:text-xl font-black text-slate-950">POS</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Venta rápida</p>
+                    </div>
+                    <div class="rounded-3xl bg-white/80 border border-slate-200 p-4 shadow-sm">
+                        <p class="text-lg sm:text-xl font-black text-slate-950">Stock</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Inventario</p>
+                    </div>
+                    <div class="rounded-3xl bg-white/80 border border-slate-200 p-4 shadow-sm">
+                        <p class="text-lg sm:text-xl font-black text-slate-950">FE</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Facturación</p>
+                    </div>
+                    <div class="rounded-3xl bg-slate-950 border border-slate-800 p-4 shadow-lg">
+                        <p class="text-lg sm:text-xl font-black text-emerald-300">IA</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-400">Smart search</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative z-10">
+                <div class="absolute -inset-4 sm:-inset-8 bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 blur-3xl rounded-full"></div>
+
+                <div class="relative rounded-[2rem] border border-white/20 bg-slate-950/90 backdrop-blur-2xl p-3 sm:p-5 shadow-2xl shadow-slate-950/25">
+                    <div class="rounded-[1.5rem] overflow-hidden border border-white/10 bg-slate-950">
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 p-4 sm:p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-11 h-11 rounded-2xl bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                        <path d="M4 7h16M4 12h16M4 17h10"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-[8px] sm:text-[9px] font-black text-emerald-300 tracking-[0.25em]">QHALISYS LIVE PANEL</p>
+                                    <h3 class="text-base sm:text-lg font-black text-white">Control Center</h3>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">ONLINE</span>
+                                <span class="px-3 py-1.5 rounded-full bg-white/10 text-slate-300 text-[10px] font-black">SaaS Core</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 sm:p-5 grid grid-cols-2 gap-3 sm:gap-4">
+                            <div class="col-span-2 sm:col-span-1 rounded-3xl bg-emerald-400 p-5 text-slate-950">
+                                <p class="text-[11px] font-black">Ventas del día</p>
+                                <p class="mt-2 text-3xl sm:text-[2rem] font-black">S/ 2,840</p>
+                                <p class="mt-2 text-[10px] font-bold">+18% vs ayer · Caja activa</p>
+                            </div>
+
+                            <div class="rounded-3xl bg-white/10 p-5 text-white">
+                                <p class="text-[11px] text-slate-300 font-bold">Productos activos</p>
+                                <p class="mt-2 text-2xl sm:text-[1.65rem] font-black">1,248</p>
+                                <div class="mt-4 h-2 rounded-full bg-white/10 overflow-hidden">
+                                    <div class="h-full w-3/4 bg-cyan-300 rounded-full"></div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-3xl bg-white/10 p-5 text-white">
+                                <p class="text-[11px] text-slate-300 font-bold">Stock crítico</p>
+                                <p class="mt-2 text-2xl sm:text-[1.65rem] font-black text-rose-300">18</p>
+                                <p class="mt-2 text-[10px] text-slate-400">Alertas por reposición</p>
+                            </div>
+
+                            <div class="rounded-3xl bg-cyan-300 p-5 text-slate-950">
+                                <p class="text-[11px] font-black">Comprobantes</p>
+                                <p class="mt-2 text-2xl sm:text-[1.65rem] font-black">126</p>
+                                <p class="mt-2 text-[10px] font-bold">Ticket · Boleta · Factura</p>
+                            </div>
+
+                            <div class="rounded-3xl bg-white/10 p-5 text-white">
+                                <p class="text-[11px] text-slate-300 font-bold">Compras</p>
+                                <p class="mt-2 text-2xl sm:text-[1.65rem] font-black">34</p>
+                                <p class="mt-2 text-[10px] text-slate-400">Recepciones registradas</p>
+                            </div>
+                        </div>
+
+                        <div class="mx-4 sm:mx-5 mb-5 rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5">
+                            <div class="flex items-start sm:items-center justify-between gap-4">
+                                <div>
+                                    <p class="text-[8px] sm:text-[9px] font-black text-cyan-300 tracking-[0.25em]">AI SEARCH ENGINE</p>
+                                    <p class="mt-1 text-xs sm:text-sm font-black text-white">“paracetamol 500 con stock”</p>
+                                    <p class="mt-1 text-[11px] text-slate-400">Producto encontrado · listo para agregar al POS</p>
+                                </div>
+                                <div class="w-11 h-11 shrink-0 rounded-2xl bg-white/10 flex items-center justify-center text-xl">✨</div>
+                            </div>
+
+                            <div class="mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 sm:p-4">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
+                                    </svg>
+                                    <input id="heroSmartSearch" type="text" value="Buscar producto, cliente, venta o módulo..." class="w-full bg-transparent outline-none text-[11px] sm:text-xs text-slate-300 font-semibold">
+                                </div>
+                            </div>
+
+                            <div id="heroSearchResult" class="mt-4 grid sm:grid-cols-3 gap-3">
+                                <div class="rounded-2xl bg-emerald-400/10 border border-emerald-400/20 p-3">
+                                    <p class="text-[10px] font-black text-emerald-300">Producto</p>
+                                    <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Paracetamol 500mg</p>
+                                </div>
+                                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                                    <p class="text-[10px] font-black text-slate-400">Stock</p>
+                                    <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Disponible</p>
+                                </div>
+                                <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                                    <p class="text-[10px] font-black text-slate-400">Acción</p>
+                                    <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Agregar al ticket</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden xl:block absolute -left-8 top-16 rounded-3xl border border-emerald-200 bg-white/90 backdrop-blur-xl p-4 shadow-xl">
+                    <p class="text-[10px] font-black text-slate-400">Módulo activo</p>
+                    <p class="mt-1 text-sm font-black text-slate-950">Ventas POS</p>
+                </div>
+
+                <div class="hidden xl:block absolute -right-6 bottom-20 rounded-3xl border border-cyan-200 bg-white/90 backdrop-blur-xl p-4 shadow-xl">
+                    <p class="text-[10px] font-black text-slate-400">IA operativa</p>
+                    <p class="mt-1 text-sm font-black text-slate-950">Smart Search</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="modulos" class="relative overflow-hidden py-12 bg-slate-950 text-white">
+    <div class="absolute inset-0">
+        <div class="absolute top-0 left-0 w-[34rem] h-[34rem] bg-emerald-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 w-[38rem] h-[38rem] bg-cyan-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute inset-0 opacity-[0.08]" style="background-image: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px); background-size: 46px 46px;"></div>
+    </div>
+
+    <div class="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-[0.8fr_1.2fr] gap-8 xl:gap-12 items-start">
+
+            <div class="lg:sticky lg:top-28">
+                <div class="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-[10px] sm:text-[11px] font-black text-emerald-300 tracking-wide">MÓDULOS DEL SISTEMA</span>
+                </div>
+
+                <h2 class="mt-5 text-3xl sm:text-4xl md:text-5xl xl:text-[3.45rem] font-black tracking-tight leading-[0.98]">
+                    Una suite completa para operar tu farmacia.
+                </h2>
+
+                <p class="mt-5 text-sm sm:text-[15px] text-slate-300 leading-relaxed max-w-2xl">
+                    Qhalisys+ no es solo un POS. Es una plataforma SaaS pensada para controlar ventas,
+                    inventario, compras, traslados, facturación electrónica, cotizaciones, reportes y búsqueda inteligente.
+                </p>
+
+                <div class="mt-7 rounded-[1.75rem] border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-2xl">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-[10px] font-black tracking-[0.22em] text-cyan-300">OPERACIÓN CENTRALIZADA</p>
+                            <h3 class="mt-2 text-xl font-black">Todo conectado</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                                <path d="M12 3v18M3 12h18"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid grid-cols-3 gap-3">
+                        <div class="rounded-2xl bg-white/10 p-3">
+                            <p class="text-xl font-black text-emerald-300">POS</p>
+                            <p class="mt-1 text-[10px] font-bold text-slate-400">Ventas</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 p-3">
+                            <p class="text-xl font-black text-cyan-300">FE</p>
+                            <p class="mt-1 text-[10px] font-bold text-slate-400">SUNAT</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/10 p-3">
+                            <p class="text-xl font-black text-white">IA</p>
+                            <p class="mt-1 text-[10px] font-bold text-slate-400">Smart</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-emerald-400/50 hover:bg-white/[0.09] hover:shadow-[0_24px_80px_rgba(16,185,129,.18)]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-emerald-400/20 blur-3xl group-hover:bg-emerald-400/30 transition"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M4 7h16M4 12h16M4 17h10"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-emerald-400/10 border border-emerald-400/30 px-2.5 py-1 text-[10px] font-black text-emerald-300">CORE</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">Ventas POS</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed text-slate-300">
+                        Venta rápida en mostrador, ticket actual, cliente, comprobante, caja activa y cobro optimizado.
+                    </p>
+
+                    <div class="relative mt-5 grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl bg-slate-950/60 border border-white/10 p-3">
+                            <p class="text-[10px] text-slate-400 font-bold">Caja</p>
+                            <p class="mt-1 text-xs font-black text-emerald-300">Activa</p>
+                        </div>
+                        <div class="rounded-2xl bg-slate-950/60 border border-white/10 p-3">
+                            <p class="text-[10px] text-slate-400 font-bold">Comprobante</p>
+                            <p class="mt-1 text-xs font-black text-white">Ticket / Boleta</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-cyan-400/50 hover:bg-white/[0.09] hover:shadow-[0_24px_80px_rgba(6,182,212,.18)]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-cyan-400/20 blur-3xl group-hover:bg-cyan-400/30 transition"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M20 7H4M6 7l1 13h10l1-13M9 7V4h6v3M10 11h4"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-cyan-400/10 border border-cyan-400/30 px-2.5 py-1 text-[10px] font-black text-cyan-300">STOCK</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">Inventario Maestro</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed text-slate-300">
+                        Productos, laboratorios, categorías, stock, recetas, vencimientos y monitoreo operativo.
+                    </p>
+
+                    <div class="relative mt-5 space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                                <span>Stock saludable</span>
+                                <span>82%</span>
+                            </div>
+                            <div class="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full w-[82%] rounded-full bg-cyan-300"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold text-slate-400">
+                                <span>Alertas críticas</span>
+                                <span>18</span>
+                            </div>
+                            <div class="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full w-[28%] rounded-full bg-rose-400"></div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-violet-400/50 hover:bg-white/[0.09]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-violet-400/20 blur-3xl"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-violet-300 text-slate-950 flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M6 7h12l-1 13H7L6 7zM9 7a3 3 0 016 0"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-violet-400/10 border border-violet-400/30 px-2.5 py-1 text-[10px] font-black text-violet-300">SUPPLY</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">Compras</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed text-slate-300">
+                        Proveedores, sucursal destino, productos recibidos, lote, vencimiento, costo y subtotal.
+                    </p>
+
+                    <div class="relative mt-5 rounded-2xl bg-slate-950/60 border border-white/10 p-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-bold">Recepción</span>
+                            <span class="font-black text-violet-300">Nueva entrada</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-orange-400/50 hover:bg-white/[0.09]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-orange-400/20 blur-3xl"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-orange-300 text-slate-950 flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/>
+                                <path d="M7 20a2 2 0 100-4 2 2 0 000 4zM18 20a2 2 0 100-4 2 2 0 000 4z"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-orange-400/10 border border-orange-400/30 px-2.5 py-1 text-[10px] font-black text-orange-300">SEDES</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">Traslados</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed text-slate-300">
+                        Movimiento de mercadería entre sedes con trazabilidad y control por farmacia o sucursal.
+                    </p>
+
+                    <div class="relative mt-5 flex items-center gap-3 rounded-2xl bg-slate-950/60 border border-white/10 p-3">
+                        <div class="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
+                        <div class="h-[2px] flex-1 bg-white/20"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-cyan-300"></div>
+                        <div class="h-[2px] flex-1 bg-white/20"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-orange-300"></div>
+                    </div>
+                </article>
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-blue-400/50 hover:bg-white/[0.09]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-blue-400/20 blur-3xl"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-300 text-slate-950 flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M7 3h10l3 3v15H7z"/>
+                                <path d="M17 3v4h4M9 11h8M9 15h8"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-blue-400/10 border border-blue-400/30 px-2.5 py-1 text-[10px] font-black text-blue-300">SUNAT</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">Facturación electrónica</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed text-slate-300">
+                        Tickets, boletas, facturas, series, correlativos y configuración de comprobantes.
+                    </p>
+
+                    <div class="relative mt-5 grid grid-cols-3 gap-2">
+                        <span class="rounded-2xl bg-white/10 px-2 py-2 text-center text-[10px] font-black text-slate-300">Ticket</span>
+                        <span class="rounded-2xl bg-white/10 px-2 py-2 text-center text-[10px] font-black text-slate-300">Boleta</span>
+                        <span class="rounded-2xl bg-white/10 px-2 py-2 text-center text-[10px] font-black text-slate-300">Factura</span>
+                    </div>
+                </article>
+
+                <article class="group relative overflow-hidden rounded-[1.75rem] border border-emerald-400/30 bg-gradient-to-br from-emerald-400 to-cyan-300 p-5 text-slate-950 transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_90px_rgba(16,185,129,.28)]">
+                    <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-white/40 blur-3xl"></div>
+
+                    <div class="relative flex items-start justify-between gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-950 text-emerald-300 flex items-center justify-center shadow-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                                <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/>
+                                <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/>
+                            </svg>
+                        </div>
+                        <span class="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-black text-white">AI POWER</span>
+                    </div>
+
+                    <h3 class="relative mt-5 text-xl font-black">IA incorporada</h3>
+                    <p class="relative mt-2 text-xs leading-relaxed font-semibold text-slate-800">
+                        Buscadores inteligentes para ubicar productos, clientes, comprobantes, módulos y acciones en segundos.
+                    </p>
+
+                    <div class="relative mt-5 rounded-2xl bg-white/70 border border-white/50 p-3">
+                        <p class="text-[10px] font-black tracking-[0.18em] text-slate-600">SMART SEARCH</p>
+                        <p class="mt-2 text-xs font-black">“producto con stock para dolor de cabeza”</p>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="ia" class="relative overflow-hidden py-14 sm:py-16 bg-slate-950 text-white">
+    <div class="absolute inset-0">
+        <div class="absolute top-10 left-10 w-[30rem] h-[30rem] rounded-full bg-emerald-500/15 blur-3xl"></div>
+        <div class="absolute bottom-0 right-0 w-[34rem] h-[34rem] rounded-full bg-cyan-500/15 blur-3xl"></div>
+        <div class="absolute inset-0 opacity-[0.07]" style="background-image: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px); background-size: 46px 46px;"></div>
+    </div>
+
+    <div class="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-12 items-center">
+
+            <div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3.5 py-1.5">
+                    <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+                    <span class="text-[10px] sm:text-[11px] font-black text-cyan-300 tracking-wide">INTELIGENCIA OPERATIVA</span>
+                </div>
+
+                <h2 class="mt-5 max-w-3xl text-3xl sm:text-4xl md:text-5xl xl:text-[3.35rem] font-black tracking-tight leading-[0.98]">
+                    Búsqueda inteligente para trabajar más rápido.
+                </h2>
+
+                <p class="mt-5 max-w-2xl text-sm sm:text-[15px] text-slate-300 leading-relaxed">
+                    Una experiencia tipo buscador global para ubicar productos, clientes, comprobantes,
+                    módulos y acciones frecuentes sin navegar pantalla por pantalla.
+                </p>
+
+                <div class="mt-7 grid gap-3 max-w-2xl">
+                    <div class="group rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.09]">
+                        <div class="flex gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-xs font-black text-slate-950">01</span>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Busca por intención, no solo por nombre</h3>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                                    Ejemplo: “dolor de cabeza”, “paracetamol 500”, “laboratorio 2” o “stock bajo”.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.09]">
+                        <div class="flex gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-cyan-300 text-xs font-black text-slate-950">02</span>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Accede a módulos en segundos</h3>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                                    POS, inventario, compras, ventas, traslados, clientes, facturación o configuración.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:bg-white/[0.09]">
+                        <div class="flex gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white text-xs font-black text-slate-950">03</span>
+                            <div>
+                                <h3 class="text-sm font-black text-white">Convierte búsqueda en acción</h3>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-400">
+                                    Abre resultados, agrega productos al ticket o encuentra información operativa rápido.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-7 grid grid-cols-3 gap-3 max-w-2xl">
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <p class="text-lg font-black text-emerald-300">0.12s</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-400">Respuesta visual</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <p class="text-lg font-black text-cyan-300">Global</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-400">Módulos y datos</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                        <p class="text-lg font-black text-white">Smart</p>
+                        <p class="mt-1 text-[10px] font-bold text-slate-400">Acciones rápidas</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="absolute -inset-6 rounded-full bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 blur-3xl"></div>
+
+                <div class="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 sm:p-5 backdrop-blur-2xl shadow-2xl">
+                    <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950">
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 p-4">
+                            <div>
+                                <p class="text-[9px] font-black tracking-[0.28em] text-cyan-300">BUSCADOR GLOBAL</p>
+                                <h3 class="mt-1 text-base font-black text-white">Qhalisys AI Search</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-black text-slate-950">ONLINE</span>
+                                <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-slate-300">Beta UX</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 sm:p-5">
+                            <div class="rounded-2xl bg-white p-3.5 flex items-center gap-3 shadow-xl">
+                                <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
+                                </svg>
+                                <input id="aiSearch" class="w-full outline-none bg-transparent text-xs sm:text-sm font-bold text-slate-800" value="buscar paracetamol con stock" autocomplete="off">
+                                <span class="hidden sm:inline-flex rounded-xl bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">AI</span>
+                            </div>
+
+                            <div id="aiResults" class="mt-4 grid gap-3">
+                                <div class="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-xs font-black text-emerald-300">Producto encontrado</p>
+                                            <p class="mt-1 text-[11px] leading-relaxed text-slate-300">Paracetamol · 500mg · stock disponible · listo para POS</p>
+                                        </div>
+                                        <span class="rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-black text-slate-950">98%</span>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                                    <p class="text-xs font-black text-white">Acción sugerida</p>
+                                    <p class="mt-1 text-[11px] leading-relaxed text-slate-400">Abrir catálogo o agregar al ticket actual.</p>
+                                </div>
+
+                                <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                                    <p class="text-xs font-black text-white">Módulos relacionados</p>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-slate-300">Inventario</span>
+                                        <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-slate-300">POS</span>
+                                        <span class="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-slate-300">Compras</span>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+                                    <p class="text-xs font-black text-cyan-300">Lectura operativa</p>
+                                    <div class="mt-3 grid grid-cols-3 gap-2">
+                                        <div class="rounded-xl bg-slate-950/60 p-3">
+                                            <p class="text-[10px] text-slate-400 font-bold">Stock</p>
+                                            <p class="mt-1 text-xs font-black text-white">Disponible</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-950/60 p-3">
+                                            <p class="text-[10px] text-slate-400 font-bold">Precio</p>
+                                            <p class="mt-1 text-xs font-black text-white">S/ 20.00</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-950/60 p-3">
+                                            <p class="text-[10px] text-slate-400 font-bold">Acción</p>
+                                            <p class="mt-1 text-xs font-black text-white">Vender</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="hidden xl:block absolute -left-6 top-12 rounded-3xl border border-emerald-300/40 bg-white/90 p-4 shadow-xl backdrop-blur-xl">
+                    <p class="text-[10px] font-black text-slate-400">Resultado</p>
+                    <p class="mt-1 text-sm font-black text-slate-950">Producto detectado</p>
+                </div>
+
+                <div class="hidden xl:block absolute -right-5 bottom-10 rounded-3xl border border-cyan-300/40 bg-white/90 p-4 shadow-xl backdrop-blur-xl">
+                    <p class="text-[10px] font-black text-slate-400">Sugerencia</p>
+                    <p class="mt-1 text-sm font-black text-slate-950">Agregar al POS</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="planes" class="relative overflow-hidden py-14 sm:py-16 bg-white text-slate-950">
+    <div class="absolute inset-0">
+        <div class="absolute -top-32 left-10 w-[34rem] h-[34rem] rounded-full bg-emerald-200/40 blur-3xl"></div>
+        <div class="absolute -bottom-32 right-10 w-[36rem] h-[36rem] rounded-full bg-cyan-200/40 blur-3xl"></div>
+        <div class="absolute inset-0 opacity-[0.35]" style="background-image: linear-gradient(rgba(15,23,42,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.05) 1px, transparent 1px); background-size: 46px 46px;"></div>
+    </div>
+
+    <div class="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] sm:text-[11px] font-black tracking-wide text-emerald-700">PLANES DE CRECIMIENTO</span>
+            </div>
+
+            <h2 class="mt-5 text-3xl sm:text-4xl md:text-5xl xl:text-[3.3rem] font-black tracking-tight leading-[0.98]">
+                Elige cómo quieres empezar.
+            </h2>
+
+            <p class="mt-4 text-sm sm:text-[15px] text-slate-600 leading-relaxed">
+                Planes para farmacias pequeñas, negocios en crecimiento y operaciones con varias sedes.
+            </p>
+        </div>
+
+        <div class="mt-10 grid md:grid-cols-2 xl:grid-cols-5 gap-4">
+
+            <article class="group relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/80 backdrop-blur-xl p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-slate-200/60 blur-3xl"></div>
+
+                <div class="relative">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-black">Gratis</h3>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">START</span>
+                    </div>
+
+                    <p class="mt-4 text-3xl font-black">S/ 0</p>
+                    <p class="mt-1 text-xs font-bold text-slate-500">Prueba inicial</p>
+
+                    <div class="my-5 h-px bg-slate-200"></div>
+
+                    <ul class="space-y-2.5 text-xs font-semibold text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Acceso de prueba</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Vista inicial del sistema</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Registro básico</li>
+                    </ul>
+
+                    <a href="{% url 'login' %}" class="mt-6 inline-flex w-full justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-800 transition hover:border-emerald-300 hover:text-emerald-700">
+                        Probar ahora
+                    </a>
+                </div>
+            </article>
+
+            <article class="group relative overflow-hidden rounded-[1.75rem] border border-emerald-200 bg-white/90 backdrop-blur-xl p-5 shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+                <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-emerald-200/70 blur-3xl"></div>
+
+                <div class="relative">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-black">Básico</h3>
+                        <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">CORE</span>
+                    </div>
+
+                    <p class="mt-4 text-3xl font-black">S/ 50</p>
+                    <p class="mt-1 text-xs font-bold text-slate-500">mensual</p>
+
+                    <div class="my-5 h-px bg-emerald-100"></div>
+
+                    <ul class="space-y-2.5 text-xs font-semibold text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Sistema funcional básico</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Ventas POS</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Clientes y productos</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Facturación electrónica</li>
+                    </ul>
+
+                    <a href="{% url 'login' %}" class="mt-6 inline-flex w-full justify-center rounded-2xl bg-emerald-500 px-4 py-3 text-xs font-black text-white transition hover:bg-emerald-600">
+                        Empezar básico
+                    </a>
+                </div>
+            </article>
+
+            <article class="group relative overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950 p-5 text-white shadow-2xl transition hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(15,23,42,.35)] xl:scale-[1.03]">
+                <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-emerald-400 via-cyan-300 to-emerald-400"></div>
+                <div class="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-emerald-400/25 blur-3xl"></div>
+
+                <div class="relative">
+                    <span class="inline-flex rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-black text-slate-950">
+                        RECOMENDADO
+                    </span>
+
+                    <h3 class="mt-4 text-lg font-black">Intermedio</h3>
+
+                    <p class="mt-4 text-3xl font-black">S/ 90</p>
+                    <p class="mt-1 text-xs font-bold text-slate-400">mensual</p>
+
+                    <div class="my-5 h-px bg-white/10"></div>
+
+                    <ul class="space-y-2.5 text-xs font-semibold text-slate-300">
+                        <li class="flex gap-2"><span class="text-emerald-300 font-black">✓</span> Todo el básico</li>
+                        <li class="flex gap-2"><span class="text-emerald-300 font-black">✓</span> Dashboard principal</li>
+                        <li class="flex gap-2"><span class="text-emerald-300 font-black">✓</span> Inventario con reportes</li>
+                        <li class="flex gap-2"><span class="text-emerald-300 font-black">✓</span> Control operativo mejorado</li>
+                    </ul>
+
+                    <a href="{% url 'login' %}" class="mt-6 inline-flex w-full justify-center rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-300">
+                        Elegir intermedio
+                    </a>
+                </div>
+            </article>
+
+            <article class="group relative overflow-hidden rounded-[1.75rem] border border-cyan-200 bg-white/90 backdrop-blur-xl p-5 shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+                <div class="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-cyan-200/70 blur-3xl"></div>
+
+                <div class="relative">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-black">Avanzado</h3>
+                        <span class="rounded-full bg-cyan-50 px-2.5 py-1 text-[10px] font-black text-cyan-700">PRO</span>
+                    </div>
+
+                    <p class="mt-4 text-3xl font-black">S/ 150</p>
+                    <p class="mt-1 text-xs font-bold text-slate-500">mensual</p>
+
+                    <div class="my-5 h-px bg-cyan-100"></div>
+
+                    <ul class="space-y-2.5 text-xs font-semibold text-slate-600">
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Todo el intermedio</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Reportes avanzados</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Cotizaciones</li>
+                        <li class="flex gap-2"><span class="text-emerald-500 font-black">✓</span> Pagos Yape + Plin</li>
+                    </ul>
+
+                    <a href="{% url 'login' %}" class="mt-6 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-4 py-3 text-xs font-black text-white transition hover:bg-cyan-600">
+                        Elegir avanzado
+                    </a>
+                </div>
+            </article>
+
+            <article class="group relative overflow-hidden rounded-[1.75rem] border border-emerald-300/50 bg-gradient-to-br from-emerald-400 to-cyan-300 p-5 text-slate-950 shadow-xl transition hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(16,185,129,.25)]">
+                <div class="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-white/50 blur-3xl"></div>
+
+                <div class="relative">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-black">Custom</h3>
+                        <span class="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-black text-white">FULL</span>
+                    </div>
+
+                    <p class="mt-4 text-3xl font-black">A medida</p>
+                    <p class="mt-1 text-xs font-bold text-slate-800">corporativo</p>
+
+                    <div class="my-5 h-px bg-slate-950/15"></div>
+
+                    <ul class="space-y-2.5 text-xs font-bold text-slate-900">
+                        <li class="flex gap-2"><span class="font-black">✓</span> Todo lo anterior</li>
+                        <li class="flex gap-2"><span class="font-black">✓</span> Todo el sistema</li>
+                        <li class="flex gap-2"><span class="font-black">✓</span> Módulos personalizados</li>
+                        <li class="flex gap-2"><span class="font-black">✓</span> Implementación y soporte</li>
+                    </ul>
+
+                    <a href="{% url 'login' %}" class="mt-6 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-4 py-3 text-xs font-black text-white transition hover:bg-slate-800">
+                        Solicitar custom
+                    </a>
+                </div>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+<section id="contacto" class="relative overflow-hidden py-14 sm:py-16 bg-slate-950 text-white">
+    <div class="absolute inset-0">
+        <div class="absolute -top-24 left-10 w-[34rem] h-[34rem] rounded-full bg-emerald-500/20 blur-3xl"></div>
+        <div class="absolute -bottom-24 right-10 w-[36rem] h-[36rem] rounded-full bg-cyan-500/20 blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-emerald-400 via-cyan-300 to-emerald-500 p-1 shadow-2xl">
+            <div class="rounded-[1.8rem] bg-slate-950/95 p-6 sm:p-8 lg:p-10">
+                <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
+                    <div>
+                        <div class="inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3.5 py-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                            <span class="text-[10px] sm:text-[11px] font-black tracking-wide text-emerald-300">QHALISYS+ PARA FARMACIAS</span>
+                        </div>
+
+                        <h2 class="mt-5 max-w-4xl text-3xl sm:text-4xl md:text-5xl xl:text-[3.3rem] font-black tracking-tight leading-[0.98]">
+                            Moderniza tu farmacia con una plataforma más rápida, ordenada e inteligente.
+                        </h2>
+
+                        <p class="mt-5 max-w-3xl text-sm sm:text-[15px] leading-relaxed text-slate-300">
+                            Lleva tus ventas POS, inventario, compras, traslados, facturación electrónica,
+                            cotizaciones, reportes e IA operativa a un sistema SaaS profesional preparado para crecer contigo.
+                        </p>
+
+                        <div class="mt-6 grid sm:grid-cols-3 gap-3 max-w-3xl">
+                            <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                                <p class="text-lg font-black text-emerald-300">POS</p>
+                                <p class="mt-1 text-[11px] font-bold text-slate-400">Venta rápida</p>
+                            </div>
+                            <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                                <p class="text-lg font-black text-cyan-300">FE</p>
+                                <p class="mt-1 text-[11px] font-bold text-slate-400">Facturación</p>
+                            </div>
+                            <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                                <p class="text-lg font-black text-white">IA</p>
+                                <p class="mt-1 text-[11px] font-bold text-slate-400">Smart search</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 sm:p-6 backdrop-blur-xl shadow-xl">
+                        <p class="text-[10px] font-black tracking-[0.25em] text-cyan-300">CONTACTO DIRECTO</p>
+                        <h3 class="mt-3 text-2xl sm:text-3xl font-black">¿Listo para probar Qhalisys+?</h3>
+                        <p class="mt-3 text-xs sm:text-sm leading-relaxed text-slate-400">
+                            Escríbenos por WhatsApp y coordinamos una demostración, activación o consulta sobre el plan ideal para tu farmacia.
+                        </p>
+
+                        <div class="mt-5 grid gap-3">
+                            <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+                                <p class="text-[10px] font-black text-emerald-300 tracking-[0.2em]">Soporte:</p>
+                                <p class="mt-1 text-lg font-black text-white">+51 916 393 838</p>
+                            </div>
+
+                            <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+                                <p class="text-[10px] font-black text-cyan-300 tracking-[0.2em]">Ventas:</p>
+                                <p class="mt-1 text-lg font-black text-white">+51 944 351 698</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 grid gap-3">
+                            <a href="https://wa.me/51916393838?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20Qhalisys%2B%20para%20mi%20farmacia."
+                               target="_blank"
+                               rel="noopener"
+                               class="inline-flex items-center justify-center gap-3 rounded-2xl bg-emerald-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
+                                WhatsApp 916 393 838
+                            </a>
+
+                            <a href="https://wa.me/51944351698?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20Qhalisys%2B%20para%20mi%20farmacia."
+                               target="_blank"
+                               rel="noopener"
+                               class="inline-flex items-center justify-center gap-3 rounded-2xl bg-cyan-300 px-6 py-3.5 text-xs font-black text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-200">
+                                WhatsApp 944 351 698
+                            </a>
+
+                            <a href="{% url 'login' %}"
+                               class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-6 py-3.5 text-xs font-black text-white transition hover:bg-white/15">
+                                Ingresar al sistema
+                            </a>
+
+                            <a href="#planes"
+                               class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-slate-950 px-6 py-3.5 text-xs font-black text-slate-300 transition hover:text-white">
+                                Revisar planes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
+
+    <a href="https://wa.me/51916393838?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20Qhalisys%2B%20para%20mi%20farmacia."
+       target="_blank"
+       rel="noopener"
+       class="inline-flex items-center gap-2 rounded-full bg-emerald-400 px-4 py-2.5 text-xs font-black text-slate-950 shadow-2xl shadow-emerald-500/30 transition hover:bg-emerald-300">
+
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.52 3.48A11.85 11.85 0 0012.08 0C5.52 0 .2 5.32.2 11.88c0 2.1.55 4.15 1.6 5.96L0 24l6.32-1.66a11.83 11.83 0 005.76 1.47h.01c6.56 0 11.88-5.32 11.88-11.88 0-3.17-1.24-6.15-3.45-8.45zM12.09 21.8h-.01a9.86 9.86 0 01-5.03-1.38l-.36-.21-3.75.98 1-3.65-.24-.38a9.82 9.82 0 01-1.5-5.27c0-5.45 4.43-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.89 6.99c0 5.45-4.43 9.88-9.88 9.88zm5.42-7.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/>
+        </svg>
+
+        Soporte
+    </a>
+
+    <a href="https://wa.me/51944351698?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20Qhalisys%2B%20para%20mi%20farmacia."
+       target="_blank"
+       rel="noopener"
+       class="inline-flex items-center gap-2 rounded-full bg-cyan-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-2xl shadow-cyan-500/30 transition hover:bg-cyan-200">
+
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.52 3.48A11.85 11.85 0 0012.08 0C5.52 0 .2 5.32.2 11.88c0 2.1.55 4.15 1.6 5.96L0 24l6.32-1.66a11.83 11.83 0 005.76 1.47h.01c6.56 0 11.88-5.32 11.88-11.88 0-3.17-1.24-6.15-3.45-8.45zM12.09 21.8h-.01a9.86 9.86 0 01-5.03-1.38l-.36-.21-3.75.98 1-3.65-.24-.38a9.82 9.82 0 01-1.5-5.27c0-5.45 4.43-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 012.89 6.99c0 5.45-4.43 9.88-9.88 9.88zm5.42-7.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/>
+        </svg>
+
+        Ventas
+    </a>
+
+</div>
+
+</main>
+
+<footer class="bg-slate-950 border-t border-white/10 py-8">
+    <div class="max-w-full mx-auto px-6 flex flex-col md:flex-row justify-between gap-4 text-sm text-slate-400">
+        <p>© 2026 Qhalisys+ · VQL Pharma Systems</p>
+        <p>Software SaaS para gestión farmacéutica, POS, inventario y facturación electrónica.</p>
+    </div>
+</footer>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const landingMenuButton = document.getElementById('landingMenuButton');
+        const landingMobileMenu = document.getElementById('landingMobileMenu');
+        const menuIconOpen = document.getElementById('menuIconOpen');
+        const menuIconClose = document.getElementById('menuIconClose');
+
+        if (landingMenuButton && landingMobileMenu) {
+            landingMenuButton.addEventListener('click', function () {
+                landingMobileMenu.classList.toggle('hidden');
+
+                if (menuIconOpen) {
+                    menuIconOpen.classList.toggle('hidden');
+                }
+
+                if (menuIconClose) {
+                    menuIconClose.classList.toggle('hidden');
+                }
+            });
+
+            landingMobileMenu.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    landingMobileMenu.classList.add('hidden');
+
+                    if (menuIconOpen) {
+                        menuIconOpen.classList.remove('hidden');
+                    }
+
+                    if (menuIconClose) {
+                        menuIconClose.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        const heroSmartSearch = document.getElementById('heroSmartSearch');
+        const heroSearchResult = document.getElementById('heroSearchResult');
+        const heroPlaceholder = 'Buscar producto, cliente, venta o módulo...';
+
+        if (heroSmartSearch && heroSearchResult) {
+            heroSmartSearch.addEventListener('focus', function () {
+                if (this.value === heroPlaceholder) {
+                    this.value = '';
+                }
+            });
+
+            heroSmartSearch.addEventListener('blur', function () {
+                if (!this.value.trim()) {
+                    this.value = heroPlaceholder;
+                }
+            });
+
+            heroSmartSearch.addEventListener('input', function () {
+                const value = this.value.trim();
+
+                if (!value) {
+                    heroSearchResult.innerHTML = `
+                        <div class="rounded-2xl bg-emerald-400/10 border border-emerald-400/20 p-3">
+                            <p class="text-[10px] font-black text-emerald-300">Sugerencia</p>
+                            <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Busca productos, clientes o módulos</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                            <p class="text-[10px] font-black text-slate-400">Ejemplo</p>
+                            <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">paracetamol 500</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                            <p class="text-[10px] font-black text-slate-400">Acceso</p>
+                            <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">POS · Inventario · Compras</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                heroSearchResult.innerHTML = `
+                    <div class="rounded-2xl bg-emerald-400/10 border border-emerald-400/20 p-3">
+                        <p class="text-[10px] font-black text-emerald-300">IA interpretando</p>
+                        <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">${value}</p>
+                    </div>
+                    <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                        <p class="text-[10px] font-black text-slate-400">Coincidencias</p>
+                        <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Productos · Clientes · Módulos</p>
+                    </div>
+                    <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                        <p class="text-[10px] font-black text-slate-400">Acción sugerida</p>
+                        <p class="mt-1 text-[11px] sm:text-xs text-white font-bold">Abrir resultado relacionado</p>
+                    </div>
+                `;
+            });
+        }
+
+        const aiSearch = document.getElementById('aiSearch');
+        const aiResults = document.getElementById('aiResults');
+
+        if (aiSearch && aiResults) {
+            aiSearch.addEventListener('input', function () {
+                const value = this.value.trim() || 'búsqueda inteligente';
+
+                aiResults.innerHTML = `
+                    <div class="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-black text-emerald-300">IA interpretando consulta</p>
+                                <p class="mt-1 text-[11px] leading-relaxed text-slate-300">${value}</p>
+                            </div>
+                            <span class="rounded-full bg-emerald-400 px-2.5 py-1 text-[10px] font-black text-slate-950">LIVE</span>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                        <p class="text-xs font-black text-white">Coincidencias sugeridas</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-400">Productos, clientes, módulos, comprobantes o acciones relacionadas.</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+                        <p class="text-xs font-black text-cyan-300">Acción rápida</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-300">Abrir POS, inventario, compras, ventas o configuración según intención.</p>
+                    </div>
+                `;
+            });
+        }
+    });
+</script>
+</body>
+</html>

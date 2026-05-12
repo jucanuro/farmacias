@@ -26,8 +26,7 @@ def enviar_factura_service(invoice_data, configuracion):
 
 
 def home_view(request):
-    return HttpResponse("<h1>¡Bienvenido al Sistema de Gestión de Farmacias!</h1><p>Esta es la página de inicio de la aplicación core.</p>")
-
+    return render(request, 'landing.html')
 
 @require_POST
 def registro_api_view(request):
