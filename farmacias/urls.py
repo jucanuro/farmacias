@@ -23,6 +23,7 @@ urlpatterns = [
     path('ventas/', include('ventas.urls')),
     path('traslados/', include('traslados.urls')),
     path("facturacion/", include("facturacion.urls")),
+    path('ia/', include('ia_assistant.urls')),
 
     path('', TemplateView.as_view(template_name='landing.html'), name='landing'),
     path('login/', TemplateView.as_view(template_name='farmacias_main_templates/index.html'), name='login'),

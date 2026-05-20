@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     'ventas',
     'traslados',
     'facturacion',
+    'ia_assistant',
+    
     'crispy_forms',
     'crispy_tailwind',
 ]
