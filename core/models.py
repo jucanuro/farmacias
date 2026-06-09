@@ -103,6 +103,9 @@ class Sucursal(models.Model):
     codigo = models.CharField(max_length=10, unique=True, verbose_name="Código de Sucursal")
     direccion = models.CharField(max_length=255, blank=True, verbose_name="Dirección de la Sucursal")
     telefono = models.CharField(max_length=20, blank=True, verbose_name="Teléfono de la Sucursal")
+    
+    es_principal = models.BooleanField(default=False)
+    
     administrador = models.ForeignKey(
         Usuario,
         on_delete=models.SET_NULL,

@@ -39,18 +39,6 @@
         color: #64748b;
     }
 
-    .section-badge {
-        width: 2.2rem;
-        height: 2.2rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.95rem;
-        font-weight: 800;
-        font-size: 0.82rem;
-        flex-shrink: 0;
-    }
-
     .mini-stat {
         border-radius: 1.15rem;
         padding: 1rem;
@@ -85,9 +73,9 @@
         letter-spacing: 0.02em;
     }
 
-    .sucursal-form input,
-    .sucursal-form textarea,
-    .sucursal-form select {
+    /* Estilos explícitos y sólidos para los inputs nativos */
+    .sucursal-form input[type="text"],
+    .sucursal-form input[type="tel"] {
         width: 100%;
         border: 1px solid #dbe3ee;
         background: #ffffff;
@@ -99,9 +87,8 @@
         box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
     }
 
-    .sucursal-form input:focus,
-    .sucursal-form textarea:focus,
-    .sucursal-form select:focus {
+    .sucursal-form input[type="text"]:focus,
+    .sucursal-form input[type="tel"]:focus {
         border-color: #06b6d4;
         box-shadow:
             0 0 0 4px rgba(6, 182, 212, 0.12),
@@ -162,11 +149,7 @@
                 <div>
                     <div class="flex flex-wrap items-center gap-3 mb-1">
                         <h1 class="text-3xl font-bold tracking-tight text-slate-900">
-                            {% if sucursal %}
-                                Editar Sucursal
-                            {% else %}
-                                Nueva Sucursal
-                            {% endif %}
+                            {% if sucursal %}Editar Sucursal{% else %}Nueva Sucursal{% endif %}
                         </h1>
 
                         {% if sucursal %}
@@ -191,23 +174,16 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 w-full lg:w-auto">
+            <div class="grid grid-cols-2 md:grid-cols-2 gap-3 w-full lg:w-auto">
                 <div class="mini-stat min-w-[140px]">
-                    <span class="mini-stat-label">Estado</span>
+                    <span class="mini-stat-label">Tipo Sede</span>
                     <span class="mini-stat-value text-sm flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full {% if sucursal %}bg-cyan-500{% else %}bg-amber-500{% endif %}"></div>
-                        {% if sucursal %}Activo{% else %}En creación{% endif %}
+                        <div id="badge-principal-dot" class="w-2 h-2 rounded-full {% if datos.es_principal or sucursal.es_principal %}bg-emerald-500{% else %}bg-slate-400{% endif %}"></div>
+                        <span id="badge-principal-text">{% if datos.es_principal or sucursal.es_principal %}Principal{% else %}Normal{% endif %}</span>
                     </span>
                 </div>
 
-                <div class="mini-stat min-w-[140px]">
-                    <span class="mini-stat-label">Código</span>
-                    <span class="mini-stat-value text-sm font-mono">
-                        {% if sucursal.codigo %}{{ sucursal.codigo }}{% else %}---{% endif %}
-                    </span>
-                </div>
-
-                <div class="flex flex-col p-4 rounded-xl bg-slate-900 border border-slate-800 min-w-[140px] col-span-2 md:col-span-1 shadow-sm">
+                <div class="flex flex-col p-4 rounded-xl bg-slate-900 border border-slate-800 min-w-[160px] shadow-sm">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Farmacia Matriz</span>
                     <span class="text-sm font-semibold text-white mt-1 truncate">{{ farmacia.nombre }}</span>
                 </div>
@@ -219,69 +195,63 @@
         <div class="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-cyan-200/60 via-sky-100/50 to-emerald-100/50 blur-2xl"></div>
 
         <div class="form-shell relative rounded-[2rem] p-5 sm:p-6 lg:p-6">
-            <form method="post" action="" novalidate class="sucursal-form space-y-6">
+            
+            {% if errores %}
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl space-y-1">
+                    {% for error in errores %}
+                        <p class="text-red-600 text-sm font-semibold flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            {{ error }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="" class="sucursal-form space-y-6">
                 {% csrf_token %}
 
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
                     <section class="xl:col-span-9">
-                        <div class="section-card">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="section-badge bg-cyan-50 text-cyan-700 border border-cyan-100">01</span>
+                        <div class="section-card space-y-5">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="section-badge bg-cyan-50 text-cyan-700 border border-cyan-100" style="width:2.2rem; height:2.2rem; display:inline-flex; align-items:center; justify-content:center; border-radius:0.95rem; font-weight:800; font-size:0.82rem;">01</span>
                                 <div>
                                     <h3 class="text-lg font-bold text-slate-900">Información de la sucursal</h3>
-                                    <p class="text-sm text-slate-500">
-                                        Registra los datos operativos principales de esta sede.
-                                    </p>
+                                    <p class="text-sm text-slate-500">Registra los detalles de localización y contacto de la sede.</p>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre de la sucursal</label>
-                                    {{ form.nombre }}
-                                    {% if form.nombre.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.nombre.errors.as_text }}</p>
-                                    {% endif %}
+                                    <label class="form-label">Nombre de la sucursal</label>
+                                    <input type="text" name="nombre" id="input-nombre" 
+                                           value="{% if datos %}{{ datos.nombre }}{% else %}{{ sucursal.nombre|default:'' }}{% endif %}" 
+                                           placeholder="Ej. Sede Central Chiclayo" required>
                                 </div>
 
                                 <div>
-                                    <label for="{{ form.codigo.id_for_label }}" class="form-label">Código de sucursal</label>
-                                    {{ form.codigo }}
-                                    {% if form.codigo.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.codigo.errors.as_text }}</p>
-                                    {% endif %}
+                                    <label class="form-label">Teléfono de contacto</label>
+                                    <input type="tel" name="telefono" id="input-telefono" 
+                                           value="{% if datos %}{{ datos.telefono }}{% else %}{{ sucursal.telefono|default:'' }}{% endif %}" 
+                                           placeholder="Ej. 074-234567 o 987654321">
                                 </div>
 
                                 <div class="md:col-span-2">
-                                    <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección de la sucursal</label>
-                                    {{ form.direccion }}
-                                    {% if form.direccion.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.direccion.errors.as_text }}</p>
-                                    {% endif %}
+                                    <label class="form-label">Dirección exacta</label>
+                                    <input type="text" name="direccion" id="input-direccion" 
+                                           value="{% if datos %}{{ datos.direccion }}{% else %}{{ sucursal.direccion|default:'' }}{% endif %}" 
+                                           placeholder="Ej. Av. Salaverry N° 456 - Urb. Santa Victoria" required>
                                 </div>
 
-                                <div>
-                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
-                                    {{ form.telefono }}
-                                    {% if form.telefono.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.telefono.errors.as_text }}</p>
-                                    {% endif %}
-                                </div>
-
-                                <div>
-                                    <label for="{{ form.fecha_apertura.id_for_label }}" class="form-label">Fecha de apertura</label>
-                                    {{ form.fecha_apertura }}
-                                    {% if form.fecha_apertura.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.fecha_apertura.errors.as_text }}</p>
-                                    {% endif %}
-                                </div>
-
-                                <div class="md:col-span-2">
-                                    <label for="{{ form.administrador.id_for_label }}" class="form-label">Administrador de sucursal</label>
-                                    {{ form.administrador }}
-                                    {% if form.administrador.errors %}
-                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.administrador.errors.as_text }}</p>
-                                    {% endif %}
+                                <div class="md:col-span-2 flex items-center p-4 rounded-xl bg-slate-50 border border-slate-200 mt-2">
+                                    <div class="flex items-center h-5">
+                                        <input type="checkbox" name="es_principal" id="input-principal" class="w-4 h-4 text-cyan-600 border-slate-300 rounded focus:ring-cyan-500"
+                                               {% if datos.es_principal or sucursal.es_principal %}checked{% endif %}>
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="input-principal" class="font-bold text-slate-800 cursor-pointer">Definir como sucursal principal</label>
+                                        <p class="text-slate-500 text-xs font-medium">Al activar esta opción, cualquier otra sucursal principal anterior pasará a ser secundaria.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -294,27 +264,27 @@
                             <div class="space-y-2.5">
                                 <div class="rounded-xl bg-slate-50 px-3 py-2">
                                     <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Sucursal</p>
-                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
-                                        {% if sucursal and sucursal.nombre %}{{ sucursal.nombre }}{% else %}Nueva sucursal{% endif %}
+                                    <p id="preview-nombre" class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if datos.nombre %}{{ datos.nombre }}{% elif sucursal.nombre %}{{ sucursal.nombre }}{% else %}Nueva sucursal{% endif %}
                                     </p>
                                 </div>
 
                                 <div class="rounded-xl bg-slate-50 px-3 py-2">
-                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Código</p>
-                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
-                                        {% if sucursal and sucursal.codigo %}{{ sucursal.codigo }}{% else %}Pendiente{% endif %}
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Teléfono</p>
+                                    <p id="preview-telefono" class="mt-1 text-sm font-semibold text-slate-800 truncate">
+                                        {% if datos.telefono %}{{ datos.telefono }}{% elif sucursal.telefono %}{{ sucursal.telefono }}{% else %}Ninguno{% endif %}
                                     </p>
                                 </div>
 
                                 <div class="rounded-xl bg-slate-50 px-3 py-2">
-                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Administrador</p>
-                                    <p class="mt-1 text-sm font-semibold text-slate-800 truncate">
-                                        {% if sucursal and sucursal.administrador %}{{ sucursal.administrador }}{% else %}Pendiente{% endif %}
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Dirección</p>
+                                    <p id="preview-direccion" class="mt-1 text-sm font-medium text-slate-600 text-xs line-clamp-2">
+                                        {% if datos.direccion %}{{ datos.direccion }}{% elif sucursal.direccion %}{{ sucursal.direccion }}{% else %}Pendiente de ingreso{% endif %}
                                     </p>
                                 </div>
 
                                 <div class="rounded-xl bg-cyan-50 border border-cyan-100 px-3 py-2">
-                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-cyan-600">Farmacia</p>
+                                    <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-cyan-600">Farmacia Matriz</p>
                                     <p class="mt-1 text-sm font-bold text-slate-800 truncate">
                                         {{ farmacia.nombre }}
                                     </p>
@@ -332,15 +302,34 @@
 
                     <button type="submit"
                             class="action-primary inline-flex items-center justify-center rounded-2xl px-7 py-3 text-sm font-bold">
-                        {% if sucursal %}
-                            Guardar cambios
-                        {% else %}
-                            Guardar sucursal
-                        {% endif %}
+                        {% if sucursal %}Guardar cambios{% else %}Guardar sucursal{% endif %}
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('input-nombre').addEventListener('input', function(e) {
+        document.getElementById('preview-nombre').innerText = e.target.value.trim() || 'Nueva sucursal';
+    });
+    document.getElementById('input-telefono').addEventListener('input', function(e) {
+        document.getElementById('preview-telefono').innerText = e.target.value.trim() || 'Ninguno';
+    });
+    document.getElementById('input-direccion').addEventListener('input', function(e) {
+        document.getElementById('preview-direccion').innerText = e.target.value.trim() || 'Pendiente de ingreso';
+    });
+    document.getElementById('input-principal').addEventListener('change', function(e) {
+        const dot = document.getElementById('badge-principal-dot');
+        const text = document.getElementById('badge-principal-text');
+        if(e.target.checked) {
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            text.innerText = "Principal";
+        } else {
+            dot.className = "w-2 h-2 rounded-full bg-slate-400";
+            text.innerText = "Normal";
+        }
+    });
+</script>
 {% endblock %}

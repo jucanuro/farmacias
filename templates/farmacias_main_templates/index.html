@@ -68,13 +68,12 @@
 <div class="relative min-h-screen flex flex-col items-center justify-center p-6">
     
     <div class="w-full max-w-[440px] glass-login-card rounded-[2.5rem] animate-top overflow-hidden">
-        <div id="form-slider" class="flex w-[200%]">
+        <div id="form-slider" class="flex w-[200%] {% if errores_registro %}show-register{% endif %}">
 
             <div class="w-1/2 p-10 flex-shrink-0">
                 <div class="mb-10 text-center">
                     <div class="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center">
                         <div class="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl"></div>
-
                         <div class="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-100 bg-white shadow-[0_18px_45px_-20px_rgba(16,185,129,0.65)]">
                             <span class="text-3xl">🧪</span>
                         </div>
@@ -82,25 +81,21 @@
 
                     <h1 class="font-display text-3xl font-extrabold tracking-tight text-slate-900">
                         Qhalisys
-                        <span class="ml-1 bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
-                            +
-                        </span>
+                        <span class="ml-1 bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">+</span>
                     </h1>
 
                     <div class="mx-auto mt-3 h-1 w-14 rounded-full bg-gradient-to-r from-emerald-400 to-teal-400"></div>
-
-                    <p class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">
-                        SaaS System
-                    </p>
-
-                    <p class="mt-2 text-sm text-slate-500">
-                        Plataforma inteligente para la gestión farmacéutica
-                    </p>
+                    <p class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">SaaS System</p>
+                    <p class="mt-2 text-sm text-slate-500">Plataforma inteligente para la gestión farmacéutica</p>
                 </div>
 
-                <div id="login-message-box" class="hidden mb-6 p-3 rounded-2xl text-sm font-medium text-center"></div>
+                {% if error_login %}
+                <div class="p-4 mb-6 rounded-2xl text-center text-sm font-bold bg-red-50 text-red-600 border border-red-100 animate-top">
+                    {{ error_login }}
+                </div>
+                {% endif %}
 
-                <form id="loginForm" class="space-y-5">
+                <form id="loginForm" method="POST" action="{% url 'core:login' %}" class="space-y-5">
                     {% csrf_token %}
                     <div class="space-y-1">
                         <label class="block text-slate-600 text-xs font-bold uppercase tracking-wider ml-4">Usuario</label>
@@ -108,7 +103,7 @@
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
                             </span>
-                            <input type="text" name="username" class="input-pharma-elite w-full pl-12 pr-4 py-3.5 text-slate-700" placeholder="admin_pharma" required>
+                            <input type="text" name="username" value="{{ login_username|default:'' }}" class="input-pharma-elite w-full pl-12 pr-4 py-3.5 text-slate-700" placeholder="admin_pharma" required>
                         </div>
                     </div>
 
@@ -122,13 +117,13 @@
                         </div>
                     </div>
 
-                    <button type="submit" id="loginButton" class="btn-pharma-glow w-full py-4 rounded-full text-white font-bold text-lg shadow-xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
+                    <button type="submit" name="action_type" value="login" id="loginButton" class="btn-pharma-glow w-full py-4 rounded-full text-white font-bold text-lg shadow-xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95 cursor-pointer">
                         <span id="loginButtonText">Acceder al Sistema</span>
                     </button>
 
                     <p class="text-center text-slate-500 text-sm mt-6">
                         ¿Nuevo en VQL? 
-                        <button type="button" id="show-register-btn" class="text-pharma-600 font-bold hover:text-cyan-600 transition-colors">Crear cuenta</button>
+                        <button type="button" id="show-register-btn" class="text-emerald-600 font-bold hover:text-cyan-600 transition-colors cursor-pointer">Crear cuenta</button>
                     </p>
                 </form>
             </div>
@@ -139,21 +134,30 @@
                     <p class="text-slate-500">Únete a la red farmacéutica</p>
                 </div>
 
-                <div id="register-message-box" class="hidden mb-4 p-3 rounded-2xl text-sm text-center"></div>
+                {% if errores_registro %}
+                <div class="p-4 mb-4 rounded-2xl text-left text-sm bg-red-50 text-red-600 border border-red-100 animate-top">
+                    <ul class="list-disc pl-4 space-y-1">
+                        {% for error in errores_registro %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
 
-                <form id="registerForm" class="space-y-4">
+                <form id="registerForm" method="POST" action="{% url 'core:login' %}" class="space-y-4">
                     {% csrf_token %}
-                    <input type="text" name="username" class="input-pharma-elite w-full px-6 py-3" placeholder="Usuario" required>
-                    <input type="email" name="email" class="input-pharma-elite w-full px-6 py-3" placeholder="Email profesional" required>
-                    <input type="password" name="password" class="input-pharma-elite w-full px-6 py-3" placeholder="Contraseña" required>
+                    <input type="text" name="reg_username" value="{{ reg_username|default:'' }}" class="input-pharma-elite w-full px-6 py-3 text-slate-700" placeholder="Usuario" required>
+                    <input type="email" name="reg_email" value="{{ reg_email|default:'' }}" class="input-pharma-elite w-full px-6 py-3 text-slate-700" placeholder="Email profesional" required>
+                    <input type="password" name="reg_password1" class="input-pharma-elite w-full px-6 py-3 text-slate-700" placeholder="Contraseña" required>
+                    <input type="password" name="reg_password2" class="input-pharma-elite w-full px-6 py-3 text-slate-700" placeholder="Confirmar Contraseña" required>
                     
-                    <button type="submit" id="registerButton" class="w-full py-4 bg-slate-800 text-white rounded-full font-bold shadow-lg hover:bg-slate-900 transition-all">
+                    <button type="submit" name="action_type" value="register" id="registerButton" class="w-full py-4 bg-slate-800 text-white rounded-full font-bold shadow-lg hover:bg-slate-900 transition-all cursor-pointer">
                         <span id="registerButtonText">Registrarme Ahora</span>
                     </button>
 
                     <p class="text-center text-slate-500 text-sm">
                         ¿Ya tienes acceso? 
-                        <button type="button" id="show-login-btn" class="text-pharma-600 font-bold">Volver al login</button>
+                        <button type="button" id="show-login-btn" class="text-emerald-600 font-bold cursor-pointer">Volver al login</button>
                     </p>
                 </form>
             </div>
@@ -173,56 +177,9 @@
         const showRegisterBtn = document.getElementById('show-register-btn');
         const showLoginBtn = document.getElementById('show-login-btn');
 
-        // Slider logic
+        // Lógica limpia nativa para transicionar el formulario con el Slider CSS
         showRegisterBtn.addEventListener('click', () => formSlider.classList.add('show-register'));
         showLoginBtn.addEventListener('click', () => formSlider.classList.remove('show-register'));
-
-        // Helper para mensajes top
-        function showMessage(elementId, message, type = 'error') {
-            const box = document.getElementById(elementId);
-            box.textContent = message;
-            box.className = `p-4 mb-6 rounded-2xl text-center text-sm font-bold animate-top ${
-                type === 'success' 
-                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                : 'bg-red-50 text-red-600 border border-red-100'
-            }`;
-            box.classList.remove('hidden');
-        }
-
-        // --- AJAX LOGIN (Refinado) ---
-        const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('loginButton');
-            const txt = document.getElementById('loginButtonText');
-            
-            btn.disabled = true;
-            txt.textContent = 'Verificando...';
-
-            const data = Object.fromEntries(new FormData(loginForm).entries());
-
-            try {
-                const response = await fetch("{% url 'core:api_login' %}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': data.csrfmiddlewaretoken
-                    },
-                    body: JSON.stringify(data),
-                });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Credenciales inválidas');
-
-                showMessage('login-message-box', 'Acceso concedido. Redirigiendo...', 'success');
-                setTimeout(() => window.location.href = result.redirect_url, 800);
-
-            } catch (error) {
-                showMessage('login-message-box', error.message);
-                btn.disabled = false;
-                txt.textContent = 'Acceder al Sistema';
-            }
-        });
     });
 </script>
 {% endblock %}

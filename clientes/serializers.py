@@ -1,7 +1,6 @@
 # clientes/serializers.py
 from rest_framework import serializers
 from .models import Cliente
-from core.serializers import FarmaciaSerializer # Importamos para anidar el serializador de Farmacia
 
 class ClienteSerializer(serializers.ModelSerializer):
     """

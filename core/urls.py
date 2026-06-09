@@ -1,22 +1,13 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from . import views
-from . import api_views
-
-router = DefaultRouter()
-router.register(r'roles', api_views.RolViewSet)
-router.register(r'usuarios', api_views.UsuarioViewSet, basename='usuario')
-router.register(r'configuraciones-fe', api_views.ConfiguracionFacturacionElectronicaViewSet)
-router.register(r'farmacias', api_views.FarmaciaViewSet)
-router.register(r'sucursales', api_views.SucursalViewSet)
 
 app_name = 'core'
 
 urlpatterns = [
     path('', views.home_view, name='home'),
-    path('api/', include(router.urls)),
-    path('api/registro/', views.registro_api_view, name='api_registro'),
-    path('api/login/', views.login_api_view, name='api_login'),
+
+    path('registro/', views.registro_view, name='registro'),
+    path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 
     path('farmacias/', views.farmacias_list_view, name='farmacias_list'),
@@ -41,25 +32,11 @@ urlpatterns = [
 
     path('configuracion-fe/', views.configuracion_facturacion_view, name='configuracion_facturacion'),
     path('enviar-factura/', views.enviar_factura_electronica_view, name='enviar_factura_electronica'),
+
+    path('farmacias/<int:farmacia_id>/series/', views.series_list_view, name='series_list'),
+    path('farmacias/<int:farmacia_id>/series/nueva/', views.serie_create_view, name='serie_create'),
+    path('series/<int:pk>/editar/', views.serie_update_view, name='serie_update'),
+    path('series/<int:pk>/eliminar/', views.serie_delete_view, name='serie_delete'),
     
-    path(
-        "farmacias/<int:farmacia_id>/series/",
-        views.series_list_view,
-        name="series_list"
-    ),
-    path(
-        "farmacias/<int:farmacia_id>/series/nueva/",
-        views.serie_create_view,
-        name="serie_create"
-    ),
-    path(
-        "series/<int:pk>/editar/",
-        views.serie_update_view,
-        name="serie_update"
-    ),
-    path(
-        "series/<int:pk>/eliminar/",
-        views.serie_delete_view,
-        name="serie_delete"
-    ),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
 ]
