@@ -92,10 +92,10 @@ export function renderCart(cartItemsContainer, cart, totals) {
                                 </button>
 
                                 <input 
-                                    type="number" 
-                                    value="${item.quantity}" 
-                                    min="1" 
-                                    class="quantity-input h-10 w-14 rounded-xl border border-slate-200 bg-slate-50 text-center text-sm font-black text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" 
+                                    type="number"
+                                    value="${item.quantity}"
+                                    min="1"
+                                    class="quantity-input h-10 w-14 rounded-xl border border-slate-200 bg-slate-50 text-center text-sm font-black text-slate-800 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 [appearance:textfield]"
                                     data-item-id="${item.id}"
                                 >
 

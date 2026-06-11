@@ -65,23 +65,35 @@ class Venta(models.Model):
         return f"Venta #{self.id} ({self.tipo_comprobante}) - {self.fecha_venta.strftime('%Y-%m-%d')}"
     
     def actualizar_totales(self):
-        """
-        Calcula y actualiza los totales de la venta basado en sus detalles.
-        """
+
         agregados = self.detalles.aggregate(
             subtotal_lineas=Sum('subtotal_linea'),
             total_descuentos=Sum('monto_descuento_linea')
         )
-        
-        subtotal_calculado = agregados['subtotal_lineas'] or Decimal('0.0')
-        descuento_calculado = agregados['total_descuentos'] or Decimal('0.0')
 
-        self.subtotal = subtotal_calculado
+        total_calculado = agregados['subtotal_lineas'] or Decimal('0.00')
+        descuento_calculado = agregados['total_descuentos'] or Decimal('0.00')
+
+        self.total_venta = total_calculado
         self.monto_descuento = descuento_calculado
-        self.impuestos = self.subtotal * Decimal('0.18')
-        self.total_venta = self.subtotal + self.impuestos
-        
-        self.save(update_fields=['subtotal', 'monto_descuento', 'impuestos', 'total_venta'])
+
+        self.subtotal = (
+            self.total_venta / Decimal('1.18')
+        ).quantize(Decimal('0.01'))
+
+        self.impuestos = (
+            self.total_venta - self.subtotal
+        ).quantize(Decimal('0.01'))
+
+        self.save(
+            update_fields=[
+                'subtotal',
+                'monto_descuento',
+                'impuestos',
+                'total_venta'
+            ]
+        )
+    
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

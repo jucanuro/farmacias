@@ -239,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-// Listener para cuando HACES CLIC en un botón (eliminar, checkbox)
     dom.cartItemsContainer.addEventListener('click', e => {
         const target = e.target;
         const itemElement = target.closest('[data-item-id]');

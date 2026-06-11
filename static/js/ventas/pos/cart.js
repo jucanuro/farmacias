@@ -15,12 +15,12 @@ export function addToCart(producto, showAlert) {
     } else {
         if (typeof producto.precio_venta === 'undefined' || producto.precio_venta === null || producto.precio_venta <= 0) {
             showAlert(`El producto "${producto.nombre}" no tiene un precio de venta válido.`, 'Error');
-            return false; // Devuelve false si no hay precio
+            return false; 
         }
         cart.push({ ...producto, quantity: 1, precio_unitario: producto.precio_venta, hasDiscount: false, monto_descuento_linea: 0 });
     }
     
-    return true; // <-- ESTA LÍNEA ES LA CORRECCIÓN CLAVE
+    return true; 
 }
 
 export function updateCartItem(itemId, field, value) {
@@ -40,10 +40,30 @@ export function removeFromCart(itemId) {
 }
 
 export function getCartTotals(tipoComprobante) {
-    const subtotal = cart.reduce((acc, item) => (acc + (item.quantity * (item.precio_unitario || 0)) - (item.monto_descuento_linea || 0)), 0);
-    const impuestos = (tipoComprobante === 'BOLETA' || tipoComprobante === 'FACTURA') ? subtotal * TASA_IGV : 0;
-    const total = subtotal + impuestos;
-    return { subtotal, impuestos, total };
+
+    const total = cart.reduce(
+        (acc, item) =>
+            acc +
+            (item.quantity * (item.precio_unitario || 0)) -
+            (item.monto_descuento_linea || 0),
+        0
+    );
+
+    const subtotal =
+        (tipoComprobante === 'BOLETA' || tipoComprobante === 'FACTURA')
+            ? total / (1 + TASA_IGV)
+            : total;
+
+    const impuestos =
+        (tipoComprobante === 'BOLETA' || tipoComprobante === 'FACTURA')
+            ? total - subtotal
+            : 0;
+
+    return {
+        subtotal: Number(subtotal.toFixed(2)),
+        impuestos: Number(impuestos.toFixed(2)),
+        total: Number(total.toFixed(2))
+    };
 }
 
 export function clearCart() {

@@ -180,9 +180,20 @@ def crear_comprobante_desde_venta(venta_id, tipo_comprobante_pos, usuario=None, 
     )
 
     for detalle in venta.detalles.all():
-        valor_venta = detalle.subtotal_linea
-        igv = (valor_venta * Decimal("0.18")).quantize(Decimal("0.01"))
-        total_linea = valor_venta + igv
+
+        total_linea = detalle.subtotal_linea
+
+        valor_venta = (
+            total_linea / Decimal("1.18")
+        ).quantize(Decimal("0.01"))
+
+        igv = (
+            total_linea - valor_venta
+        ).quantize(Decimal("0.01"))
+
+        valor_unitario = (
+            detalle.precio_unitario / Decimal("1.18")
+        ).quantize(Decimal("0.000001"))
 
         ComprobanteElectronicoDetalle.objects.create(
             comprobante=comprobante,
@@ -191,8 +202,8 @@ def crear_comprobante_desde_venta(venta_id, tipo_comprobante_pos, usuario=None, 
             producto_nombre=detalle.producto.nombre,
             unidad_medida="NIU",
             cantidad=detalle.cantidad,
-            valor_unitario=detalle.precio_unitario,
-            precio_unitario=detalle.precio_unitario * Decimal("1.18"),
+            valor_unitario=valor_unitario,
+            precio_unitario=detalle.precio_unitario,
             descuento=detalle.monto_descuento_linea,
             valor_venta=valor_venta,
             igv=igv,

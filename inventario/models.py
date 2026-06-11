@@ -69,8 +69,14 @@ class UnidadPresentacion(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class Producto(models.Model):
+
+    TIPO_IGV_CHOICES = [
+        ('10', 'Gravado - Operación Onerosa'),
+        ('20', 'Exonerado'),
+        ('30', 'Inafecto'),
+    ]
+
     nombre = models.CharField(max_length=200, verbose_name="Nombre del Producto")
     descripcion = models.TextField(blank=True, verbose_name="Descripción Detallada")
     codigo_barras = models.CharField(max_length=100, unique=True, blank=True, null=True, verbose_name="Código de Barras (EAN)")
@@ -79,12 +85,37 @@ class Producto(models.Model):
     forma_farmaceutica = models.ForeignKey(FormaFarmaceutica, on_delete=models.PROTECT, verbose_name="Forma Farmacéutica")
     laboratorio = models.ForeignKey(Laboratorio, on_delete=models.PROTECT, verbose_name="Laboratorio")
     categoria = models.ForeignKey(CategoriaProducto, on_delete=models.PROTECT, verbose_name="Categoría")
-    unidad_compra = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_comprados', verbose_name="Unidad de Compra Principal", help_text="La unidad en la que normalmente se compra este producto (ej. Caja).", null=True, blank=True)
-    unidad_venta = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_vendidos', verbose_name="Unidad de Venta Mínima", help_text="La unidad mínima en la que se vende el producto (ej. Tableta, Unidad).", null=True, blank=True)
-    margen_ganancia_sugerido = models.DecimalField(max_digits=5, decimal_places=2, default=0.20, verbose_name="Margen de Ganancia Sugerido (%)", help_text="Ej: 0.20 para 20% de margen.")
-    precio_venta_sugerido = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio de Venta Sugerido (Global)")
-    unidades_por_caja = models.PositiveIntegerField(default=1, verbose_name="Unidades por Caja", help_text="Total de unidades básicas (pastillas, cápsulas) que contiene la caja.")
-    unidades_por_blister = models.PositiveIntegerField(default=1, verbose_name="Unidades por Blíster", help_text="Número de unidades básicas que contiene un blíster.")
+    unidad_compra = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_comprados', verbose_name="Unidad de Compra Principal", null=True, blank=True)
+    unidad_venta = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_vendidos', verbose_name="Unidad de Venta Mínima", null=True, blank=True)
+
+    margen_ganancia_sugerido = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=20.00,
+        verbose_name="Margen de Ganancia Sugerido (%)"
+    )
+
+    precio_venta_sugerido = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Precio de Venta Sugerido"
+    )
+
+    tipo_igv = models.CharField(
+        max_length=2,
+        choices=TIPO_IGV_CHOICES,
+        default='10',
+        verbose_name="Tipo de Afectación IGV"
+    )
+
+    precio_incluye_igv = models.BooleanField(
+        default=True,
+        verbose_name="Precio Incluye IGV"
+    )
+
+    unidades_por_caja = models.PositiveIntegerField(default=1, verbose_name="Unidades por Caja")
+    unidades_por_blister = models.PositiveIntegerField(default=1, verbose_name="Unidades por Blíster")
     aplica_receta = models.BooleanField(default=False, verbose_name="Requiere Receta Médica")
     es_controlado = models.BooleanField(default=False, verbose_name="Es Producto Controlado")
     imagen_producto = models.ImageField(upload_to='productos/', blank=True, null=True, verbose_name="Imagen del Producto")
@@ -97,6 +128,10 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.concentracion}"
+
+    @property
+    def tasa_igv(self):
+        return 0.18 if self.tipo_igv == '10' else 0.00
 
     def get_unidades_compra_jerarquia(self):
         if not self.unidad_venta:
@@ -115,14 +150,18 @@ class Producto(models.Model):
         while unidad_actual.padre:
             unidad_actual = unidad_actual.padre
             factor_acumulado *= unidad_actual.factor_conversion
+
             unidades.append({
                 'id': unidad_actual.id,
                 'nombre': unidad_actual.nombre,
                 'factor_conversion_a_base': factor_acumulado
             })
 
-        return sorted(unidades, key=lambda x: x['factor_conversion_a_base'], reverse=True)
-
+        return sorted(
+            unidades,
+            key=lambda x: x['factor_conversion_a_base'],
+            reverse=True
+        )
 
 class StockProducto(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='stocks', verbose_name="Producto")
@@ -143,7 +182,6 @@ class StockProducto(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre} ({self.lote}) - Suc: {self.sucursal.nombre} - Cant: {self.cantidad}"
-
 
 class MovimientoInventario(models.Model):
     TIPO_MOVIMIENTO_CHOICES = [
