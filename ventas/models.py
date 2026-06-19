@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from core.models import Sucursal, Usuario
 from clientes.models import Cliente
-from inventario.models import Producto, StockProducto, MovimientoInventario
+from inventario.models import Producto, StockProducto, MovimientoInventario, PrecioProductoSucursal
 
 from django.db.models import Sum, F
 
@@ -100,15 +100,48 @@ class Venta(models.Model):
 
 
 class DetalleVenta(models.Model):
-    # ... (tus campos no cambian) ...
-    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles', verbose_name="Venta Asociada")
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, verbose_name="Producto Vendido")
-    stock_producto = models.ForeignKey(StockProducto, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Lote de Stock Afectado")
-    cantidad = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cantidad Vendida")
-    unidad_venta = models.CharField(max_length=20, verbose_name="Unidad de Venta", help_text="Unidad en la que se vendió el producto.")
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio Unitario de Venta")
-    monto_descuento_linea = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Monto de Descuento")
-    subtotal_linea = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Subtotal de la Línea")
+    venta = models.ForeignKey(
+        Venta,
+        on_delete=models.CASCADE,
+        related_name='detalles',
+        verbose_name="Venta Asociada"
+    )
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        verbose_name="Producto Vendido"
+    )
+    stock_producto = models.ForeignKey(
+        StockProducto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Lote de Stock Afectado"
+    )
+    cantidad = models.PositiveIntegerField(
+        verbose_name="Cantidad Vendida"
+    )
+    unidad_venta = models.CharField(
+        max_length=20,
+        verbose_name="Unidad de Venta",
+        help_text="Unidad en la que se vendió el producto."
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Precio Unitario de Venta"
+    )
+    monto_descuento_linea = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Monto de Descuento"
+    )
+    subtotal_linea = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Subtotal de la Línea"
+    )
 
     class Meta:
         verbose_name = "Detalle de Venta"
@@ -116,57 +149,83 @@ class DetalleVenta(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} de {self.producto.nombre} en Venta #{self.venta.id}"
-    
+
+    def obtener_precio_sucursal(self):
+        precio_sucursal = PrecioProductoSucursal.objects.filter(
+            producto=self.producto,
+            sucursal=self.venta.sucursal,
+            activo=True
+        ).first()
+
+        if precio_sucursal and not precio_sucursal.usa_precio_matriz:
+            return precio_sucursal.precio_venta
+
+        return self.producto.precio_venta_sugerido
+
     def save(self, *args, **kwargs):
-        self.subtotal_linea = (self.cantidad * self.precio_unitario) - self.monto_descuento_linea
+        if not self.precio_unitario or self.precio_unitario <= 0:
+            self.precio_unitario = self.obtener_precio_sucursal()
+
+        self.subtotal_linea = (
+            Decimal(self.cantidad) * self.precio_unitario
+        ) - self.monto_descuento_linea
+
         super().save(*args, **kwargs)
-        if self.venta_id: 
+
+        if self.venta_id:
             self.venta.actualizar_totales()
 
     def delete(self, *args, **kwargs):
         venta_padre = self.venta
         super().delete(*args, **kwargs)
+
         if venta_padre:
             venta_padre.actualizar_totales()
-            
+
     def actualizar_stock_por_venta(self):
-        """
-        Lógica FEFO/FIFO para descontar stock.
-        Busca los lotes del producto más próximos a vencer y descuenta la cantidad vendida.
-        Crea los movimientos de inventario correspondientes.
-        """
-        cantidad_a_descontar = self.cantidad
+        cantidad_a_descontar = int(self.cantidad)
         sucursal_venta = self.venta.sucursal
 
-        lotes_disponibles = StockProducto.objects.filter(
+        lotes_disponibles = StockProducto.objects.select_for_update().filter(
             producto=self.producto,
             sucursal=sucursal_venta,
-            cantidad__gt=0
+            activo=True,
+            cantidad_disponible__gt=0
         ).order_by('fecha_vencimiento', 'id')
 
-        stock_total = lotes_disponibles.aggregate(total=Sum('cantidad'))['total'] or 0
+        stock_total = lotes_disponibles.aggregate(
+            total=Sum('cantidad_disponible')
+        )['total'] or 0
+
         if stock_total < cantidad_a_descontar:
-            raise ValidationError(f"Stock insuficiente para '{self.producto.nombre}'. "
-                                f"Disponible: {stock_total}, Requerido: {cantidad_a_descontar}")
+            raise ValidationError(
+                f"Stock insuficiente para '{self.producto.nombre}'. "
+                f"Disponible: {stock_total}, Requerido: {cantidad_a_descontar}"
+            )
 
         lote_principal_asignado = False
+
         for lote in lotes_disponibles:
             if cantidad_a_descontar <= 0:
                 break
 
-            cantidad_descontada = min(lote.cantidad, cantidad_a_descontar)
-            
-            lote.cantidad -= cantidad_descontada
-            lote.save()
+            cantidad_descontada = min(lote.cantidad_disponible, cantidad_a_descontar)
+
+            cantidad_anterior = lote.cantidad_disponible
+            lote.cantidad_disponible -= cantidad_descontada
+            lote.save(update_fields=['cantidad_disponible', 'ultima_actualizacion'])
 
             MovimientoInventario.objects.create(
                 producto=self.producto,
                 sucursal=sucursal_venta,
                 stock_afectado=lote,
-                tipo_movimiento='SALIDA',
-                cantidad=-cantidad_descontada,
+                tipo_movimiento='VENTA',
+                cantidad=cantidad_descontada,
+                cantidad_anterior=cantidad_anterior,
+                cantidad_nueva=lote.cantidad_disponible,
                 usuario=self.venta.vendedor,
-                referencia_doc=f"Venta ID: {self.venta.id}"
+                referencia_doc=f"VENTA-{self.venta.id}",
+                observaciones=f"Salida por venta #{self.venta.id}"
             )
 
             cantidad_a_descontar -= cantidad_descontada
@@ -174,8 +233,8 @@ class DetalleVenta(models.Model):
             if not lote_principal_asignado:
                 self.stock_producto = lote
                 lote_principal_asignado = True
-        
-        self.save(update_fields=['stock_producto']) 
+
+        self.save(update_fields=['stock_producto'])
         
 class SesionCaja(models.Model):
     """

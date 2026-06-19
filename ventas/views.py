@@ -17,7 +17,7 @@ from django.db.models import Q
 from weasyprint import HTML
 from .models import Venta, DetalleVenta, SesionCaja
 from clientes.models import Cliente
-from inventario.models import Producto
+from inventario.models import Producto, StockProducto, PrecioProductoSucursal
 
 
 
@@ -110,7 +110,6 @@ def _obtener_sucursal_usuario(user):
         return perfil.sucursal
 
     return None
-
 
 def _json_error(message, status=400):
     return JsonResponse({"error": message}, status=status)
@@ -243,11 +242,16 @@ def cerrar_caja_api(request):
 @login_required
 @require_GET
 def ventas_list_api(request):
+    sucursal = _obtener_sucursal_usuario(request.user)
+
     ventas = Venta.objects.select_related(
         'cliente',
         'vendedor',
         'sucursal'
     ).order_by('-fecha_venta')
+
+    if sucursal:
+        ventas = ventas.filter(sucursal=sucursal)
 
     search = request.GET.get('search', '').strip()
     fecha_inicio = request.GET.get('fecha_venta__date__gte')
@@ -259,7 +263,8 @@ def ventas_list_api(request):
             Q(cliente__apellidos__icontains=search) |
             Q(vendedor__username__icontains=search) |
             Q(tipo_comprobante__icontains=search) |
-            Q(numero_comprobante__icontains=search)
+            Q(numero_comprobante__icontains=search) |
+            Q(sucursal__nombre__icontains=search)
         )
 
     if fecha_inicio:
@@ -275,18 +280,15 @@ def ventas_list_api(request):
     results = []
 
     for venta in page.object_list:
-        cliente_nombre = 'Público General'
-        if venta.cliente:
-            cliente_nombre = str(venta.cliente)
-
         results.append({
             'id': venta.id,
             'fecha_venta': venta.fecha_venta.isoformat() if venta.fecha_venta else '',
-            'cliente_nombre_completo': cliente_nombre,
+            'cliente_nombre_completo': str(venta.cliente) if venta.cliente else 'Público General',
             'vendedor_username': venta.vendedor.username if venta.vendedor else '',
+            'sucursal': venta.sucursal_id,
+            'sucursal_nombre': venta.sucursal.nombre if venta.sucursal else '',
             'tipo_comprobante': venta.tipo_comprobante,
-            'serie_comprobante': getattr(venta, 'serie_comprobante', '') or '',
-            'numero_comprobante': getattr(venta, 'numero_comprobante', '') or '',
+            'numero_comprobante': venta.numero_comprobante or '',
             'total_venta': str(venta.total_venta),
             'estado': venta.estado,
             'metodo_pago': venta.metodo_pago,
@@ -306,18 +308,37 @@ def ventas_list_api(request):
         'previous': build_page_url(page.previous_page_number()) if page.has_previous() else None,
     })
 
+def _obtener_precio_producto_sucursal(producto, sucursal):
+    precio_sucursal = PrecioProductoSucursal.objects.filter(
+        producto=producto,
+        sucursal=sucursal,
+        activo=True
+    ).first()
+
+    if precio_sucursal and not precio_sucursal.usa_precio_matriz:
+        return precio_sucursal.precio_venta
+
+    return producto.precio_venta_sugerido or Decimal("0.00")
 
 @login_required
 @require_GET
 def venta_detail_api(request, venta_id):
+    sucursal_usuario = _obtener_sucursal_usuario(request.user)
+
     try:
         venta = Venta.objects.select_related(
             'cliente',
             'vendedor',
             'sucursal'
-        ).prefetch_related('detalles__producto').get(id=venta_id)
+        ).prefetch_related(
+            'detalles__producto',
+            'detalles__stock_producto'
+        ).get(id=venta_id)
     except Venta.DoesNotExist:
         return _json_error('La venta no existe.', 404)
+
+    if sucursal_usuario and venta.sucursal_id != sucursal_usuario.id:
+        return _json_error('No tienes permiso para ver esta venta.', 403)
 
     cliente_nombre = 'Público General'
     if venta.cliente:
@@ -326,12 +347,20 @@ def venta_detail_api(request, venta_id):
     detalles = []
 
     for detalle in venta.detalles.all():
+        stock = detalle.stock_producto
+
         detalles.append({
+            'id': detalle.id,
+            'producto': detalle.producto_id,
             'producto_nombre': detalle.producto.nombre if detalle.producto else '',
             'cantidad': str(detalle.cantidad),
+            'unidad_venta': detalle.unidad_venta,
             'precio_unitario': str(detalle.precio_unitario),
             'monto_descuento_linea': str(detalle.monto_descuento_linea),
             'subtotal': str(detalle.subtotal_linea),
+            'stock_producto': stock.id if stock else None,
+            'lote': stock.lote if stock else '',
+            'fecha_vencimiento': stock.fecha_vencimiento.strftime('%d/%m/%Y') if stock and stock.fecha_vencimiento else '',
         })
 
     return JsonResponse({
@@ -339,6 +368,8 @@ def venta_detail_api(request, venta_id):
         'fecha_venta': venta.fecha_venta.isoformat() if venta.fecha_venta else '',
         'cliente_nombre_completo': cliente_nombre,
         'vendedor_username': venta.vendedor.username if venta.vendedor else '',
+        'sucursal': venta.sucursal_id,
+        'sucursal_nombre': venta.sucursal.nombre if venta.sucursal else '',
         'tipo_comprobante': venta.tipo_comprobante,
         'serie_comprobante': getattr(venta, 'serie_comprobante', '') or '',
         'numero_comprobante': getattr(venta, 'numero_comprobante', '') or '',
@@ -365,7 +396,7 @@ def registrar_venta_api(request):
             if not sucursal:
                 return _json_error("El usuario no tiene una sucursal asignada.", 400)
 
-            sesion = SesionCaja.objects.filter(
+            sesion = SesionCaja.objects.select_for_update().filter(
                 usuario=request.user,
                 sucursal=sucursal,
                 estado="ABIERTA"
@@ -407,28 +438,53 @@ def registrar_venta_api(request):
             for item in detalles:
                 producto_id = item.get("producto")
 
-                producto = Producto.objects.filter(id=producto_id).first()
+                producto = Producto.objects.filter(
+                    id=producto_id,
+                    activo=True
+                ).first()
+
                 if not producto:
-                    raise ValueError(f"Producto inválido: {producto_id}")
+                    raise ValueError(f"Producto inválido o inactivo: {producto_id}")
 
                 cantidad = _decimal(item.get("cantidad"), "1.00")
-                precio_unitario = _decimal(item.get("precio_unitario"))
                 descuento = _decimal(item.get("monto_descuento_linea"))
-                unidad_venta = item.get("unidad_venta", "UNIDAD")
+                unidad_venta = item.get("unidad_venta") or (
+                    producto.unidad_venta.nombre if producto.unidad_venta else "UNIDAD"
+                )
 
                 if cantidad <= 0:
                     raise ValueError(
                         f"La cantidad del producto {producto.nombre} debe ser mayor a cero."
                     )
 
-                if precio_unitario <= 0:
-                    raise ValueError(
-                        f"El producto {producto.nombre} no tiene precio válido."
-                    )
-
                 if descuento < 0:
                     raise ValueError(
                         f"El descuento del producto {producto.nombre} no puede ser negativo."
+                    )
+
+                precio_frontend = _decimal(item.get("precio_unitario"))
+                precio_sistema = _obtener_precio_producto_sucursal(producto, sucursal)
+
+                precio_unitario = precio_frontend if precio_frontend > 0 else precio_sistema
+
+                if precio_unitario <= 0:
+                    raise ValueError(
+                        f"El producto {producto.nombre} no tiene precio válido para la sucursal {sucursal.nombre}."
+                    )
+
+                stock_total = StockProducto.objects.select_for_update().filter(
+                    producto=producto,
+                    sucursal=sucursal,
+                    activo=True,
+                    cantidad_disponible__gt=0
+                ).aggregate(
+                    total=Sum("cantidad_disponible")
+                )["total"] or Decimal("0.00")
+
+                if stock_total < cantidad:
+                    raise ValueError(
+                        f"Stock insuficiente para {producto.nombre}. "
+                        f"Disponible: {stock_total}, requerido: {cantidad}"
                     )
 
                 subtotal_linea = (cantidad * precio_unitario) - descuento
@@ -484,6 +540,8 @@ def registrar_venta_api(request):
                 "subtotal": str(venta.subtotal),
                 "impuestos": str(venta.impuestos),
                 "metodo_pago": venta.metodo_pago,
+                "sucursal": venta.sucursal_id,
+                "sucursal_nombre": venta.sucursal.nombre if venta.sucursal else "",
                 "cliente_telefono": venta.cliente.telefono if venta.cliente else "",
                 "comprobante_electronico": comprobante_data,
                 "mensaje": "Venta registrada correctamente.",
