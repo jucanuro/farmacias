@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('transfer-search-input');
     const countBadge = document.getElementById('transfers-count-badge');
 
-    function getCookie(name) {
+    const getCookie = (name) => {
         let cookieValue = null;
 
         if (document.cookie && document.cookie !== '') {
@@ -22,14 +22,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return cookieValue;
-    }
+    };
 
     const csrftoken = getCookie('csrftoken');
 
-    const updateCount = () => {
+    const parseJsonResponse = async (response) => {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (!contentType.includes('application/json')) {
+            throw new Error('La respuesta del servidor no es JSON. Revisa la URL, sesión o permisos.');
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.detail || 'Ocurrió un error en el servidor.');
+        }
+
+        return data;
+    };
+
+    const getVisibleRowsCount = () => {
         const rows = document.querySelectorAll('.transfer-row');
-        if (countBadge) {
-            countBadge.textContent = `${rows.length} traslados`;
+        return Array.from(rows).filter(row => row.style.display !== 'none').length;
+    };
+
+    const updateCount = () => {
+        if (!countBadge) return;
+
+        const totalRows = document.querySelectorAll('.transfer-row').length;
+        const visibleRows = getVisibleRowsCount();
+
+        if (searchInput && searchInput.value.trim()) {
+            countBadge.textContent = `${visibleRows} de ${totalRows} traslados`;
+        } else {
+            countBadge.textContent = `${totalRows} traslados`;
+        }
+    };
+
+    const setButtonLoading = (button, isLoading) => {
+        if (!button) return;
+
+        if (isLoading) {
+            button.dataset.originalText = button.innerHTML;
+            button.disabled = true;
+            button.classList.add('opacity-60', 'cursor-not-allowed');
+            button.innerHTML = '…';
+        } else {
+            button.disabled = false;
+            button.classList.remove('opacity-60', 'cursor-not-allowed');
+
+            if (button.dataset.originalText) {
+                button.innerHTML = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
         }
     };
 
@@ -44,13 +90,19 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({}),
         });
 
-        const data = await response.json();
+        return parseJsonResponse(response);
+    };
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Ocurrió un error.');
-        }
+    const renderStatus = (estado) => {
+        const estadoMap = {
+            PENDIENTE: 'Pendiente',
+            ENVIADO: 'Enviado',
+            RECIBIDO: 'Recibido',
+            CANCELADO: 'Cancelado',
+            RECHAZADO: 'Rechazado',
+        };
 
-        return data;
+        return estadoMap[estado] || estado || '-';
     };
 
     const viewTransferDetail = async (transferId) => {
@@ -62,19 +114,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'No se pudo cargar el detalle.');
-            }
-
+            const data = await parseJsonResponse(response);
             const detalles = data.detalles || [];
 
             let productosTexto = 'Sin productos registrados.';
 
             if (detalles.length > 0) {
                 productosTexto = detalles.map((item) => {
-                    return `• ${item.producto_nombre} | Lote: ${item.lote} | Cantidad: ${item.cantidad}`;
+                    const recibido = item.cantidad_recibida !== undefined
+                        ? ` | Recibido: ${item.cantidad_recibida}`
+                        : '';
+
+                    return `• ${item.producto_nombre} | Lote: ${item.lote} | Cantidad: ${item.cantidad}${recibido}`;
                 }).join('\n');
             }
 
@@ -82,7 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 `Traslado #${data.id}\n\n` +
                 `Origen: ${data.sucursal_origen_nombre}\n` +
                 `Destino: ${data.sucursal_destino_nombre}\n` +
-                `Estado: ${data.estado}\n\n` +
+                `Estado: ${renderStatus(data.estado)}\n` +
+                `Solicitado por: ${data.usuario_solicita || '-'}\n` +
+                `Enviado por: ${data.usuario_envia || '-'}\n` +
+                `Recibido por: ${data.usuario_recibe || '-'}\n\n` +
                 `Productos:\n${productosTexto}`
             );
 
@@ -91,23 +145,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const handleTransferAction = async (action, transferId) => {
+    const handleTransferAction = async (action, transferId, button = null) => {
         let url = '';
         let confirmationMessage = '';
 
         if (action === 'ver') {
-            viewTransferDetail(transferId);
+            await viewTransferDetail(transferId);
             return;
         }
 
         if (action === 'enviar') {
             url = `/traslados/api/transferencias/${transferId}/enviar/`;
-            confirmationMessage = '¿Seguro que quieres enviar este traslado? El stock se descontará del origen.';
+            confirmationMessage = '¿Seguro que quieres enviar este traslado? El stock se descontará de la sucursal origen.';
         }
 
         if (action === 'recibir') {
             url = `/traslados/api/transferencias/${transferId}/recibir/`;
-            confirmationMessage = '¿Seguro que quieres recibir este traslado? El stock se añadirá al destino.';
+            confirmationMessage = '¿Seguro que quieres recibir este traslado? El stock se añadirá a la sucursal destino.';
         }
 
         if (action === 'eliminar') {
@@ -116,37 +170,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!url) return;
+
         if (!confirm(confirmationMessage)) return;
 
         try {
+            setButtonLoading(button, true);
+
             const result = await postAction(url);
+
             alert(result.message || result.status || 'Operación realizada correctamente.');
             window.location.reload();
 
         } catch (error) {
             alert(`Error: ${error.message}`);
+            setButtonLoading(button, false);
         }
     };
 
     const applySearch = () => {
+        if (!searchInput) return;
+
         const term = searchInput.value.toLowerCase().trim();
         const rows = document.querySelectorAll('.transfer-row');
 
         rows.forEach((row) => {
-            const text = row.dataset.search.toLowerCase();
+            const text = (row.dataset.search || '').toLowerCase();
             row.style.display = text.includes(term) ? '' : 'none';
         });
+
+        updateCount();
     };
 
-    tableBody.addEventListener('click', (event) => {
-        const button = event.target.closest('.action-btn');
-        if (!button) return;
+    if (tableBody) {
+        tableBody.addEventListener('click', (event) => {
+            const button = event.target.closest('.action-btn');
+            if (!button) return;
 
-        handleTransferAction(button.dataset.action, button.dataset.id);
-    });
+            handleTransferAction(
+                button.dataset.action,
+                button.dataset.id,
+                button
+            );
+        });
+    }
 
     if (searchInput) {
-        searchInput.addEventListener('keyup', applySearch);
+        searchInput.addEventListener('input', applySearch);
     }
 
     updateCount();

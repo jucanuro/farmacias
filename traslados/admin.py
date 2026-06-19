@@ -1,33 +1,177 @@
 # traslados/admin.py
 
 from django.contrib import admin
-from .models import Transferencia, DetalleTransferencia
 
-class DetalleTransferenciaInline(admin.TabularInline):
-    """Permite ver y editar los detalles de la transferencia en la misma página."""
-    model = DetalleTransferencia
-    extra = 1 
-    raw_id_fields = ('stock_origen',) 
-    autocomplete_fields = ('producto',) 
+from .models import TrasladoStock, DetalleTrasladoStock
 
-@admin.register(Transferencia)
-class TransferenciaAdmin(admin.ModelAdmin):
-    """Configuración del panel de administrador para el modelo Transferencia."""
-    list_display = (
-        'id', 'sucursal_origen', 'sucursal_destino', 
-        'estado', 'solicitado_por', 'fecha_creacion'
+
+class DetalleTrasladoStockInline(admin.TabularInline):
+    model = DetalleTrasladoStock
+    extra = 1
+
+    autocomplete_fields = (
+        'producto',
+        'stock_origen',
     )
-    list_filter = ('estado', 'sucursal_origen', 'sucursal_destino')
-    search_fields = ('id', 'observaciones')
-    inlines = [DetalleTransferenciaInline] 
-    readonly_fields = ('fecha_creacion', 'fecha_envio', 'fecha_recepcion')
-    
-    def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('detalles__producto')
 
-@admin.register(DetalleTransferencia)
-class DetalleTransferenciaAdmin(admin.ModelAdmin):
-    """Configuración para el modelo DetalleTransferencia (opcional)."""
-    list_display = ('id', 'transferencia', 'producto', 'stock_origen', 'cantidad')
-    list_filter = ('producto',)
-    search_fields = ('transferencia__id', 'producto__nombre', 'stock_origen__lote')
+    fields = (
+        'producto',
+        'stock_origen',
+        'lote',
+        'fecha_vencimiento',
+        'cantidad',
+        'cantidad_recibida',
+        'observaciones',
+    )
+
+
+@admin.register(TrasladoStock)
+class TrasladoStockAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'sucursal_origen',
+        'sucursal_destino',
+        'estado',
+        'usuario_solicita',
+        'usuario_envia',
+        'usuario_recibe',
+        'fecha_creacion',
+        'fecha_envio',
+        'fecha_recepcion',
+    )
+
+    list_filter = (
+        'estado',
+        'sucursal_origen',
+        'sucursal_destino',
+        'fecha_creacion',
+        'fecha_envio',
+        'fecha_recepcion',
+    )
+
+    search_fields = (
+        'id',
+        'sucursal_origen__nombre',
+        'sucursal_destino__nombre',
+        'usuario_solicita__username',
+        'usuario_envia__username',
+        'usuario_recibe__username',
+        'observaciones',
+    )
+
+    autocomplete_fields = (
+        'sucursal_origen',
+        'sucursal_destino',
+        'usuario_solicita',
+        'usuario_envia',
+        'usuario_recibe',
+    )
+
+    readonly_fields = (
+        'fecha_creacion',
+        'fecha_envio',
+        'fecha_recepcion',
+    )
+
+    date_hierarchy = 'fecha_creacion'
+
+    ordering = (
+        '-fecha_creacion',
+    )
+
+    inlines = [
+        DetalleTrasladoStockInline,
+    ]
+
+    fieldsets = (
+        ('Sucursales', {
+            'fields': (
+                'sucursal_origen',
+                'sucursal_destino',
+            )
+        }),
+
+        ('Usuarios responsables', {
+            'fields': (
+                'usuario_solicita',
+                'usuario_envia',
+                'usuario_recibe',
+            )
+        }),
+
+        ('Estado del traslado', {
+            'fields': (
+                'estado',
+                'fecha_creacion',
+                'fecha_envio',
+                'fecha_recepcion',
+            )
+        }),
+
+        ('Observaciones', {
+            'fields': (
+                'observaciones',
+            )
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'sucursal_origen',
+            'sucursal_destino',
+            'usuario_solicita',
+            'usuario_envia',
+            'usuario_recibe',
+        ).prefetch_related(
+            'detalles__producto'
+        )
+
+
+@admin.register(DetalleTrasladoStock)
+class DetalleTrasladoStockAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'traslado',
+        'producto',
+        'stock_origen',
+        'lote',
+        'fecha_vencimiento',
+        'cantidad',
+        'cantidad_recibida',
+    )
+
+    list_filter = (
+        'traslado__estado',
+        'fecha_vencimiento',
+        'producto__categoria',
+        'producto__laboratorio',
+    )
+
+    search_fields = (
+        'traslado__id',
+        'producto__nombre',
+        'producto__sku',
+        'producto__codigo_barras',
+        'stock_origen__lote',
+        'lote',
+    )
+
+    autocomplete_fields = (
+        'traslado',
+        'producto',
+        'stock_origen',
+    )
+
+    ordering = (
+        '-traslado__fecha_creacion',
+        'producto__nombre',
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'traslado',
+            'producto',
+            'stock_origen',
+            'producto__categoria',
+            'producto__laboratorio',
+        )

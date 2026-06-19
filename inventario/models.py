@@ -88,6 +88,19 @@ class Producto(models.Model):
     unidad_compra = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_comprados', verbose_name="Unidad de Compra Principal", null=True, blank=True)
     unidad_venta = models.ForeignKey(UnidadPresentacion, on_delete=models.PROTECT, related_name='productos_vendidos', verbose_name="Unidad de Venta Mínima", null=True, blank=True)
 
+    sku = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name="SKU Interno"
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Producto Activo"
+    )
+
     margen_ganancia_sugerido = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -165,13 +178,16 @@ class Producto(models.Model):
 
 class StockProducto(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='stocks', verbose_name="Producto")
-    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, verbose_name="Sucursal")
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, related_name='stocks_productos', verbose_name="Sucursal")
     lote = models.CharField(max_length=50, verbose_name="Número de Lote")
     fecha_vencimiento = models.DateField(verbose_name="Fecha de Vencimiento")
-    cantidad = models.PositiveIntegerField(default=0, verbose_name="Cantidad Disponible", help_text="Cantidad del producto en su 'unidad de venta mínima' (ej. número de tabletas).")
+
+    cantidad_disponible = models.PositiveIntegerField(default=0, verbose_name="Cantidad Disponible")
+    cantidad_reservada = models.PositiveIntegerField(default=0, verbose_name="Cantidad Reservada")
+
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio de Compra del Lote")
-    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio de Venta en esta Sucursal")
     ubicacion_almacen = models.CharField(max_length=100, blank=True, verbose_name="Ubicación en Almacén")
+    activo = models.BooleanField(default=True, verbose_name="Activo")
     ultima_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
 
     class Meta:
@@ -180,31 +196,170 @@ class StockProducto(models.Model):
         unique_together = ('producto', 'sucursal', 'lote')
         ordering = ['sucursal__nombre', 'producto__nombre', 'fecha_vencimiento']
 
+    @property
+    def cantidad_total(self):
+        return self.cantidad_disponible + self.cantidad_reservada
+
     def __str__(self):
-        return f"{self.producto.nombre} ({self.lote}) - Suc: {self.sucursal.nombre} - Cant: {self.cantidad}"
+        return f"{self.producto.nombre} ({self.lote}) - {self.sucursal.nombre} - Stock: {self.cantidad_disponible}"
 
 class MovimientoInventario(models.Model):
     TIPO_MOVIMIENTO_CHOICES = [
         ('ENTRADA', 'Entrada'),
         ('SALIDA', 'Salida'),
+        ('VENTA', 'Venta'),
+        ('ANULACION_VENTA', 'Anulación de Venta'),
         ('AJUSTE_POSITIVO', 'Ajuste Positivo'),
-        ('AJUSTE_NEGATIVO', 'Ajuste Negativo')
+        ('AJUSTE_NEGATIVO', 'Ajuste Negativo'),
+        ('TRASLADO_SALIDA', 'Traslado - Salida'),
+        ('TRASLADO_ENTRADA', 'Traslado - Entrada'),
     ]
 
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, verbose_name="Producto Afectado")
-    sucursal = models.ForeignKey(Sucursal, on_delete=models.PROTECT, verbose_name="Sucursal del Movimiento")
-    stock_afectado = models.ForeignKey(StockProducto, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Stock de Producto Afectado")
-    tipo_movimiento = models.CharField(max_length=50, choices=TIPO_MOVIMIENTO_CHOICES, verbose_name="Tipo de Movimiento")
-    cantidad = models.IntegerField(verbose_name="Cantidad del Movimiento (en unidad de venta)")
-    fecha_movimiento = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora del Movimiento")
-    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, verbose_name="Usuario que realizó el movimiento")
-    referencia_doc = models.CharField(max_length=100, blank=True, verbose_name="Referencia de Documento")
-    observaciones = models.TextField(blank=True, verbose_name="Observaciones Adicionales")
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        verbose_name="Producto Afectado"
+    )
+
+    sucursal = models.ForeignKey(
+        Sucursal,
+        on_delete=models.PROTECT,
+        related_name='movimientos_inventario',
+        verbose_name="Sucursal del Movimiento"
+    )
+
+    stock_afectado = models.ForeignKey(
+        StockProducto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='movimientos',
+        verbose_name="Stock de Producto Afectado"
+    )
+
+    tipo_movimiento = models.CharField(
+        max_length=50,
+        choices=TIPO_MOVIMIENTO_CHOICES,
+        verbose_name="Tipo de Movimiento"
+    )
+
+    cantidad = models.IntegerField(
+        verbose_name="Cantidad del Movimiento en Unidad Mínima"
+    )
+
+    cantidad_anterior = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Cantidad Antes del Movimiento"
+    )
+
+    cantidad_nueva = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Cantidad Después del Movimiento"
+    )
+
+    sucursal_origen = models.ForeignKey(
+        Sucursal,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='movimientos_origen',
+        verbose_name="Sucursal Origen"
+    )
+
+    sucursal_destino = models.ForeignKey(
+        Sucursal,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='movimientos_destino',
+        verbose_name="Sucursal Destino"
+    )
+
+    fecha_movimiento = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha y Hora del Movimiento"
+    )
+
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.PROTECT,
+        related_name='movimientos_inventario',
+        verbose_name="Usuario que realizó el movimiento"
+    )
+
+    referencia_doc = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Referencia de Documento"
+    )
+
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones Adicionales"
+    )
 
     class Meta:
         verbose_name = "Movimiento de Inventario"
         verbose_name_plural = "Movimientos de Inventario"
         ordering = ['-fecha_movimiento']
+        indexes = [
+            models.Index(fields=['producto', 'sucursal']),
+            models.Index(fields=['tipo_movimiento']),
+            models.Index(fields=['fecha_movimiento']),
+            models.Index(fields=['referencia_doc']),
+        ]
 
     def __str__(self):
-        return f"{self.tipo_movimiento} de {self.cantidad} de {self.producto.nombre} en {self.sucursal.nombre}"
+        return f"{self.tipo_movimiento} - {self.producto.nombre} - {self.cantidad} en {self.sucursal.nombre}"
+    
+class PrecioProductoSucursal(models.Model):
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name='precios_sucursal',
+        verbose_name="Producto"
+    )
+    sucursal = models.ForeignKey(
+        Sucursal,
+        on_delete=models.CASCADE,
+        related_name='precios_productos',
+        verbose_name="Sucursal"
+    )
+    precio_venta = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Precio de Venta"
+    )
+    precio_minimo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Precio Mínimo Permitido"
+    )
+    precio_mayorista = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Precio Mayorista"
+    )
+    usa_precio_matriz = models.BooleanField(
+        default=True,
+        verbose_name="Usa precio de matriz"
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo"
+    )
+    ultima_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Precio por Sucursal"
+        verbose_name_plural = "Precios por Sucursal"
+        unique_together = ('producto', 'sucursal')
+        ordering = ['sucursal__nombre', 'producto__nombre']
+
+    def __str__(self):
+        return f"{self.producto.nombre} - {self.sucursal.nombre} - S/ {self.precio_venta}"

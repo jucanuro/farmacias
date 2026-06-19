@@ -230,19 +230,30 @@
 
                             <div class="grid grid-cols-1 gap-5">
                                 <div>
-                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del rol</label>
-                                    {{ form.nombre }}
-                                    {% if form.nombre.errors %}
-                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.nombre.errors.as_text }}</p>
-                                    {% endif %}
+                                    <label for="nombre" class="form-label">
+                                        Nombre del rol
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="nombre"
+                                        name="nombre"
+                                        required
+                                        value="{% if rol %}{{ rol.nombre }}{% endif %}"
+                                        placeholder="Ejemplo: Administrador"
+                                    >
                                 </div>
 
                                 <div>
-                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
-                                    {{ form.descripcion }}
-                                    {% if form.descripcion.errors %}
-                                    <p class="text-red-500 text-xs mt-1 font-semibold">{{ form.descripcion.errors.as_text }}</p>
-                                    {% endif %}
+                                    <label for="descripcion" class="form-label">
+                                        Descripción
+                                    </label>
+
+                                    <textarea
+                                        id="descripcion"
+                                        name="descripcion"
+                                        placeholder="Describe las responsabilidades y permisos de este rol..."
+                                    >{% if rol %}{{ rol.descripcion }}{% endif %}</textarea>
                                 </div>
                             </div>
                         </div>

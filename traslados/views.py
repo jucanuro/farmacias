@@ -7,11 +7,12 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from core.models import Sucursal
-from inventario.models import Producto, StockProducto
-from .models import Transferencia, DetalleTransferencia
+from inventario.models import Producto, StockProducto, MovimientoInventario
+from .models import TrasladoStock, DetalleTrasladoStock
 
 
 def _json_body(request):
@@ -25,19 +26,21 @@ def _json_error(message, status=400):
     return JsonResponse({"error": message}, status=status)
 
 
-def _transferencia_to_json(transferencia, incluir_detalles=False):
+def _traslado_to_json(traslado, incluir_detalles=False):
     data = {
-        "id": transferencia.id,
-        "sucursal_origen": transferencia.sucursal_origen_id,
-        "sucursal_origen_nombre": str(transferencia.sucursal_origen),
-        "sucursal_destino": transferencia.sucursal_destino_id,
-        "sucursal_destino_nombre": str(transferencia.sucursal_destino),
-        "estado": transferencia.estado,
-        "observaciones": transferencia.observaciones or "",
-        "solicitado_por": str(transferencia.solicitado_por),
-        "fecha_creacion": transferencia.fecha_creacion.isoformat(),
-        "fecha_envio": transferencia.fecha_envio.isoformat() if transferencia.fecha_envio else None,
-        "fecha_recepcion": transferencia.fecha_recepcion.isoformat() if transferencia.fecha_recepcion else None,
+        "id": traslado.id,
+        "sucursal_origen": traslado.sucursal_origen_id,
+        "sucursal_origen_nombre": str(traslado.sucursal_origen),
+        "sucursal_destino": traslado.sucursal_destino_id,
+        "sucursal_destino_nombre": str(traslado.sucursal_destino),
+        "estado": traslado.estado,
+        "observaciones": traslado.observaciones or "",
+        "usuario_solicita": str(traslado.usuario_solicita),
+        "usuario_envia": str(traslado.usuario_envia) if traslado.usuario_envia else None,
+        "usuario_recibe": str(traslado.usuario_recibe) if traslado.usuario_recibe else None,
+        "fecha_creacion": traslado.fecha_creacion.isoformat(),
+        "fecha_envio": traslado.fecha_envio.isoformat() if traslado.fecha_envio else None,
+        "fecha_recepcion": traslado.fecha_recepcion.isoformat() if traslado.fecha_recepcion else None,
     }
 
     if incluir_detalles:
@@ -47,13 +50,15 @@ def _transferencia_to_json(transferencia, incluir_detalles=False):
                 "producto": detalle.producto_id,
                 "producto_nombre": detalle.producto.nombre,
                 "stock_origen": detalle.stock_origen_id,
-                "lote": detalle.stock_origen.lote,
+                "lote": detalle.lote,
+                "fecha_vencimiento": detalle.fecha_vencimiento.isoformat(),
                 "cantidad": detalle.cantidad,
-                "stock_disponible": detalle.stock_origen.cantidad,
+                "cantidad_recibida": detalle.cantidad_recibida,
+                "stock_disponible": detalle.stock_origen.cantidad_disponible,
             }
-            for detalle in transferencia.detalles.select_related(
+            for detalle in traslado.detalles.select_related(
                 "producto",
-                "stock_origen"
+                "stock_origen",
             ).all()
         ]
 
@@ -62,21 +67,24 @@ def _transferencia_to_json(transferencia, incluir_detalles=False):
 
 @login_required
 def traslados_home_view(request):
-    transferencias = Transferencia.objects.select_related(
+    traslados = TrasladoStock.objects.select_related(
         "sucursal_origen",
         "sucursal_destino",
-        "solicitado_por",
+        "usuario_solicita",
+        "usuario_envia",
+        "usuario_recibe",
     ).order_by("-fecha_creacion")
 
     return render(request, "traslados_templates/traslados_home.html", {
-        "transferencias": transferencias,
+        "transferencias": traslados,
+        "traslados": traslados,
     })
 
 
 @login_required
 def traslado_create_view(request):
     sucursales = Sucursal.objects.all().order_by("nombre")
-    productos = Producto.objects.all().order_by("nombre")
+    productos = Producto.objects.filter(activo=True).order_by("nombre")
 
     return render(request, "traslados_templates/traslado_form.html", {
         "sucursales": sucursales,
@@ -87,29 +95,31 @@ def traslado_create_view(request):
 
 @login_required
 def traslado_edit_view(request, transferencia_id):
-    transferencia = get_object_or_404(
-        Transferencia.objects.select_related(
+    traslado = get_object_or_404(
+        TrasladoStock.objects.select_related(
             "sucursal_origen",
             "sucursal_destino",
-            "solicitado_por"
+            "usuario_solicita",
         ),
         id=transferencia_id
     )
 
-    if transferencia.estado != "PENDIENTE":
+    if traslado.estado != "PENDIENTE":
         return render(request, "traslados_templates/traslado_form.html", {
             "error": "Solo puedes editar traslados en estado PENDIENTE.",
-            "transferencia": transferencia,
+            "transferencia": traslado,
+            "traslado": traslado,
             "modo": "editar",
         })
 
     sucursales = Sucursal.objects.all().order_by("nombre")
-    productos = Producto.objects.all().order_by("nombre")
+    productos = Producto.objects.filter(activo=True).order_by("nombre")
 
     return render(request, "traslados_templates/traslado_form.html", {
         "sucursales": sucursales,
         "productos": productos,
-        "transferencia": transferencia,
+        "transferencia": traslado,
+        "traslado": traslado,
         "modo": "editar",
     })
 
@@ -117,13 +127,15 @@ def traslado_edit_view(request, transferencia_id):
 @login_required
 @require_GET
 def transferencias_list_api(request):
-    transferencias = Transferencia.objects.select_related(
+    traslados = TrasladoStock.objects.select_related(
         "sucursal_origen",
         "sucursal_destino",
-        "solicitado_por",
+        "usuario_solicita",
+        "usuario_envia",
+        "usuario_recibe",
     ).order_by("-fecha_creacion")
 
-    data = [_transferencia_to_json(t) for t in transferencias]
+    data = [_traslado_to_json(t) for t in traslados]
 
     return JsonResponse({
         "count": len(data),
@@ -134,16 +146,18 @@ def transferencias_list_api(request):
 @login_required
 @require_GET
 def transferencia_detail_api(request, transferencia_id):
-    transferencia = get_object_or_404(
-        Transferencia.objects.select_related(
+    traslado = get_object_or_404(
+        TrasladoStock.objects.select_related(
             "sucursal_origen",
             "sucursal_destino",
-            "solicitado_por",
+            "usuario_solicita",
+            "usuario_envia",
+            "usuario_recibe",
         ).prefetch_related("detalles__producto", "detalles__stock_origen"),
         id=transferencia_id
     )
 
-    return JsonResponse(_transferencia_to_json(transferencia, incluir_detalles=True))
+    return JsonResponse(_traslado_to_json(traslado, incluir_detalles=True))
 
 
 @login_required
@@ -169,10 +183,10 @@ def transferencia_create_api(request):
     if not detalles:
         return _json_error("Debes agregar al menos un producto al traslado.", 400)
 
-    transferencia = Transferencia.objects.create(
+    traslado = TrasladoStock.objects.create(
         sucursal_origen_id=sucursal_origen_id,
         sucursal_destino_id=sucursal_destino_id,
-        solicitado_por=request.user,
+        usuario_solicita=request.user,
         observaciones=observaciones,
         estado="PENDIENTE",
     )
@@ -180,33 +194,45 @@ def transferencia_create_api(request):
     for item in detalles:
         producto_id = item.get("producto")
         stock_origen_id = item.get("stock_origen")
-        cantidad = int(item.get("cantidad") or 0)
+
+        try:
+            cantidad = int(item.get("cantidad") or 0)
+        except ValueError:
+            return _json_error("La cantidad enviada no es válida.", 400)
 
         if cantidad <= 0:
             return _json_error("La cantidad debe ser mayor a cero.", 400)
 
-        stock = StockProducto.objects.select_related("producto", "sucursal").filter(
+        stock = StockProducto.objects.select_for_update().select_related(
+            "producto",
+            "sucursal",
+        ).filter(
             id=stock_origen_id,
             producto_id=producto_id,
             sucursal_id=sucursal_origen_id,
+            activo=True,
         ).first()
 
         if not stock:
             return _json_error("El lote seleccionado no pertenece al producto o sucursal de origen.", 400)
 
-        if stock.cantidad < cantidad:
+        if stock.cantidad_disponible < cantidad:
             return _json_error(f"Stock insuficiente para {stock.producto.nombre}.", 400)
 
-        DetalleTransferencia.objects.create(
-            transferencia=transferencia,
+        DetalleTrasladoStock.objects.create(
+            traslado=traslado,
             producto_id=producto_id,
             stock_origen=stock,
+            lote=stock.lote,
+            fecha_vencimiento=stock.fecha_vencimiento,
             cantidad=cantidad,
+            cantidad_recibida=0,
         )
 
     return JsonResponse({
         "message": "Traslado creado correctamente.",
-        "transferencia": _transferencia_to_json(transferencia, incluir_detalles=True),
+        "transferencia": _traslado_to_json(traslado, incluir_detalles=True),
+        "traslado": _traslado_to_json(traslado, incluir_detalles=True),
     }, status=201)
 
 
@@ -214,9 +240,9 @@ def transferencia_create_api(request):
 @require_http_methods(["PUT", "PATCH"])
 @transaction.atomic
 def transferencia_update_api(request, transferencia_id):
-    transferencia = get_object_or_404(Transferencia, id=transferencia_id)
+    traslado = get_object_or_404(TrasladoStock, id=transferencia_id)
 
-    if transferencia.estado != "PENDIENTE":
+    if traslado.estado != "PENDIENTE":
         return _json_error("Solo puedes editar traslados en estado PENDIENTE.", 400)
 
     data = _json_body(request)
@@ -238,43 +264,55 @@ def transferencia_update_api(request, transferencia_id):
     if not detalles:
         return _json_error("Debes agregar al menos un producto al traslado.", 400)
 
-    transferencia.sucursal_origen_id = sucursal_origen_id
-    transferencia.sucursal_destino_id = sucursal_destino_id
-    transferencia.observaciones = observaciones
-    transferencia.save()
+    traslado.sucursal_origen_id = sucursal_origen_id
+    traslado.sucursal_destino_id = sucursal_destino_id
+    traslado.observaciones = observaciones
+    traslado.save()
 
-    transferencia.detalles.all().delete()
+    traslado.detalles.all().delete()
 
     for item in detalles:
         producto_id = item.get("producto")
         stock_origen_id = item.get("stock_origen")
-        cantidad = int(item.get("cantidad") or 0)
+
+        try:
+            cantidad = int(item.get("cantidad") or 0)
+        except ValueError:
+            return _json_error("La cantidad enviada no es válida.", 400)
 
         if cantidad <= 0:
             return _json_error("La cantidad debe ser mayor a cero.", 400)
 
-        stock = StockProducto.objects.select_related("producto", "sucursal").filter(
+        stock = StockProducto.objects.select_for_update().select_related(
+            "producto",
+            "sucursal",
+        ).filter(
             id=stock_origen_id,
             producto_id=producto_id,
             sucursal_id=sucursal_origen_id,
+            activo=True,
         ).first()
 
         if not stock:
             return _json_error("El lote seleccionado no pertenece al producto o sucursal de origen.", 400)
 
-        if stock.cantidad < cantidad:
+        if stock.cantidad_disponible < cantidad:
             return _json_error(f"Stock insuficiente para {stock.producto.nombre}.", 400)
 
-        DetalleTransferencia.objects.create(
-            transferencia=transferencia,
+        DetalleTrasladoStock.objects.create(
+            traslado=traslado,
             producto_id=producto_id,
             stock_origen=stock,
+            lote=stock.lote,
+            fecha_vencimiento=stock.fecha_vencimiento,
             cantidad=cantidad,
+            cantidad_recibida=0,
         )
 
     return JsonResponse({
         "message": "Traslado actualizado correctamente.",
-        "transferencia": _transferencia_to_json(transferencia, incluir_detalles=True),
+        "transferencia": _traslado_to_json(traslado, incluir_detalles=True),
+        "traslado": _traslado_to_json(traslado, incluir_detalles=True),
     })
 
 
@@ -282,12 +320,12 @@ def transferencia_update_api(request, transferencia_id):
 @require_POST
 @transaction.atomic
 def transferencia_delete_api(request, transferencia_id):
-    transferencia = get_object_or_404(Transferencia, id=transferencia_id)
+    traslado = get_object_or_404(TrasladoStock, id=transferencia_id)
 
-    if transferencia.estado != "PENDIENTE":
+    if traslado.estado != "PENDIENTE":
         return _json_error("Solo puedes eliminar traslados en estado PENDIENTE.", 400)
 
-    transferencia.delete()
+    traslado.delete()
 
     return JsonResponse({
         "message": "Traslado eliminado correctamente."
@@ -296,25 +334,127 @@ def transferencia_delete_api(request, transferencia_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def transferencia_enviar_api(request, transferencia_id):
-    transferencia = get_object_or_404(Transferencia, id=transferencia_id)
+    traslado = get_object_or_404(
+        TrasladoStock.objects.select_for_update().prefetch_related("detalles__stock_origen", "detalles__producto"),
+        id=transferencia_id
+    )
 
-    try:
-        transferencia.marcar_como_enviada(request.user)
-        return JsonResponse({"status": "Traslado enviado correctamente."})
-    except ValidationError as e:
-        return _json_error(str(e), 400)
+    if traslado.estado != "PENDIENTE":
+        return _json_error("Solo puedes enviar traslados en estado PENDIENTE.", 400)
+
+    detalles = traslado.detalles.select_related("producto", "stock_origen").all()
+
+    if not detalles.exists():
+        return _json_error("El traslado no tiene productos.", 400)
+
+    for detalle in detalles:
+        stock = StockProducto.objects.select_for_update().get(id=detalle.stock_origen_id)
+
+        if stock.cantidad_disponible < detalle.cantidad:
+            return _json_error(f"Stock insuficiente para {stock.producto.nombre}.", 400)
+
+    for detalle in detalles:
+        stock = StockProducto.objects.select_for_update().get(id=detalle.stock_origen_id)
+
+        cantidad_anterior = stock.cantidad_disponible
+        stock.cantidad_disponible -= detalle.cantidad
+        stock.save(update_fields=["cantidad_disponible", "ultima_actualizacion"])
+
+        MovimientoInventario.objects.create(
+            producto=detalle.producto,
+            sucursal=traslado.sucursal_origen,
+            stock_afectado=stock,
+            tipo_movimiento="TRASLADO_SALIDA",
+            cantidad=detalle.cantidad,
+            cantidad_anterior=cantidad_anterior,
+            cantidad_nueva=stock.cantidad_disponible,
+            sucursal_origen=traslado.sucursal_origen,
+            sucursal_destino=traslado.sucursal_destino,
+            usuario=request.user,
+            referencia_doc=f"TRASLADO-{traslado.id}",
+            observaciones=f"Salida por traslado #{traslado.id}",
+        )
+
+    traslado.estado = "ENVIADO"
+    traslado.usuario_envia = request.user
+    traslado.fecha_envio = timezone.now()
+    traslado.save(update_fields=["estado", "usuario_envia", "fecha_envio"])
+
+    return JsonResponse({
+        "status": "Traslado enviado correctamente.",
+        "traslado": _traslado_to_json(traslado, incluir_detalles=True),
+    })
 
 
 @login_required
 @require_POST
+@transaction.atomic
 def transferencia_recibir_api(request, transferencia_id):
-    transferencia = get_object_or_404(Transferencia, id=transferencia_id)
+    traslado = get_object_or_404(
+        TrasladoStock.objects.select_for_update().prefetch_related("detalles__stock_origen", "detalles__producto"),
+        id=transferencia_id
+    )
 
-    try:
-        transferencia.marcar_como_recibida(request.user)
-        return JsonResponse({"status": "Traslado recibido correctamente."})
-    except ValidationError as e:
-        return _json_error(str(e), 400)
-    
-    
+    if traslado.estado != "ENVIADO":
+        return _json_error("Solo puedes recibir traslados en estado ENVIADO.", 400)
+
+    detalles = traslado.detalles.select_related("producto", "stock_origen").all()
+
+    if not detalles.exists():
+        return _json_error("El traslado no tiene productos.", 400)
+
+    for detalle in detalles:
+        stock_destino, _ = StockProducto.objects.select_for_update().get_or_create(
+            producto=detalle.producto,
+            sucursal=traslado.sucursal_destino,
+            lote=detalle.lote,
+            defaults={
+                "fecha_vencimiento": detalle.fecha_vencimiento,
+                "cantidad_disponible": 0,
+                "cantidad_reservada": 0,
+                "precio_compra": detalle.stock_origen.precio_compra,
+                "ubicacion_almacen": "",
+                "activo": True,
+            }
+        )
+
+        cantidad_anterior = stock_destino.cantidad_disponible
+        stock_destino.cantidad_disponible += detalle.cantidad
+        stock_destino.fecha_vencimiento = detalle.fecha_vencimiento
+        stock_destino.activo = True
+        stock_destino.save(update_fields=[
+            "cantidad_disponible",
+            "fecha_vencimiento",
+            "activo",
+            "ultima_actualizacion",
+        ])
+
+        detalle.cantidad_recibida = detalle.cantidad
+        detalle.save(update_fields=["cantidad_recibida"])
+
+        MovimientoInventario.objects.create(
+            producto=detalle.producto,
+            sucursal=traslado.sucursal_destino,
+            stock_afectado=stock_destino,
+            tipo_movimiento="TRASLADO_ENTRADA",
+            cantidad=detalle.cantidad,
+            cantidad_anterior=cantidad_anterior,
+            cantidad_nueva=stock_destino.cantidad_disponible,
+            sucursal_origen=traslado.sucursal_origen,
+            sucursal_destino=traslado.sucursal_destino,
+            usuario=request.user,
+            referencia_doc=f"TRASLADO-{traslado.id}",
+            observaciones=f"Entrada por traslado #{traslado.id}",
+        )
+
+    traslado.estado = "RECIBIDO"
+    traslado.usuario_recibe = request.user
+    traslado.fecha_recepcion = timezone.now()
+    traslado.save(update_fields=["estado", "usuario_recibe", "fecha_recepcion"])
+
+    return JsonResponse({
+        "status": "Traslado recibido correctamente.",
+        "traslado": _traslado_to_json(traslado, incluir_detalles=True),
+    })

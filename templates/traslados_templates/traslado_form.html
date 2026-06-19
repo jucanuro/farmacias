@@ -1,177 +1,416 @@
 {% extends 'farmacias_main_templates/app_base.html' %}
 {% load static %}
 
-{% block title %}Nuevo Traslado{% endblock %}
+{% block title %}
+{% if modo == "editar" %}Editar Traslado{% else %}Nuevo Traslado{% endif %}
+{% endblock %}
 
 {% block app_content %}
 <style>
-    .form-shell {
-        background: rgba(255,255,255,0.96);
-        border: 1px solid #e2e8f0;
-        box-shadow:
-            0 18px 40px rgba(15, 23, 42, 0.05),
-            0 32px 80px rgba(15, 23, 42, 0.06);
-        backdrop-filter: blur(10px);
-    }
-
-    .section-card {
-        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-        border: 1px solid #e2e8f0;
-        border-radius: 1.35rem;
-        padding: 1.35rem;
-        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
-    }
-
-    .form-input, .form-select {
+    .form-control-mini {
         width: 100%;
         border: 1px solid #dbe3ee;
-        background: #ffffff;
+        background: #fff;
         color: #0f172a;
-        border-radius: 1rem;
-        padding: 0.75rem 1rem;
-        transition: all 0.25s ease;
+        border-radius: .9rem;
+        padding: .58rem .85rem;
+        font-size: .82rem;
+        outline: none;
+        transition: all .2s ease;
     }
 
-    .form-input:focus, .form-select:focus {
+    .form-control-mini:focus {
         border-color: #10b981;
-        box-shadow: 0 0 0 4px rgba(16,185,129,0.1);
+        box-shadow: 0 0 0 3px rgba(16,185,129,.10);
     }
 
-    .form-label {
-        font-size: 0.70rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-bottom: 0.4rem;
+    .form-control-mini:disabled {
+        background: #f8fafc;
+        color: #94a3b8;
+        cursor: not-allowed;
+    }
+
+    .form-label-mini {
         display: block;
+        margin-bottom: .35rem;
+        font-size: .62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .09em;
+        color: #64748b;
+    }
+
+    .compact-card {
+        background: rgba(255,255,255,.96);
+        border: 1px solid #e2e8f0;
+        border-radius: 1.2rem;
+        box-shadow: 0 12px 30px rgba(15,23,42,.045);
+    }
+
+    .table-scroll {
+        max-height: 310px;
+        overflow: auto;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+    }
+
+    .transfer-table {
+        width: 100%;
+        min-width: 900px;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .transfer-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .transfer-table th {
+        padding: .65rem .75rem;
+        font-size: .62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        color: #94a3b8;
+        white-space: nowrap;
+    }
+
+    .suggestions-panel {
+        max-height: 260px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        background: #fff;
+        box-shadow: 0 18px 45px rgba(15,23,42,.12);
+    }
+
+    .empty-details {
+        border: 1px dashed #cbd5e1;
+        background: #f8fafc;
+        border-radius: 1rem;
     }
 </style>
+<style>
+@media (max-width: 768px) {
+    .table-scroll {
+        max-height: none;
+        overflow: visible;
+        border: 0;
+        background: transparent;
+    }
 
-<div class="space-y-6">
+    .transfer-table {
+        min-width: 0;
+        width: 100%;
+        display: block;
+    }
 
-    <!-- HEADER -->
-    <header class="relative mb-8 rounded-[1.6rem] border border-slate-200 bg-white px-6 py-6 shadow-sm">
-        <div class="flex items-center justify-between">
+    .transfer-table thead {
+        display: none;
+    }
 
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-emerald-400">
+    .transfer-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: .9rem;
+    }
+
+    .transfer-table tr {
+        display: block;
+        border: 1px solid #e2e8f0;
+        border-radius: 1.25rem;
+        background: #fff;
+        box-shadow: 0 10px 25px rgba(15,23,42,.06);
+        padding: .85rem;
+    }
+
+    .transfer-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: .65rem .35rem !important;
+        border-bottom: 1px dashed #e2e8f0;
+        text-align: right !important;
+    }
+
+    .transfer-table td:last-child {
+        border-bottom: 0;
+        justify-content: flex-end;
+    }
+
+    .transfer-table td::before {
+        content: attr(data-label);
+        font-size: .65rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #94a3b8;
+        text-align: left;
+    }
+
+    .transfer-table td:last-child::before {
+        content: "";
+    }
+
+    .transfer-quantity-input,
+    .transfer-qty-input {
+        width: 90px !important;
+    }
+}
+</style>
+<div class="space-y-4">
+
+    <header class="compact-card relative overflow-hidden px-5 py-4">
+        <div class="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-emerald-100 blur-3xl"></div>
+
+        <div class="relative flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-emerald-300">
                     ⇄
                 </div>
 
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900">
-                        Nuevo Traslado
-                    </h1>
-                    <p class="text-sm text-slate-500">
-                        Registra el movimiento de stock entre sucursales
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-black text-slate-900">
+                            {% if modo == "editar" %}Editar Traslado{% else %}Nuevo Traslado{% endif %}
+                        </h1>
+
+                        <span class="rounded-full border {% if traslado %}border-emerald-200 bg-emerald-50 text-emerald-700{% else %}border-amber-200 bg-amber-50 text-amber-700{% endif %} px-2.5 py-1 text-[10px] font-black uppercase tracking-widest">
+                            {% if traslado %}#{{ traslado.id }}{% else %}Borrador{% endif %}
+                        </span>
+                    </div>
+
+                    <p class="mt-1 text-xs text-slate-500">
+                        Movimiento de stock entre sucursales con control de lote, vencimiento y cantidad disponible.
                     </p>
                 </div>
             </div>
 
             <a href="{% url 'traslados:traslados_home' %}"
-               class="text-sm font-semibold text-slate-500 hover:text-emerald-600">
+               class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
                 ← Volver
             </a>
-
         </div>
     </header>
 
-    <!-- FORM -->
-    <div class="form-shell rounded-[2rem] p-6">
-        <form id="transfer-form" data-success-url="{% url 'traslados:traslados_home' %}">
-
-            {% csrf_token %}
-
-            <!-- DATOS GENERALES -->
-            <div class="section-card mb-6">
-                <h3 class="text-lg font-bold text-slate-900 mb-4">
-                    Datos del traslado
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                    <div>
-                        <label class="form-label">Sucursal origen</label>
-                        <select id="sucursal-origen" class="form-select">
-                            <option value="">Seleccionar...</option>
-                            {% for s in sucursales %}
-                                <option value="{{ s.id }}">{{ s.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="form-label">Sucursal destino</label>
-                        <select id="sucursal-destino" class="form-select">
-                            <option value="">Seleccionar...</option>
-                            {% for s in sucursales %}
-                                <option value="{{ s.id }}">{{ s.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="form-label">Observaciones</label>
-                        <textarea id="observaciones" class="form-input" rows="2"></textarea>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- PRODUCTOS -->
-            <div class="section-card">
-                <h3 class="text-lg font-bold text-slate-900 mb-4">
-                    Productos del traslado
-                </h3>
-
-                <!-- TABLA -->
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="border-b border-slate-200">
-                            <tr>
-                                <th class="p-2 text-left text-xs text-slate-400">Producto</th>
-                                <th class="p-2 text-left text-xs text-slate-400">Lote</th>
-                                <th class="p-2 text-center text-xs text-slate-400">Disponible</th>
-                                <th class="p-2 text-center text-xs text-slate-400">Cantidad</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="transfer-details-body">
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- BUSCADOR -->
-                <div class="mt-5">
-                    <label class="form-label">Buscar producto en origen</label>
-
-                    <input type="text"
-                           id="stock-search"
-                           class="form-input"
-                           placeholder="Selecciona sucursal primero"
-                           disabled>
-
-                    <div id="stock-suggestions"
-                         class="hidden mt-2 border rounded-xl bg-white shadow"></div>
-                </div>
-            </div>
-
-            <!-- BOTÓN -->
-            <div class="flex justify-end mt-6">
-                <button type="button"
-                        id="save-transfer-btn"
-                        class="px-6 py-3 rounded-2xl bg-emerald-500 text-white font-bold hover:bg-emerald-600">
-                    Crear traslado
-                </button>
-            </div>
-
-        </form>
+    {% if error %}
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">
+        {{ error }}
     </div>
+    {% endif %}
 
+    <form
+        id="transfer-form"
+        data-mode="{{ modo|default:'crear' }}"
+        data-transfer-id="{% if traslado %}{{ traslado.id }}{% elif transferencia %}{{ transferencia.id }}{% endif %}"
+        data-success-url="{% url 'traslados:traslados_home' %}"
+        novalidate
+    >
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+
+            <section class="xl:col-span-9 space-y-4">
+
+                <div class="compact-card p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div class="md:col-span-4">
+                            <label for="sucursal-origen" class="form-label-mini">Sucursal origen</label>
+                            <select id="sucursal-origen" name="sucursal_origen" class="form-control-mini" required>
+                                <option value="">Seleccionar origen...</option>
+                                {% for s in sucursales %}
+                                    <option
+                                        value="{{ s.id }}"
+                                        {% if traslado and traslado.sucursal_origen_id == s.id %}selected{% endif %}
+                                        {% if transferencia and transferencia.sucursal_origen_id == s.id %}selected{% endif %}
+                                    >
+                                        {{ s.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label for="sucursal-destino" class="form-label-mini">Sucursal destino</label>
+                            <select id="sucursal-destino" name="sucursal_destino" class="form-control-mini" required>
+                                <option value="">Seleccionar destino...</option>
+                                {% for s in sucursales %}
+                                    <option
+                                        value="{{ s.id }}"
+                                        {% if traslado and traslado.sucursal_destino_id == s.id %}selected{% endif %}
+                                        {% if transferencia and transferencia.sucursal_destino_id == s.id %}selected{% endif %}
+                                    >
+                                        {{ s.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label for="stock-search" class="form-label-mini">Buscar producto en origen</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="stock-search"
+                                    class="form-control-mini"
+                                    placeholder="Selecciona origen primero"
+                                    autocomplete="off"
+                                    disabled
+                                >
+                                <div
+                                    id="stock-suggestions"
+                                    class="suggestions-panel hidden absolute left-0 right-0 z-30 mt-2"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compact-card p-4">
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-sm font-black text-slate-900">Productos del traslado</h2>
+                            <p class="text-xs text-slate-500">Agrega lotes activos con stock disponible en origen.</p>
+                        </div>
+
+                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                            Unidad mínima
+                        </span>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 overflow-hidden bg-white">
+
+                        <!-- DESKTOP -->
+                        <div class="hidden md:block max-h-[350px] overflow-auto">
+                            <table class="w-full min-w-[900px] table-fixed">
+                                <colgroup>
+                                    <col class="w-[30%]">
+                                    <col class="w-[15%]">
+                                    <col class="w-[16%]">
+                                    <col class="w-[14%]">
+                                    <col class="w-[15%]">
+                                    <col class="w-[10%]">
+                                </colgroup>
+
+                                <thead class="sticky top-0 bg-slate-50 border-b border-slate-200 z-10">
+                                    <tr>
+                                        <th class="px-3 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Producto
+                                        </th>
+
+                                        <th class="px-3 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Lote
+                                        </th>
+
+                                        <th class="px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Vencimiento
+                                        </th>
+
+                                        <th class="px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Disponible
+                                        </th>
+
+                                        <th class="px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Cantidad
+                                        </th>
+
+                                        <th class="px-3 py-3 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            Acción
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="transfer-details-body" class="divide-y divide-slate-100">
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                        <!-- MOBILE -->
+                        <div
+                            id="transfer-details-mobile"
+                            class="md:hidden divide-y divide-slate-100"
+                        >
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+
+            <aside class="xl:col-span-3 space-y-4">
+                <div class="compact-card p-4">
+                    <h3 class="text-sm font-black text-slate-900">Resumen</h3>
+
+                    <div class="mt-3 grid grid-cols-3 xl:grid-cols-1 gap-2">
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</p>
+                            <p class="mt-1 truncate text-xs font-black text-slate-800">
+                                {% if traslado %}{{ traslado.estado }}{% elif transferencia %}{{ transferencia.estado }}{% else %}Borrador{% endif %}
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-white p-3">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Origen</p>
+                            <p class="mt-1 truncate text-xs font-black text-slate-800">
+                                {% if traslado %}{{ traslado.sucursal_origen.nombre }}{% elif transferencia %}{{ transferencia.sucursal_origen.nombre }}{% else %}Pendiente{% endif %}
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-white p-3">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Destino</p>
+                            <p class="mt-1 truncate text-xs font-black text-slate-800">
+                                {% if traslado %}{{ traslado.sucursal_destino.nombre }}{% elif transferencia %}{{ transferencia.sucursal_destino.nombre }}{% else %}Pendiente{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compact-card p-4">
+                    <label for="observaciones" class="form-label-mini">Observaciones</label>
+                    <textarea
+                        id="observaciones"
+                        name="observaciones"
+                        class="form-control-mini"
+                        rows="5"
+                        placeholder="Motivo del traslado..."
+                    >{% if traslado %}{{ traslado.observaciones }}{% elif transferencia %}{{ transferencia.observaciones }}{% endif %}</textarea>
+                </div>
+
+                <div class="compact-card border-emerald-100 bg-emerald-50/50 p-4">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Flujo correcto</p>
+                    <p class="mt-2 text-xs leading-5 font-medium text-emerald-800">
+                        Pendiente → enviar descuenta stock del origen → recibir ingresa stock al destino.
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button
+                        type="button"
+                        id="save-transfer-btn"
+                        class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-100 transition hover:-translate-y-0.5 hover:bg-emerald-600"
+                    >
+                        {% if modo == "editar" %}Guardar cambios{% else %}Crear traslado{% endif %}
+                    </button>
+
+                    <a href="{% url 'traslados:traslados_home' %}"
+                       class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">
+                        Cancelar
+                    </a>
+                </div>
+            </aside>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block app_scripts %}
-<script type="module" src="{% static 'js/traslados/traslado_form.js' %}"></script>
+<script type="module" src="{% static 'js/traslados/traslado_form.js' %}?v=3"></script>
 {% endblock %}

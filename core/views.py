@@ -383,27 +383,38 @@ def rol_list_view(request):
 
 def rol_create_view(request):
     if request.method == 'POST':
-        form = RolForm(request.POST)
-        if form.is_valid():
-            form.save()
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+
+        if nombre:
+            Rol.objects.create(
+                nombre=nombre,
+                descripcion=descripcion
+            )
             return redirect('core:rol_list')
-    else:
-        form = RolForm()
-    context = {'form': form}
-    return render(request, 'roles_templates/rol_form.html', context)
+
+    return render(request, 'roles_templates/rol_form.html')
 
 
 def rol_update_view(request, pk):
     rol = get_object_or_404(Rol, pk=pk)
+
     if request.method == 'POST':
-        form = RolForm(request.POST, instance=rol)
-        if form.is_valid():
-            form.save()
-            return redirect('core:rol_list')
-    else:
-        form = RolForm(instance=rol)
-    context = {'form': form, 'rol': rol}
-    return render(request, 'roles_templates/rol_form.html', context)
+        rol.nombre = request.POST.get('nombre', '').strip()
+        rol.descripcion = request.POST.get('descripcion', '').strip()
+        rol.save()
+
+        return redirect('core:rol_list')
+
+    context = {
+        'rol': rol
+    }
+
+    return render(
+        request,
+        'roles_templates/rol_form.html',
+        context
+    )
 
 
 @require_POST
@@ -417,32 +428,126 @@ def usuario_list_view(request):
     lista_de_usuarios = Usuario.objects.all().select_related(
         'farmacia', 'sucursal', 'rol'
     ).order_by('username')
-    context = {'usuarios': lista_de_usuarios}
+
+    context = {
+        'usuarios': lista_de_usuarios
+    }
+
     return render(request, 'usuarios_templates/usuario_list.html', context)
 
 
 def usuario_create_view(request):
     if request.method == 'POST':
-        form = UsuarioCreateForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('core:usuario_list')
-    else:
-        form = UsuarioCreateForm()
-    context = {'form': form}
+        username = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        farmacia_id = request.POST.get('farmacia') or None
+        sucursal_id = request.POST.get('sucursal') or None
+        rol_id = request.POST.get('rol') or None
+
+        is_active = True if request.POST.get('is_active') == 'on' else False
+        is_staff = True if request.POST.get('is_staff') == 'on' else False
+
+        if not username:
+            messages.error(request, 'El nombre de usuario es obligatorio.')
+            return redirect('core:usuario_create')
+
+        if not password:
+            messages.error(request, 'La contraseña es obligatoria.')
+            return redirect('core:usuario_create')
+
+        if Usuario.objects.filter(username__iexact=username).exists():
+            messages.error(request, 'Ya existe un usuario con ese username.')
+            return redirect('core:usuario_create')
+
+        if email and Usuario.objects.filter(email__iexact=email).exists():
+            messages.error(request, 'Ya existe un usuario con ese correo.')
+            return redirect('core:usuario_create')
+
+        usuario = Usuario(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            farmacia_id=farmacia_id,
+            sucursal_id=sucursal_id,
+            rol_id=rol_id,
+            is_active=is_active,
+            is_staff=is_staff,
+        )
+
+        usuario.set_password(password)
+        usuario.save()
+
+        messages.success(request, 'Usuario creado correctamente.')
+        return redirect('core:usuario_list')
+
+    context = {
+        'farmacias': Farmacia.objects.filter(activo=True).order_by('nombre'),
+        'sucursales': Sucursal.objects.select_related('farmacia').order_by('farmacia__nombre', 'nombre'),
+        'roles': Rol.objects.all().order_by('nombre'),
+    }
+
     return render(request, 'usuarios_templates/usuario_form.html', context)
 
 
 def usuario_update_view(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
+
     if request.method == 'POST':
-        form = UsuarioUpdateForm(request.POST, instance=usuario)
-        if form.is_valid():
-            form.save()
-            return redirect('core:usuario_list')
-    else:
-        form = UsuarioUpdateForm(instance=usuario)
-    context = {'form': form, 'usuario': usuario}
+        username = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        farmacia_id = request.POST.get('farmacia') or None
+        sucursal_id = request.POST.get('sucursal') or None
+        rol_id = request.POST.get('rol') or None
+
+        is_active = True if request.POST.get('is_active') == 'on' else False
+        is_staff = True if request.POST.get('is_staff') == 'on' else False
+
+        if not username:
+            messages.error(request, 'El nombre de usuario es obligatorio.')
+            return redirect('core:usuario_update', pk=usuario.pk)
+
+        if Usuario.objects.filter(username__iexact=username).exclude(pk=usuario.pk).exists():
+            messages.error(request, 'Ya existe otro usuario con ese username.')
+            return redirect('core:usuario_update', pk=usuario.pk)
+
+        if email and Usuario.objects.filter(email__iexact=email).exclude(pk=usuario.pk).exists():
+            messages.error(request, 'Ya existe otro usuario con ese correo.')
+            return redirect('core:usuario_update', pk=usuario.pk)
+
+        usuario.username = username
+        usuario.first_name = first_name
+        usuario.last_name = last_name
+        usuario.email = email
+        usuario.farmacia_id = farmacia_id
+        usuario.sucursal_id = sucursal_id
+        usuario.rol_id = rol_id
+        usuario.is_active = is_active
+        usuario.is_staff = is_staff
+
+        if password:
+            usuario.set_password(password)
+
+        usuario.save()
+
+        messages.success(request, 'Usuario actualizado correctamente.')
+        return redirect('core:usuario_list')
+
+    context = {
+        'usuario': usuario,
+        'farmacias': Farmacia.objects.filter(activo=True).order_by('nombre'),
+        'sucursales': Sucursal.objects.select_related('farmacia').order_by('farmacia__nombre', 'nombre'),
+        'roles': Rol.objects.all().order_by('nombre'),
+    }
+
     return render(request, 'usuarios_templates/usuario_form.html', context)
 
 

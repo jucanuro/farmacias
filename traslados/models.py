@@ -1,125 +1,138 @@
-# traslados/models.py
-
-from django.db import models, transaction
-from django.utils import timezone
+from django.db import models
 from django.core.exceptions import ValidationError
 from core.models import Sucursal, Usuario
-from inventario.models import Producto, StockProducto, MovimientoInventario
+from inventario.models import Producto, StockProducto
 
-class Transferencia(models.Model):
+
+class TrasladoStock(models.Model):
     ESTADO_CHOICES = [
-        ('PENDIENTE', 'Pendiente de Envío'),
-        ('EN_TRANSITO', 'En Tránsito'),
+        ('PENDIENTE', 'Pendiente'),
+        ('ENVIADO', 'Enviado'),
         ('RECIBIDO', 'Recibido'),
         ('CANCELADO', 'Cancelado'),
+        ('RECHAZADO', 'Rechazado'),
     ]
 
-    sucursal_origen = models.ForeignKey(Sucursal, related_name='transferencias_enviadas', on_delete=models.PROTECT)
-    sucursal_destino = models.ForeignKey(Sucursal, related_name='transferencias_recibidas', on_delete=models.PROTECT)
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
-    
-    solicitado_por = models.ForeignKey(Usuario, related_name='transferencias_solicitadas', on_delete=models.PROTECT)
-    enviado_por = models.ForeignKey(Usuario, related_name='transferencias_despachadas', on_delete=models.SET_NULL, null=True, blank=True)
-    recibido_por = models.ForeignKey(Usuario, related_name='transferencias_aceptadas', on_delete=models.SET_NULL, null=True, blank=True)
-    
+    sucursal_origen = models.ForeignKey(
+        Sucursal,
+        on_delete=models.PROTECT,
+        related_name='traslados_salientes',
+        verbose_name='Sucursal Origen'
+    )
+
+    sucursal_destino = models.ForeignKey(
+        Sucursal,
+        on_delete=models.PROTECT,
+        related_name='traslados_entrantes',
+        verbose_name='Sucursal Destino'
+    )
+
+    usuario_solicita = models.ForeignKey(
+        Usuario,
+        on_delete=models.PROTECT,
+        related_name='traslados_solicitados',
+        verbose_name='Usuario que Solicita'
+    )
+
+    usuario_envia = models.ForeignKey(
+        Usuario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='traslados_enviados',
+        verbose_name='Usuario que Envía'
+    )
+
+    usuario_recibe = models.ForeignKey(
+        Usuario,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='traslados_recibidos',
+        verbose_name='Usuario que Recibe'
+    )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='PENDIENTE',
+        verbose_name='Estado'
+    )
+
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_envio = models.DateTimeField(null=True, blank=True)
     fecha_recepcion = models.DateTimeField(null=True, blank=True)
-    
+
     observaciones = models.TextField(blank=True)
 
     class Meta:
+        verbose_name = 'Traslado de Stock'
+        verbose_name_plural = 'Traslados de Stock'
         ordering = ['-fecha_creacion']
-        verbose_name = "Transferencia"
-        verbose_name_plural = "Transferencias"
-
-    def __str__(self):
-        return f"Traslado #{self.id}: {self.sucursal_origen.nombre} -> {self.sucursal_destino.nombre}"
 
     def clean(self):
-        if self.sucursal_origen == self.sucursal_destino:
-            raise ValidationError("La sucursal de origen y destino no pueden ser la misma.")
-
-    def marcar_como_enviada(self, usuario):
-        if self.estado != 'PENDIENTE':
-            raise ValidationError(f"Solo se pueden enviar transferencias en estado 'PENDIENTE'.")
-        
-        with transaction.atomic():
-            for detalle in self.detalles.all():
-                stock_origen = detalle.stock_origen
-                if stock_origen.cantidad < detalle.cantidad:
-                    raise ValidationError(f"Stock insuficiente para {detalle.producto.nombre} (Lote: {stock_origen.lote}).")
-                
-                stock_origen.cantidad -= detalle.cantidad
-                stock_origen.save()
-
-                MovimientoInventario.objects.create(
-                    producto=detalle.producto,
-                    sucursal=self.sucursal_origen,
-                    stock_afectado=stock_origen,
-                    tipo_movimiento='SALIDA_TRASLADO', # Puedes añadir este tipo a tus CHOICES
-                    cantidad=-detalle.cantidad,
-                    usuario=usuario,
-                    referencia_doc=f"Traslado ID: {self.id}"
-                )
-            
-            self.estado = 'EN_TRANSITO'
-            self.enviado_por = usuario
-            self.fecha_envio = timezone.now()
-            self.save()
-
-    def marcar_como_recibida(self, usuario):
-        if self.estado != 'EN_TRANSITO':
-            raise ValidationError("Solo se pueden recibir transferencias 'En Tránsito'.")
-
-        with transaction.atomic():
-            for detalle in self.detalles.all():
-                stock_origen = detalle.stock_origen # El lote de origen que se envió
-                
-                stock_destino, created = StockProducto.objects.get_or_create(
-                    producto=detalle.producto,
-                    sucursal=self.sucursal_destino,
-                    lote=stock_origen.lote,
-                    defaults={
-                        'fecha_vencimiento': stock_origen.fecha_vencimiento,
-                        'precio_compra': stock_origen.precio_compra,
-                        'precio_venta': stock_origen.precio_venta
-                    }
-                )
-                
-                stock_destino.cantidad += detalle.cantidad
-                stock_destino.save()
-
-                MovimientoInventario.objects.create(
-                    producto=detalle.producto,
-                    sucursal=self.sucursal_destino,
-                    stock_afectado=stock_destino,
-                    tipo_movimiento='ENTRADA_TRASLADO', # Puedes añadir este tipo
-                    cantidad=detalle.cantidad,
-                    usuario=usuario,
-                    referencia_doc=f"Traslado ID: {self.id}"
-                )
-            
-            self.estado = 'RECIBIDO'
-            self.recibido_por = usuario
-            self.fecha_recepcion = timezone.now()
-            self.save()
-
-
-class DetalleTransferencia(models.Model):
-    transferencia = models.ForeignKey(Transferencia, related_name='detalles', on_delete=models.CASCADE)
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
-    stock_origen = models.ForeignKey(
-        StockProducto, 
-        on_delete=models.PROTECT,
-        help_text="Lote específico del cual se está enviando el producto."
-    )
-    cantidad = models.PositiveIntegerField()
-
-    class Meta:
-        unique_together = ('transferencia', 'stock_origen') 
-        verbose_name = "Detalle de Transferencia"
-        verbose_name_plural = "Detalles de Transferencia"
+        if self.sucursal_origen_id == self.sucursal_destino_id:
+            raise ValidationError('La sucursal origen y destino no pueden ser iguales.')
 
     def __str__(self):
-        return f"{self.cantidad} de {self.producto.nombre} (Lote: {self.stock_origen.lote})"
+        return f'Traslado #{self.id} - {self.sucursal_origen} → {self.sucursal_destino}'
+    
+    
+
+class DetalleTrasladoStock(models.Model):
+    traslado = models.ForeignKey(
+        TrasladoStock,
+        on_delete=models.CASCADE,
+        related_name='detalles',
+        verbose_name='Traslado'
+    )
+
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        verbose_name='Producto'
+    )
+
+    stock_origen = models.ForeignKey(
+        StockProducto,
+        on_delete=models.PROTECT,
+        related_name='detalles_traslado_origen',
+        verbose_name='Stock Origen'
+    )
+
+    lote = models.CharField(
+        max_length=50,
+        verbose_name='Lote'
+    )
+
+    fecha_vencimiento = models.DateField(
+        verbose_name='Fecha de Vencimiento'
+    )
+
+    cantidad = models.PositiveIntegerField(
+        verbose_name='Cantidad a Trasladar'
+    )
+
+    cantidad_recibida = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Cantidad Recibida'
+    )
+
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Detalle de Traslado'
+        verbose_name_plural = 'Detalles de Traslado'
+
+    def clean(self):
+        if self.cantidad <= 0:
+            raise ValidationError('La cantidad debe ser mayor a cero.')
+
+        if self.stock_origen and self.cantidad > self.stock_origen.cantidad_disponible:
+            raise ValidationError('No hay stock suficiente para realizar el traslado.')
+
+        if self.stock_origen and self.stock_origen.producto_id != self.producto_id:
+            raise ValidationError('El stock origen no corresponde al producto seleccionado.')
+
+    def __str__(self):
+        return f'{self.producto.nombre} - {self.cantidad} unidades'
